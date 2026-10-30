@@ -1,0 +1,15 @@
+[package]
+name = "rockfish-hip"
+description = "Safe Rust layer over the AMD HIP runtime, runtime-loaded; no ROCm needed to build."
+publish = false
+readme = "../../README.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+rockfish-core = { path = "../rockfish-core", version = "=0.0.7" }
+rockfish-hip-sys = { path = "../rockfish-hip-sys", version = "=0.0.7" }
+thiserror = "2.0.21"
