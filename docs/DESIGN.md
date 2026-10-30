@@ -31,7 +31,7 @@ Baracuda ships one `-sys` and one safe crate per library plus parse/emit crates 
 
 ## 3. Versions
 
-HIP bindings differ between releases (`cubecl-hip-sys` keeps one binding file per HIP build, 11 of them in 7.14.6085001 **[read]**). Rockfish's rule: generate bindings from the **newest** headers and call only symbols present in every supported release without a check; for newer symbols, resolve per call and return `SymbolMissing`. The HIP version is read at run time from `hipRuntimeGetVersion` (**[measured]** on the laptop: 60450101) and exposed as `rockfish_hip::runtime_version()`. Struct layouts that changed between releases (the `hipDeviceProp_t` / `R0600` family is the known case) are handled by calling the versioned entry point (`hipGetDevicePropertiesR0600`, present in the laptop DLL **[measured]**) and reading fields by offset tables generated per release. This is the hardest part of the design and gets its own spike before wave 1 code.
+HIP bindings differ between releases, but less than feared. Spike R3b (`docs/SPIKE-R3b-versions.md`, **[read]** from the 11 bindgen files in `cubecl-hip-sys` 7.14.6085001) found `hipDeviceProp_tR0600` identical in all 11 HIP builds, 88 functions added and 1 removed over the range, signature changes ABI-neutral (const-ness, `c_int` to `c_uint`), and layout changes only in rare structs (`hipMemAllocationProp`, `hipLaunchAttributeValue`). Rockfish's rule: generate bindings from the **newest** headers and resolve every symbol per call, so a symbol absent from an older runtime returns `SymbolMissing` for that call only. The HIP version is read at run time from `hipRuntimeGetVersion` (**[measured]** on the laptop: 60450101) and exposed as `rockfish_hip::runtime_version()`; rare structs with layout changes are fenced behind a version check and added only on demand. Not covered by the spike: ROCm before this range and the math libraries (wave 2).
 
 ## 4. Platform support and test matrix
 
@@ -58,7 +58,7 @@ Owned by Rockfish (CireSnave, 2026-10-30, via `Unpopped/docs/parser-emitter-owne
 
 ## 8. Rows this changes in ROADMAP
 
-R4 becomes `rockfish-core` + `rockfish-hip-sys` + `rockfish-hiprtc-sys` with the fake-library tests; R5 the safe layer; a new spike row precedes R4 for the version/struct-layout question in section 3.
+R4 becomes `rockfish-core` + `rockfish-hip-sys` + `rockfish-hiprtc-sys` with the fake-library tests; R5 the safe layer. The version/struct-layout spike (R3b) is done, see section 3.
 
 ## 9. Open items
 
