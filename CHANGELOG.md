@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.8
+
+- `rockfish-hip`: `Stream`, `Event` (record, synchronize, poll, elapsed), `DeviceBuffer<T: DeviceRepr>` (alloc, host/device copies, `fill_zero`, freed on drop), `DeviceRepr` for the primitive ints and floats. Optional feature `half` implements `DeviceRepr` for `half::f16`/`bf16` (`half` 2.7.1, as Fuel resolves). Synchronous copies only; async copies come later. `hip()` now warms the runtime up under a lock (see its docs for the measured hang it prevents). GPU assertions UNVERIFIED in CI; measured locally on the Radeon 610M.
+
 ## 0.0.7
 
 - New crate `rockfish-hip` (unpublished), first slice: `Error` (load / API-with-name / misuse), process-wide `hip()` table like Baracuda's `driver()`, `runtime_version`, `device_count`, `Device` (name, memory, set current). GPU assertions are UNVERIFIED in CI; run locally on the Radeon 610M.

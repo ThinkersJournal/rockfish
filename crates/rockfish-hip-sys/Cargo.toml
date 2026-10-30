@@ -10,4 +10,4 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-rockfish-core = { path = "../rockfish-core", version = "=0.0.7" }
+rockfish-core = { path = "../rockfish-core", version = "=0.0.8" }
