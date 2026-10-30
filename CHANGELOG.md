@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.7
+
+- New crate `rockfish-hip` (unpublished), first slice: `Error` (load / API-with-name / misuse), process-wide `hip()` table like Baracuda's `driver()`, `runtime_version`, `device_count`, `Device` (name, memory, set current). GPU assertions are UNVERIFIED in CI; run locally on the Radeon 610M.
+- `rockfish-hip-sys` now exports `ERROR_NAMES` (status code to name), emitted by `tools/gen-bindings`; fixed `rockfish-hip-sys` test imports that failed to compile on macOS.
+
 ## 0.0.6
 
 - `docs/DESIGN-R5.md`: design of the safe `rockfish-hip` layer (error type, ownership, launch, tests). No code.

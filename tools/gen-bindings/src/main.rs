@@ -8,7 +8,7 @@
 use std::path::{Path, PathBuf};
 
 use quote::{format_ident, quote};
-use syn::{FnArg, ForeignItem, Item, Pat, ReturnType};
+use syn::{Expr, ExprLit, FnArg, ForeignItem, Item, Lit, Pat, ReturnType};
 
 struct Target {
     /// Crate directory under `crates/`.
@@ -229,12 +229,43 @@ fn generate(root: &Path, t: &Target) -> String {
         });
     }
 
+    // First name per `hipError_t` code, so the safe layer can name a status
+    // when the loaded library cannot (HIP only; hipRTC has no such constants).
+    let mut status_names: Vec<(i32, String)> = Vec::new();
+    for item in &file.items {
+        let Item::Const(c) = item else { continue };
+        let Some(short) = c.ident.to_string().strip_prefix("hipError_t_").map(str::to_owned) else {
+            continue;
+        };
+        let Expr::Lit(ExprLit { lit: Lit::Int(value), .. }) = &*c.expr else {
+            continue;
+        };
+        let code: i32 = value.base10_parse().expect("status code fits i32");
+        if !status_names.iter().any(|(known, _)| *known == code) {
+            status_names.push((code, short));
+        }
+    }
+    status_names.sort();
+    let status_codes = status_names.iter().map(|(c, _)| proc_macro2::Literal::i32_unsuffixed(*c));
+    let status_strs = status_names.iter().map(|(_, n)| n);
+    let error_names = if status_names.is_empty() {
+        quote! {}
+    } else {
+        quote! {
+            /// Name of each `hipError_t` status code in the header (the first
+            /// name where several share a code), sorted by code.
+            pub const ERROR_NAMES: &[(i32, &str)] = &[#((#status_codes, #status_strs)),*];
+        }
+    };
+
     let items = &file.items;
     let tokens = quote! {
         use crate::#spec as SPEC;
         use rockfish_core::{Library, LoadError};
 
         #(#items)*
+
+        #error_names
 
         #(#aliases)*
 

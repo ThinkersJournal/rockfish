@@ -38,33 +38,42 @@ dependencies = [
 
 [[package]]
 name = "rockfish"
-version = "0.0.6"
+version = "0.0.7"
 
 [[package]]
 name = "rockfish-core"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "libloading",
  "thiserror",
 ]
 
 [[package]]
+name = "rockfish-hip"
+version = "0.0.7"
+dependencies = [
+ "rockfish-core",
+ "rockfish-hip-sys",
+ "thiserror",
+]
+
+[[package]]
 name = "rockfish-hip-sys"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "rockfish-core",
 ]
 
 [[package]]
 name = "rockfish-hiprtc-sys"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "rockfish-core",
 ]
 
 [[package]]
 name = "rockfish-sys"
-version = "0.0.6"
+version = "0.0.7"
 
 [[package]]
 name = "syn"
