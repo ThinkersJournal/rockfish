@@ -68,6 +68,13 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2
 
+  vendor:
+    name: vendored headers match upstream
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: tools/verify-vendor.sh
+
   # Advisory only (CireSnave 2026-10-23): not a required check.
   portfolio:
     permissions:

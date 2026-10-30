@@ -3,7 +3,7 @@ resolver = "3"
 members = ["crates/rockfish", "crates/rockfish-core", "crates/rockfish-sys"]
 
 [workspace.package]
-version = "0.0.3"
+version = "0.0.4"
 edition = "2024"
 rust-version = "1.88"
 license = "MIT OR Apache-2.0"

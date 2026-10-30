@@ -1,0 +1,14 @@
+# local path (under vendor/hip/include)	upstream path in ROCm/rocm-systems@97f5574fe2fdc7bef44fb01545347912ee9f1779 (tag rocm-7.2.4)	git blob sha
+hip/amd_detail/amd_channel_descriptor.h	projects/clr/hipamd/include/hip/amd_detail/amd_channel_descriptor.h	26d03abfb44ee564d22da3df1d94f4a4df57782d
+hip/amd_detail/amd_hip_runtime_pt_api.h	projects/clr/hipamd/include/hip/amd_detail/amd_hip_runtime_pt_api.h	e477ad8b67f630f17a9814448749ffa79b087a81
+hip/amd_detail/amd_hip_vector_types.h	projects/clr/hipamd/include/hip/amd_detail/amd_hip_vector_types.h	b96bcc1e16449b2ad6284d46389df652dcd4f30d
+hip/amd_detail/host_defines.h	projects/clr/hipamd/include/hip/amd_detail/host_defines.h	8081966cf7afb515f676fdd5613909b1840ad08a
+hip/channel_descriptor.h	projects/hip/include/hip/channel_descriptor.h	21d5f2052e2bed51f8be063fb9315466ab745efa
+hip/driver_types.h	projects/hip/include/hip/driver_types.h	1b64d165a40fbaa58efff8e6d8f9940fed192def
+hip/hip_common.h	projects/hip/include/hip/hip_common.h	4a7dcff6cbd5f530e3ac23f3c82c33cda92d67e0
+hip/hip_deprecated.h	projects/hip/include/hip/hip_deprecated.h	91c58e28b587db34f72daefc0bcbddc576da1735
+hip/hip_runtime_api.h	projects/hip/include/hip/hip_runtime_api.h	9eb4bba6c5a04dfa7bf46bf594ee4b581860e876
+hip/hiprtc.h	projects/hip/include/hip/hiprtc.h	f4f8b88eb92250c3bb36e19d889ddb06a7c0b2f9
+hip/linker_types.h	projects/hip/include/hip/linker_types.h	1131910322196a2903d5bad665baef9378607e9c
+hip/surface_types.h	projects/hip/include/hip/surface_types.h	d5cc457b8593654b65d3f0a5baa08c409cd00afe
+hip/texture_types.h	projects/hip/include/hip/texture_types.h	65290cd52c72974292765aa95e7065adb9ee090f
