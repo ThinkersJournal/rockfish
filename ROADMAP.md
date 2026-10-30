@@ -11,7 +11,7 @@ Order matters: survey, then design, then code. Every code row ships with a negat
 | R3b | Spike: HIP version / struct-layout handling; result in `docs/SPIKE-R3b-versions.md` | in PR |
 | R4a | `rockfish-core`: loader, per-OS name table, error type, tests against a real system library | in PR |
 | R4b-1 | Vendor the HIP headers with provenance and a byte-for-byte check | in PR |
-| R4b-2 | `rockfish-hip-sys` and `rockfish-hiprtc-sys`: bindgen-generated HIP runtime + hipRTC bindings on the R4a loader | in PR |
+| R4b-2 | `rockfish-hip-sys` and `rockfish-hiprtc-sys`: bindgen-generated HIP runtime + hipRTC bindings on the R4a loader. Library names other than `amdhip64_6.dll` (measured, one laptop) are UNVERIFIED | in PR |
 | R5 | `rockfish`: safe HIP layer (devices, streams, memory, modules, kernels) | after R4 |
 | R6 | Math libraries: rocBLAS, hipBLASLt, rocFFT, rocRAND, rocSOLVER, rocSPARSE, MIOpen | after R5 |
 | R7 | HIP C++ parser + emitter on Unpopped's `Frontend`/`Backend` contract (`Unpopped/docs/parser-emitter-ownership-map.md`, ROADMAP 6.7) | after R3 |
