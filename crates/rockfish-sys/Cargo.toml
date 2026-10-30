@@ -1,6 +1,7 @@
 [package]
 name = "rockfish-sys"
 description = "Placeholder: AMD ROCm and HIP for Rust. No code yet; see ROADMAP.md."
+publish = false
 readme = "../../README.md"
 version.workspace = true
 edition.workspace = true
