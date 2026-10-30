@@ -3,7 +3,7 @@
 use std::ffi::CStr;
 
 use rockfish_core::LoadError;
-use rockfish_hip_sys::{ERROR_NAMES, HipApi};
+use rockfish_hip_sys::{ERROR_NAMES, HipApi, hipError_t_hipErrorNotReady};
 
 /// Why a `rockfish-hip` call failed.
 #[derive(Debug, thiserror::Error)]
@@ -58,6 +58,15 @@ pub(crate) fn check(api: &HipApi, call: &'static str, code: i32) -> Result<()> {
         .or_else(|| builtin_name(code).map(str::to_owned))
         .unwrap_or_else(|| format!("hipError({code})"));
     Err(Error::Api { call, code, name })
+}
+
+/// Like [`check`] for the polling calls: `hipErrorNotReady` is `Ok(false)`,
+/// success is `Ok(true)`, anything else an error.
+pub(crate) fn check_ready(api: &HipApi, call: &'static str, code: i32) -> Result<bool> {
+    if code == hipError_t_hipErrorNotReady {
+        return Ok(false);
+    }
+    check(api, call, code).map(|()| true)
 }
 
 #[cfg(test)]
