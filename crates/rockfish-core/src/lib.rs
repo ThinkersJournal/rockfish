@@ -259,6 +259,7 @@ mod tests {
         assert_eq!(NEVER.path_variable(), "ROCKFISH_NOTHING_PATH");
     }
 
+    #[cfg(any(windows, target_os = "linux"))]
     #[test]
     fn search_order_is_override_then_roots_then_loader() {
         let spec = LibrarySpec {
@@ -295,6 +296,7 @@ mod tests {
         assert_eq!(got[0], OsString::from("somewhere/exact-file"));
     }
 
+    #[cfg(any(windows, target_os = "linux"))]
     #[test]
     fn missing_library_is_an_error_listing_every_candidate() {
         let error = Library::open_with(&NEVER, &candidates(&NEVER, &env_of(&[]), &|_| false))
@@ -306,6 +308,14 @@ mod tests {
             }
             other => panic!("wrong error: {other}"),
         }
+    }
+
+    // No ROCm exists for other OSes, so every library is unsupported there.
+    #[cfg(not(any(windows, target_os = "linux")))]
+    #[test]
+    fn other_os_reports_no_names() {
+        let error = Library::open(&NEVER).expect_err("no names");
+        assert!(matches!(error, LoadError::UnsupportedPlatform { .. }));
     }
 
     #[test]
