@@ -9,7 +9,8 @@ Order matters: survey, then design, then code. Every code row ships with a negat
 | R2 | `docs/SURVEY.md`: existing crates (rocm-rs, rocmrc, cubecl-hip-sys, rocm-sys), ROCm/HIP SDK library names per OS, what loads on Windows; options first, recommendation, no code | next |
 | R3 | `docs/DESIGN.md`: sys/safe split, runtime loading, per-OS library table, error model, Fuel consumption (with the Fuel lane) | in PR |
 | R3b | Spike: HIP version / struct-layout handling; result in `docs/SPIKE-R3b-versions.md` | in PR |
-| R4 | `rockfish-sys`: HIP runtime + hipRTC, runtime-loaded | after R3 |
+| R4a | `rockfish-core`: loader, per-OS name table, error type, tests against a real system library | in PR |
+| R4b | `rockfish-hip-sys` and `rockfish-hiprtc-sys`: HIP runtime + hipRTC bindings on the R4a loader | next |
 | R5 | `rockfish`: safe HIP layer (devices, streams, memory, modules, kernels) | after R4 |
 | R6 | Math libraries: rocBLAS, hipBLASLt, rocFFT, rocRAND, rocSOLVER, rocSPARSE, MIOpen | after R5 |
 | R7 | HIP C++ parser + emitter on Unpopped's `Frontend`/`Backend` contract (`Unpopped/docs/parser-emitter-ownership-map.md`, ROADMAP 6.7) | after R3 |
