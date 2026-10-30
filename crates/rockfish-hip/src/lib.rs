@@ -10,8 +10,7 @@
 
 mod device;
 mod error;
-mod error_names;
-#[cfg(test)]
+#[cfg(all(test, any(windows, target_os = "linux")))]
 mod test_support;
 
 use std::sync::OnceLock;

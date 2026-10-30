@@ -1,6 +1,8 @@
 //! Loader behaviour of the generated table. None of these need ROCm.
 
-use rockfish_core::{Library, LibrarySpec, LoadError};
+use rockfish_core::LoadError;
+#[cfg(any(windows, target_os = "linux"))]
+use rockfish_core::{Library, LibrarySpec};
 use rockfish_hip_sys::HipApi;
 
 // A library every machine of that OS has, standing in for "a library that loads but is not HIP".
