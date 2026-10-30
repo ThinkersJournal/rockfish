@@ -1,0 +1,13 @@
+[package]
+name = "rockfish-hiprtc-sys"
+description = "Raw, runtime-loaded bindings to the AMD hipRTC library, generated from the vendored HIP headers."
+publish = false
+readme = "../../README.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+rockfish-core = { path = "../rockfish-core", version = "=0.0.5" }

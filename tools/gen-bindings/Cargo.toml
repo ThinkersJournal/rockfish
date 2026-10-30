@@ -1,0 +1,19 @@
+# Developer tool, not part of the main workspace (it needs libclang). Run:
+#   cargo run --manifest-path tools/gen-bindings/Cargo.toml -- hip
+#   cargo run --manifest-path tools/gen-bindings/Cargo.toml -- hiprtc
+# and commit the regenerated `generated.rs`.
+[package]
+name = "gen-bindings"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "MIT OR Apache-2.0"
+
+[workspace]
+
+[dependencies]
+bindgen = "0.73"
+syn = { version = "3", features = ["full"] }
+quote = "1"
+proc-macro2 = "1"
+prettyplease = "0.3"
