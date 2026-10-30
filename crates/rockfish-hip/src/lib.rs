@@ -29,7 +29,7 @@ pub use stream::{Event, Stream};
 
 /// The process-wide HIP table, loading the runtime and warming it up on first use.
 ///
-/// Warm-up (see [`warm_up`]) runs once, under a lock, before any thread gets
+/// Warm-up (`warm_up`, one stream created and destroyed on device 0) runs once, under a lock, before any thread gets
 /// the table. A failed load is not cached, so installing HIP and calling
 /// again works.
 pub fn hip() -> Result<&'static HipApi> {
