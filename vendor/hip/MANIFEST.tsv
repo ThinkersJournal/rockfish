@@ -12,3 +12,4 @@ hip/hiprtc.h	projects/hip/include/hip/hiprtc.h	f4f8b88eb92250c3bb36e19d889ddb06a
 hip/linker_types.h	projects/hip/include/hip/linker_types.h	1131910322196a2903d5bad665baef9378607e9c
 hip/surface_types.h	projects/hip/include/hip/surface_types.h	d5cc457b8593654b65d3f0a5baa08c409cd00afe
 hip/texture_types.h	projects/hip/include/hip/texture_types.h	65290cd52c72974292765aa95e7065adb9ee090f
+hip/library_types.h	projects/hip/include/hip/library_types.h	c3c8d5d835371ccc41ca26630f337ce2191be78b

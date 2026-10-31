@@ -42,5 +42,7 @@ verify_set vendor/hip vendor/hip/include ROCm/rocm-systems 97f5574fe2fdc7bef44fb
   projects/hip/LICENSE.md 4d43ac8700191c7a688e99ca2a25685963a61bb2
 verify_set vendor/rocblas vendor/rocblas/include/rocblas ROCm/rocm-libraries 3a2a9bc877edcf5decd36eeaf897a8c9b6017030 \
   projects/rocblas/LICENSE.md e41274cd9434ff82a2e89735a3bad406b80b2f96
+# hipBLASLt: includes hipblas-common/hipblas-common.h from projects/hipblas-common; its LICENSE.md is the same blob 4d43ac8...
+verify_set vendor/hipblaslt vendor/hipblaslt/include ROCm/rocm-libraries 3a2a9bc877edcf5decd36eeaf897a8c9b6017030   projects/hipblaslt/LICENSE.md 4d43ac8700191c7a688e99ca2a25685963a61bb2
 echo "fail=$fail"
 exit $fail
