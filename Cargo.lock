@@ -83,6 +83,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rockfish-hipblaslt-sys"
+version = "0.0.12"
+dependencies = [
+ "rockfish-core",
+ "rockfish-hip-sys",
+]
+
+[[package]]
 name = "rockfish-hiprtc"
 version = "0.0.12"
 dependencies = [

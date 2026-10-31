@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/rockfish", "crates/rockfish-core", "crates/rockfish-sys", "crates/rockfish-hip", "crates/rockfish-hip-sys", "crates/rockfish-hiprtc-sys", "crates/rockfish-hiprtc", "crates/rockfish-rocblas-sys"]
+members = ["crates/rockfish", "crates/rockfish-core", "crates/rockfish-sys", "crates/rockfish-hip", "crates/rockfish-hip-sys", "crates/rockfish-hiprtc-sys", "crates/rockfish-hiprtc", "crates/rockfish-rocblas-sys", "crates/rockfish-hipblaslt-sys"]
 
 [workspace.package]
 version = "0.0.12"

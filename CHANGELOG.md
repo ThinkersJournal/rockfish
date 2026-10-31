@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- New crate `rockfish-hipblaslt-sys` (unpublished): runtime-loaded bindings for the whole hipBLASLt C API in `hipblaslt.h`, 24 functions (handle, matrix layout, matmul descriptor and preference, algorithm heuristic, `hipblasLtMatmul`, matrix transform). `hipStream_t` is the `rockfish-hip-sys` type. Measured on one Windows laptop against Ollama's ROCm 7.1 `libhipblaslt.dll`: it exports exactly these 24 and all resolve (headers are hipBLASLt 1.2.2). NOT run on a GPU: no handle has been created. Linux sonames UNVERIFIED. The C++ extension API (`hipblaslt-ext.hpp`) is not bound.
+- `vendor/hipblaslt`: 4 hipBLASLt headers and `hipblas-common.h` (from `projects/hipblas-common`) at `ROCm/rocm-libraries` tag `rocm-7.2.4`; `vendor/hip` gains `hip/library_types.h` (`hipDataType`) from `rocm-systems` at the pinned commit. All byte-identical to upstream blobs; `tools/verify-vendor.sh` checks all three sets.
+- `tools/gen-bindings` takes a `hipblaslt` target (header parsed as C++, HIP and hipBLAS-side stand-ins for headers that are not vendored).
+
 ## 0.0.12
 
 - New crate `rockfish-rocblas-sys` (unpublished): runtime-loaded rocBLAS bindings, 56 functions (handle, stream, pointer/atomics/math mode, version, vector/matrix copies, level 1 `s`/`d` scal axpy dot nrm2 asum copy swap iamax iamin, gemv, geam, and the GEMM family: `h`/`s`/`d` gemm with batched and strided-batched forms, `gemm_ex` and its batched forms). `hipStream_t` is the `rockfish-hip-sys` type. Measured on one Windows laptop against Ollama's ROCm 7.1 `rocblas.dll` (rocBLAS 5.1.1, headers are 5.2.0): all 56 symbols resolve and `rocblas_get_version_string` answers. NOT run on a GPU: no call that touches a device has been made, and that bundle ships no gfx1036 kernels (this laptop's iGPU). Linux sonames UNVERIFIED.

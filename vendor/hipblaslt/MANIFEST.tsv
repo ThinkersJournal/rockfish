@@ -1,0 +1,6 @@
+# local path (under vendor/hipblaslt/include)	upstream path in ROCm/rocm-libraries@3a2a9bc877edcf5decd36eeaf897a8c9b6017030 (tag rocm-7.2.4)	git blob sha
+hipblaslt/hipblaslt.h	projects/hipblaslt/library/include/hipblaslt/hipblaslt.h	b72e6926f0292b7d3fb548bc7ea0b358082c3c93
+hipblaslt/hipblaslt-types.h	projects/hipblaslt/library/include/hipblaslt/hipblaslt-types.h	a313a5f6920634e6709b7a6c8e29cf517fef98ee
+hipblaslt/hipblaslt_float8.h	projects/hipblaslt/library/include/hipblaslt/hipblaslt_float8.h	c9e12107ffe08980e0a9e2fb865345579ebcb69d
+hipblaslt/hipblaslt_xfloat32.h	projects/hipblaslt/library/include/hipblaslt/hipblaslt_xfloat32.h	a71bd2d94dd967e0970ebe290bd03c3ea37f8013
+hipblas-common/hipblas-common.h	projects/hipblas-common/library/include/hipblas-common/hipblas-common.h	9ce438c201d0d115ab9f7912bd844cf05dcbf930

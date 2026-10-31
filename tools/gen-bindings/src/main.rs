@@ -1,4 +1,4 @@
-//! Generates `generated.rs` for the `-sys` crates (HIP, hipRTC, rocBLAS) from the
+//! Generates `generated.rs` for the `-sys` crates (HIP, hipRTC, rocBLAS, hipBLASLt) from the
 //! vendored headers.
 //!
 //! bindgen produces the types and a plain `extern "C"` block; this tool removes
@@ -24,6 +24,8 @@ struct Target {
     preinclude: Option<&'static str>,
     /// Types provided by another `-sys` crate: (type, `use` path). Kept out of the output.
     reused: &'static [(&'static str, &'static str)],
+    /// Parse the header as C++ (its API is `extern "C"`, but the file is not valid C).
+    cxx: bool,
     /// Provenance written at the top of the generated file.
     origin: &'static str,
     /// Name of the generated table type.
@@ -47,6 +49,7 @@ const ROCBLAS: Target = Target {
     stubs: &[".", "rocblas", "rocblas/internal"],
     preinclude: Some("hip/hip_runtime_api.h"),
     reused: &[("hipStream_t", "rockfish_hip_sys::hipStream_t")],
+    cxx: false,
     origin: "vendor/rocblas (ROCm/rocm-libraries rocm-7.2.4",
     table: "RocblasApi",
     spec: "ROCBLAS",
@@ -112,6 +115,47 @@ const ROCBLAS: Target = Target {
     ],
 };
 
+const HIPBLASLT: Target = Target {
+    krate: "rockfish-hipblaslt-sys",
+    include: "vendor/hipblaslt/include",
+    header: "hipblaslt/hipblaslt.h",
+    stubs: &[".", "hipblaslt"],
+    preinclude: None,
+    reused: &[("hipStream_t", "rockfish_hip_sys::hipStream_t")],
+    cxx: true,
+    origin: "vendor/hipblaslt (ROCm/rocm-libraries rocm-7.2.4",
+    table: "HipblasltApi",
+    spec: "HIPBLASLT",
+    library: "HIPBLASLT",
+    extra_types: "^(hipblas[A-Za-z0-9]*_t|hipDataType)$",
+    functions: &[
+        "hipblasLtGetVersion",
+        "hipblasLtGetGitRevision",
+        "hipblasLtGetArchName",
+        "hipblasLtCreate",
+        "hipblasLtDestroy",
+        "hipblasLtMatrixLayoutCreate",
+        "hipblasLtMatrixLayoutDestroy",
+        "hipblasLtMatrixLayoutSetAttribute",
+        "hipblasLtMatrixLayoutGetAttribute",
+        "hipblasLtMatmulDescCreate",
+        "hipblasLtMatmulDescDestroy",
+        "hipblasLtMatmulDescSetAttribute",
+        "hipblasLtMatmulDescGetAttribute",
+        "hipblasLtMatmulPreferenceCreate",
+        "hipblasLtMatmulPreferenceDestroy",
+        "hipblasLtMatmulPreferenceSetAttribute",
+        "hipblasLtMatmulPreferenceGetAttribute",
+        "hipblasLtMatmulAlgoGetHeuristic",
+        "hipblasLtMatmul",
+        "hipblasLtMatrixTransformDescCreate",
+        "hipblasLtMatrixTransformDescDestroy",
+        "hipblasLtMatrixTransformDescSetAttribute",
+        "hipblasLtMatrixTransformDescGetAttribute",
+        "hipblasLtMatrixTransform",
+    ],
+};
+
 const HIP: Target = Target {
     krate: "rockfish-hip-sys",
     include: "vendor/hip/include",
@@ -119,6 +163,7 @@ const HIP: Target = Target {
     stubs: &["."],
     preinclude: None,
     reused: &[],
+    cxx: false,
     origin: HIP_ORIGIN,
     table: "HipApi",
     spec: "HIP",
@@ -195,6 +240,7 @@ const HIPRTC: Target = Target {
     stubs: &["."],
     preinclude: None,
     reused: &[],
+    cxx: false,
     origin: HIP_ORIGIN,
     table: "HiprtcApi",
     spec: "HIPRTC",
@@ -221,7 +267,8 @@ fn main() {
         "hip" => &HIP,
         "hiprtc" => &HIPRTC,
         "rocblas" => &ROCBLAS,
-        other => panic!("usage: gen-bindings (hip|hiprtc|rocblas); got `{other}`"),
+        "hipblaslt" => &HIPBLASLT,
+        other => panic!("usage: gen-bindings (hip|hiprtc|rocblas|hipblaslt); got `{other}`"),
     };
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let out = root
@@ -246,6 +293,12 @@ fn generate(root: &Path, t: &Target) -> String {
         .allowlist_var(t.extra_types);
     for s in t.stubs {
         builder = builder.clang_arg(format!("-I{}", stub.join(s).display()));
+    }
+    if t.cxx {
+        builder = builder
+            .clang_arg("-x")
+            .clang_arg("c++")
+            .clang_arg("-std=c++17");
     }
     if let Some(pre) = t.preinclude {
         builder = builder.clang_arg("-include").clang_arg(pre);
