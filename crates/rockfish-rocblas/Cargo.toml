@@ -1,0 +1,22 @@
+[package]
+name = "rockfish-rocblas"
+description = "Safe Rust layer over AMD rocBLAS (typed GEMM on rockfish-hip buffers and streams), runtime-loaded; no ROCm needed to build."
+publish = false
+readme = "../../README.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+rockfish-core = { path = "../rockfish-core", version = "=0.0.14" }
+rockfish-hip = { path = "../rockfish-hip", version = "=0.0.14" }
+rockfish-hip-sys = { path = "../rockfish-hip-sys", version = "=0.0.14" }
+rockfish-rocblas-sys = { path = "../rockfish-rocblas-sys", version = "=0.0.14" }
+half = { version = "2.7.1", optional = true, default-features = false }
+thiserror = "2.0.21"
+
+[features]
+# GEMM on `half::f16` and `half::bf16` (and `DeviceRepr` for them, via `rockfish-hip`).
+half = ["dep:half", "rockfish-hip/half"]
