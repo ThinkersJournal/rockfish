@@ -12,8 +12,13 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+# The hipRTC `Compiler`; runtime-loaded, so enabling it needs no ROCm to build.
+hiprtc = ["dep:rockfish-hiprtc"]
+
 [dependencies]
 unpopped = "0.38"
+rockfish-hiprtc = { path = "../rockfish-hiprtc", version = "=0.0.22", optional = true }
 unpopped-vocab = "0.38"
 
 [dev-dependencies]
