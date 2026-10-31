@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.20
 
 - New crate `rockfish-hip-emit` (unpublished; version tracks Unpopped, 0.38.4 = the `unpopped` built and tested against): the `Hip` `unpopped::backend::Backend` (`name` "hip", `provider` "rockfish"), so Unpopped can lower a plan to HIP C++ source. Scope is one cell: the scalar contiguous elementwise schedule, one output, `f32`, on a `rocm:` target; everything else (vectorized/strided schedules, runtime parameters, other dtypes, other namespaces, `Fma`, `Select`, comparisons, `Max`/`Min` and the ops listed in `docs/DESIGN-R7.md` section 5a) is a typed `LowerError`. Spellings are stated in the emitter, not inherited from CUDA output, and are the inverse of what `rockfish-hip-parse` lifts; constants are rounded to `f32` as the IR defines and refused if they overflow, underflow or are non-finite; the kernel body turns floating-point contraction off. Tests: golden text, round trip through the HIP frontend with a one-operator-change control, and each refusal paired with a lowering control. **Emits text only: no HIP compiler has seen it and nothing ran on a GPU (compilation UNVERIFIED; rig row).** `KernelPlan` carries no wavefront size (recorded for R7c).
 - `Cargo.lock`: `unpopped` and `unpopped-vocab` 0.38.0 -> 0.38.4; `rockfish-hip-parse`'s 14 tests pass against 0.38.4 (its own version stays 0.38.0 until the PM allocates).
