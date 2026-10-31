@@ -12,10 +12,12 @@ use rockfish_hip_sys::{
 use crate::device::Device;
 use crate::error::{Error, Result, check};
 use crate::hip;
+use crate::pinned::{PendingCopy, PinnedBuffer};
 use crate::repr::DeviceRepr;
+use crate::stream::Stream;
 
 /// `len` elements of `T` as a byte count; zero-sized requests and overflow are refused.
-fn byte_len<T: DeviceRepr>(len: usize) -> Result<usize> {
+pub(crate) fn byte_len<T: DeviceRepr>(len: usize) -> Result<usize> {
     match len.checked_mul(size_of::<T>()) {
         Some(0) => Err(Error::Misuse("zero-length device allocation")),
         Some(bytes) => Ok(bytes),
@@ -128,6 +130,65 @@ impl<T: DeviceRepr> DeviceBuffer<T> {
                 hipMemcpyKind_hipMemcpyDeviceToHost,
             )
         })
+    }
+
+    /// Queue a copy of `source` into this buffer on `stream` and return at once.
+    ///
+    /// The returned guard borrows all three objects until
+    /// [`PendingCopy::wait`] (or its drop) has synchronised the stream.
+    pub fn copy_from_pinned_async<'a>(
+        &'a mut self,
+        source: &'a PinnedBuffer<T>,
+        stream: &'a Stream,
+    ) -> Result<PendingCopy<'a>> {
+        same_len(self.len, source.len())?;
+        self.same_device_as(stream)?;
+        let api = hip()?;
+        let f = api.hipMemcpyAsync()?;
+        // SAFETY: both allocations hold `self.len` values; the guard keeps
+        // them and the stream borrowed until the stream is synchronised.
+        check(api, "hipMemcpyAsync", unsafe {
+            f(
+                self.ptr,
+                source.as_ptr(),
+                self.len * size_of::<T>(),
+                hipMemcpyKind_hipMemcpyHostToDevice,
+                stream.as_raw(),
+            )
+        })?;
+        Ok(PendingCopy::new(stream))
+    }
+
+    /// Queue a copy of this buffer into `out` on `stream`; see
+    /// [`DeviceBuffer::copy_from_pinned_async`].
+    pub fn copy_to_pinned_async<'a>(
+        &'a self,
+        out: &'a mut PinnedBuffer<T>,
+        stream: &'a Stream,
+    ) -> Result<PendingCopy<'a>> {
+        same_len(self.len, out.len())?;
+        self.same_device_as(stream)?;
+        let api = hip()?;
+        let f = api.hipMemcpyAsync()?;
+        // SAFETY: as `copy_from_pinned_async`, in the other direction.
+        check(api, "hipMemcpyAsync", unsafe {
+            f(
+                out.as_mut_ptr(),
+                self.ptr,
+                self.len * size_of::<T>(),
+                hipMemcpyKind_hipMemcpyDeviceToHost,
+                stream.as_raw(),
+            )
+        })?;
+        Ok(PendingCopy::new(stream))
+    }
+
+    /// Make this buffer's device current and require `stream` to belong to it.
+    fn same_device_as(&self, stream: &Stream) -> Result<()> {
+        if stream.device() != self.device {
+            return Err(Error::Misuse("stream and buffer are on different devices"));
+        }
+        self.device.set_current()
     }
 
     /// The contents as a new `Vec`. Blocks until done.
@@ -255,6 +316,38 @@ mod tests {
         buffer.copy_to_host(&mut back).expect("download");
         assert_eq!(back, sent);
         assert_eq!(buffer.to_vec().expect("to_vec"), sent);
+    }
+
+    #[test]
+    fn async_copies_round_trip_through_pinned_memory() {
+        let Some(device) = device() else { return };
+        let stream = Stream::new(device).expect("stream");
+        let sent: Vec<u32> = (0..4096u32)
+            .map(|i| i.wrapping_mul(2_246_822_519))
+            .collect();
+        let pinned = PinnedBuffer::from_slice(device, &sent).expect("pinned");
+        let mut buffer = DeviceBuffer::<u32>::alloc(device, sent.len()).expect("device");
+        buffer
+            .copy_from_pinned_async(&pinned, &stream)
+            .expect("queue upload")
+            .wait()
+            .expect("upload");
+        // Prefill the destination so an unwritten one cannot pass.
+        let mut back = PinnedBuffer::from_slice(device, &vec![0xDEAD_BEEFu32; sent.len()])
+            .expect("pinned out");
+        {
+            // Dropping the guard instead of calling `wait` must also finish the copy.
+            let _pending = buffer
+                .copy_to_pinned_async(&mut back, &stream)
+                .expect("queue download");
+        }
+        assert_eq!(&back[..], &sent[..]);
+        let other = Stream::new(device).expect("second stream");
+        let mut short = DeviceBuffer::<u32>::alloc(device, 8).expect("short");
+        assert!(matches!(
+            short.copy_from_pinned_async(&pinned, &other),
+            Err(Error::Misuse(_))
+        ));
     }
 
     #[test]

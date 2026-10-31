@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.11
+
+- `rockfish-hip`: `PinnedBuffer<T>` (`hipHostMalloc`, derefs to `[T]`, freed on drop) and asynchronous copies `DeviceBuffer::copy_from_pinned_async` / `copy_to_pinned_async` (`hipMemcpyAsync`). Each returns a `PendingCopy` guard that borrows the buffers and the stream until `wait()` or drop synchronises; `mem::forget` on the guard is a documented hole. Measured on the Radeon 610M: a 4096-element round trip through pinned memory, including drop-as-wait, plus a refused cross-device stream; one device only, so cross-device behaviour is UNVERIFIED.
+
 ## 0.0.10
 
 - New crate `rockfish-hiprtc` (unpublished): optional safe hipRTC wrapper. `hiprtc()` process-wide table, `Program` (new, name expressions, compile with options, log, code object, lowered names; destroyed on drop), `version()`, `Error` with a `Compile { log }` variant. UNVERIFIED end to end: the laptop has no hipRTC (`hiprtc.dll` not found, measured), so the compile path has never run; tested are the absent-library error, a missing entry point, NUL-byte refusal and log handling.
