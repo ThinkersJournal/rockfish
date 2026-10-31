@@ -1,4 +1,5 @@
-//! Generates `generated.rs` for the HIP `-sys` crates from the vendored headers.
+//! Generates `generated.rs` for the `-sys` crates (HIP, hipRTC, rocBLAS) from the
+//! vendored headers.
 //!
 //! bindgen produces the types and a plain `extern "C"` block; this tool removes
 //! the block and replaces it with a table of optional function pointers filled
@@ -13,8 +14,18 @@ use syn::{Expr, ExprLit, FnArg, ForeignItem, Item, Lit, Pat, ReturnType};
 struct Target {
     /// Crate directory under `crates/`.
     krate: &'static str,
-    /// Header under `vendor/hip/include`.
+    /// Directory the header is read from and `-I`-ed, relative to the repo root.
+    include: &'static str,
+    /// Header under `include`.
     header: &'static str,
+    /// Stub directories (relative to `tools/gen-bindings/stub`) added with `-I`.
+    stubs: &'static [&'static str],
+    /// Header force-included before `header`, for headers that assume another was included first.
+    preinclude: Option<&'static str>,
+    /// Types provided by another `-sys` crate: (type, `use` path). Kept out of the output.
+    reused: &'static [(&'static str, &'static str)],
+    /// Provenance written at the top of the generated file.
+    origin: &'static str,
     /// Name of the generated table type.
     table: &'static str,
     /// Name of the `LibrarySpec` constant in the crate's `lib.rs`.
@@ -27,9 +38,88 @@ struct Target {
     extra_types: &'static str,
 }
 
+const HIP_ORIGIN: &str = "vendor/hip (ROCm/rocm-systems rocm-7.2.4";
+
+const ROCBLAS: Target = Target {
+    krate: "rockfish-rocblas-sys",
+    include: "vendor/rocblas/include/rocblas",
+    header: "rocblas.h",
+    stubs: &[".", "rocblas", "rocblas/internal"],
+    preinclude: Some("hip/hip_runtime_api.h"),
+    reused: &[("hipStream_t", "rockfish_hip_sys::hipStream_t")],
+    origin: "vendor/rocblas (ROCm/rocm-libraries rocm-7.2.4",
+    table: "RocblasApi",
+    spec: "ROCBLAS",
+    library: "ROCBLAS",
+    extra_types: "^rocblas_.*$",
+    functions: &[
+        "rocblas_create_handle",
+        "rocblas_destroy_handle",
+        "rocblas_set_stream",
+        "rocblas_get_stream",
+        "rocblas_set_pointer_mode",
+        "rocblas_get_pointer_mode",
+        "rocblas_set_atomics_mode",
+        "rocblas_get_atomics_mode",
+        "rocblas_set_math_mode",
+        "rocblas_get_math_mode",
+        "rocblas_get_version_string",
+        "rocblas_get_version_string_size",
+        "rocblas_status_to_string",
+        "rocblas_initialize",
+        "rocblas_set_vector",
+        "rocblas_get_vector",
+        "rocblas_set_matrix",
+        "rocblas_get_matrix",
+        "rocblas_set_vector_async",
+        "rocblas_get_vector_async",
+        "rocblas_set_matrix_async",
+        "rocblas_get_matrix_async",
+        "rocblas_sscal",
+        "rocblas_dscal",
+        "rocblas_saxpy",
+        "rocblas_daxpy",
+        "rocblas_sdot",
+        "rocblas_ddot",
+        "rocblas_snrm2",
+        "rocblas_dnrm2",
+        "rocblas_sasum",
+        "rocblas_dasum",
+        "rocblas_scopy",
+        "rocblas_dcopy",
+        "rocblas_sswap",
+        "rocblas_dswap",
+        "rocblas_isamax",
+        "rocblas_idamax",
+        "rocblas_isamin",
+        "rocblas_idamin",
+        "rocblas_sgemv",
+        "rocblas_dgemv",
+        "rocblas_hgemm",
+        "rocblas_sgemm",
+        "rocblas_dgemm",
+        "rocblas_hgemm_batched",
+        "rocblas_hgemm_strided_batched",
+        "rocblas_sgemm_batched",
+        "rocblas_sgemm_strided_batched",
+        "rocblas_dgemm_batched",
+        "rocblas_dgemm_strided_batched",
+        "rocblas_gemm_ex",
+        "rocblas_gemm_batched_ex",
+        "rocblas_gemm_strided_batched_ex",
+        "rocblas_sgeam",
+        "rocblas_dgeam",
+    ],
+};
+
 const HIP: Target = Target {
     krate: "rockfish-hip-sys",
+    include: "vendor/hip/include",
     header: "hip/hip_runtime_api.h",
+    stubs: &["."],
+    preinclude: None,
+    reused: &[],
+    origin: HIP_ORIGIN,
     table: "HipApi",
     spec: "HIP",
     library: "HIP",
@@ -100,7 +190,12 @@ const HIP: Target = Target {
 
 const HIPRTC: Target = Target {
     krate: "rockfish-hiprtc-sys",
+    include: "vendor/hip/include",
     header: "hip/hiprtc.h",
+    stubs: &["."],
+    preinclude: None,
+    reused: &[],
+    origin: HIP_ORIGIN,
     table: "HiprtcApi",
     spec: "HIPRTC",
     library: "HIPRTC",
@@ -125,7 +220,8 @@ fn main() {
     let target = match which.as_str() {
         "hip" => &HIP,
         "hiprtc" => &HIPRTC,
-        other => panic!("usage: gen-bindings (hip|hiprtc); got `{other}`"),
+        "rocblas" => &ROCBLAS,
+        other => panic!("usage: gen-bindings (hip|hiprtc|rocblas); got `{other}`"),
     };
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let out = root
@@ -137,16 +233,30 @@ fn main() {
 }
 
 fn generate(root: &Path, t: &Target) -> String {
-    let include = root.join("vendor/hip/include");
+    let include = root.join(t.include);
+    let hip_include = root.join("vendor/hip/include");
     let stub = root.join("tools/gen-bindings/stub");
     let mut builder = bindgen::Builder::default()
         .header(include.join(t.header).to_string_lossy())
         .clang_arg(format!("-I{}", include.display()))
-        .clang_arg(format!("-I{}", stub.display()))
+        .clang_arg(format!("-I{}", hip_include.display()))
         .clang_arg("-D__HIP_PLATFORM_AMD__")
         .layout_tests(true)
         .allowlist_type(t.extra_types)
         .allowlist_var(t.extra_types);
+    for s in t.stubs {
+        builder = builder.clang_arg(format!("-I{}", stub.join(s).display()));
+    }
+    if let Some(pre) = t.preinclude {
+        builder = builder.clang_arg("-include").clang_arg(pre);
+    }
+    for (ty, _) in t.reused {
+        builder = builder.blocklist_type(format!("^{ty}$"));
+    }
+    if !t.reused.is_empty() {
+        // The pointee of a reused handle type is defined by the crate that owns it.
+        builder = builder.blocklist_type("^ihip.*$");
+    }
     for f in t.functions {
         builder = builder.allowlist_function(format!("^{f}$"));
     }
@@ -183,11 +293,16 @@ fn generate(root: &Path, t: &Target) -> String {
     let table = format_ident!("{}", t.table);
     let spec = format_ident!("{}", t.spec);
     let library = t.library;
+    let reuse_paths = t.reused.iter().map(|(_, path)| {
+        let path: syn::Path = syn::parse_str(path).expect("reuse path parses");
+        quote! { use #path; }
+    });
     let mut aliases = Vec::new();
     let mut fields = Vec::new();
     let mut loads = Vec::new();
     let mut inits = Vec::new();
     let mut getters = Vec::new();
+    let mut unresolved = Vec::new();
     for d in &decls {
         let name = &d.sig.ident;
         let name_str = name.to_string();
@@ -217,6 +332,11 @@ fn generate(root: &Path, t: &Target) -> String {
             let #name = unsafe { library.symbol::<#alias>(#name_str) }.ok();
         });
         inits.push(quote! { #name });
+        unresolved.push(quote! {
+            if self.#name.is_none() {
+                missing.push(#name_str);
+            }
+        });
         getters.push(quote! {
             #[doc = concat!("The `", #name_str, "` entry point, or an error if the loaded library does not export it. The pointer is valid while this table is alive.")]
             pub fn #name(&self) -> Result<#alias, LoadError> {
@@ -262,6 +382,7 @@ fn generate(root: &Path, t: &Target) -> String {
     let tokens = quote! {
         use crate::#spec as SPEC;
         use rockfish_core::{Library, LoadError};
+        #(#reuse_paths)*
 
         #(#items)*
 
@@ -294,13 +415,21 @@ fn generate(root: &Path, t: &Target) -> String {
                 &self.library
             }
 
+            /// Names of the bound entry points the loaded library does not export.
+            pub fn unresolved(&self) -> Vec<&'static str> {
+                let mut missing = Vec::new();
+                #(#unresolved)*
+                missing
+            }
+
             #(#getters)*
         }
     };
 
     let parsed: syn::File = syn::parse2(tokens).expect("generated code parses");
     format!(
-        "// @generated by tools/gen-bindings from vendor/hip (ROCm/rocm-systems rocm-7.2.4,\n// see THIRD-PARTY-NOTICES.md). Do not edit; rerun the tool.\n\n{}",
+        "// @generated by tools/gen-bindings from {},\n// see THIRD-PARTY-NOTICES.md). Do not edit; rerun the tool.\n\n{}",
+        t.origin,
         prettyplease::unparse(&parsed)
     )
 }
