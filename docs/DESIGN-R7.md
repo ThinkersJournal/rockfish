@@ -85,6 +85,19 @@ Scope is one cell: `Schedule::Scalar`, one output, `f32`, target namespace `rocm
 - **No status text in the emitted source.** A comment saying "unverified" would be false the day the rig verifies it.
 - **Not done in R7b:** `Vectorized` and `Strided` schedules (an aligned contiguous cell keys `Vectorized`, so a default `rocm:` cell is declined today; the tests use a small alignment to get `Scalar`), runtime scalar parameters, multiple outputs, `f16`/`bf16`/`f64`/integers.
 
+## 5b. What R7c shipped, and what it decided
+
+Two more schedules, same `f32` / `rocm:` / one-output scope, same refusal rule. Read from Unpopped 0.38.4 **[read]**; not compiled by a HIP compiler.
+
+- **Sequential reduction** (`Schedule::Reduction`, class `InnerContig`): `Sum`, `Mean`, `Prod`, `Max`, `Min` over the contiguous trailing axis, identity epilogue only. One thread per output row; a block-parallel reduction is a later slice. Other classes (`Outer`, `Middle`, `Multi`), a fused post-expression and a non-identity `ReduceOp` are typed refusals.
+- **Serial scan** (`Schedule::Scan`, `block: false`, the deterministic base): `Sum`, `Prod`, `Max`, `Min`, `reverse` and `exclusive` both, innermost axis only, identity epilogue. The cooperative block scan, and `Mean` (not a monoid), are refused.
+- **Wavefront width: none is used, and none is assumed.** Neither slice has a cross-lane step. `KernelPlan` carries no width and, per the PM (Unpopped `4ec1a562`, 2026-10-31), will not: plans stay target-neutral and the emitter owns the width. The first emitter that needs one (block reduction, block scan) must read it from the target or device-side `warpSize`, never 32; a test pins that these two slices contain no `warpSize`, `__shfl`, barrier or shared memory.
+- **Accumulator is `double`**, narrowed to `float` at the store, because the oracle (`eval_reduction`, `eval_scan`) folds in `f64`. This is the emitter's reading of `ReductionAccum::Auto`. Max/Min follow the oracle: a NaN element wins and a NaN accumulator stays; an empty axis gives `0` (Mean gives `0/0 = NaN`). Exclusive scans store the identity (`0`, `1`, `-inf`, `+inf`) first.
+- **Launch ABI** is `(in0.., out, rows, k)` over contiguous rows, one thread per row, grid-stride. The plan carries no extents, so this is a stated contract, not a checked one.
+- **Measured (one-off, not in CI):** the 5 reduction and 16 scan kernels were compiled with the Visual Studio `clang++` against a shim for the HIP built-ins and run on the host over 3 rows of 4 (one with a NaN) and `k = 0`; the outputs matched a Python transcription of the oracle's loops. **That reference shares the author and the algorithm with the emitter**, so it checks the C++ spelling, not the semantics; it says nothing about a HIP compiler, `double` on a gfx part, or the `fp contract` pragma.
+- **Not round-trippable:** the HIP frontend lifts `acc += in0[i]` loops; the emitted `double acc ... acc = acc + v` form is not claimed to lift, and no test says it does.
+- **Not done:** block-parallel reduce and scan (needs the width), `RowReduce`, `Window`, `Contraction`, `RowSort`, multi-axis reductions, integer and half dtypes.
+
 ## 6. Tests and negative controls
 
 - **Round trip:** emit with `Hip`, parse the result with `HIP`, and require the lifted IR to equal the original. A control: change one operator in the emitted text and require the round trip to differ. (A round trip that returns what it was given proves nothing, as in DESIGN-R5.)

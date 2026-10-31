@@ -10,8 +10,8 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-rockfish-core = { path = "../rockfish-core", version = "=0.0.20" }
-rockfish-hip-sys = { path = "../rockfish-hip-sys", version = "=0.0.20" }
+rockfish-core = { path = "../rockfish-core", version = "=0.0.21" }
+rockfish-hip-sys = { path = "../rockfish-hip-sys", version = "=0.0.21" }
 half = { version = "2.7.1", optional = true, default-features = false }
 thiserror = "2.0.21"
 
