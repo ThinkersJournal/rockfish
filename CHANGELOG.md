@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.22
+
+- `rockfish-hip-emit` (new feature `hiprtc`, off by default; runtime-loaded, no ROCm needed to build): `HipRtcCompiler`, an `unpopped::Compiler` over `rockfish-hiprtc` that compiles HIP source to an AMD GPU code object with `--offload-arch=<gfx>` and reports `ArtifactKind::HipCodeObject` (Unpopped 0.38.0+). `HipRtcCompiler::new` declines, as a typed `HipRtcTargetError`, a target outside `rocm:` or whose capability set is not `gfx<lowercase hex>`; a compile failure returns hipRTC's log in the error string; `max_compile_ms` is not enforced (hipRTC has no deadline API). Tests: 4 (target grammar with both decline arms, artifact kind, and a compile that passes both ways, printing which). **hipRTC compile UNVERIFIED: this laptop has no `hiprtc.dll` (measured: the compile test took the absent-library path), so the option spelling and the produced bytes have never run; rig row.**
+
+
 ## 0.0.21
 
 - `rockfish-hip-emit`: the `Hip` backend now also lowers the sequential last-axis reduction (`Sum`, `Mean`, `Prod`, `Max`, `Min`) and the serial prefix scan (`Sum`, `Prod`, `Max`, `Min`; `reverse`, `exclusive`), `f32` on a `rocm:` target, as one-thread-per-row kernels with a `double` accumulator (the oracle's width) and the launch ABI `(in0.., out, rows, k)`. Outer/middle/multi-axis reductions, fused post-expressions, the cooperative block scan, `RowReduce`, `Window`, `Contraction` and `RowSort` stay typed `LowerError`s. No wavefront width is used or assumed (the emitter owns the width; `KernelPlan` carries none). Tests: 11 new (goldens, per-op text with a pairwise-different control, flag effects, each refusal paired with a lowering control, a no-warp-assumption check). One-off host check (VS `clang++` with a HIP built-in shim, not in CI): 21 kernels match a reference transcription of the oracle loops. **Still no HIP compiler has seen any emitted text, and nothing ran on a GPU (compilation UNVERIFIED; rig row).**

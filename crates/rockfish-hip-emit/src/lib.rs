@@ -30,6 +30,11 @@
 //! shapes above use none (no cross-lane step). A block-parallel reduction or scan must take the
 //! width from the target or from the device-side `warpSize`, never assume 32.
 
+#[cfg(feature = "hiprtc")]
+mod rtc;
+#[cfg(feature = "hiprtc")]
+pub use rtc::{HipRtcCompiler, HipRtcTargetError};
+
 use unpopped::backend::{
     Backend, Decline, DeclinedOp, DtypeSupport, GeneratedKernel, LowerError, Lowering, Spelling,
     lower_dag,
