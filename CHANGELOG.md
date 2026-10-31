@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.12
 
 - New crate `rockfish-rocblas-sys` (unpublished): runtime-loaded rocBLAS bindings, 56 functions (handle, stream, pointer/atomics/math mode, version, vector/matrix copies, level 1 `s`/`d` scal axpy dot nrm2 asum copy swap iamax iamin, gemv, geam, and the GEMM family: `h`/`s`/`d` gemm with batched and strided-batched forms, `gemm_ex` and its batched forms). `hipStream_t` is the `rockfish-hip-sys` type. Measured on one Windows laptop against Ollama's ROCm 7.1 `rocblas.dll` (rocBLAS 5.1.1, headers are 5.2.0): all 56 symbols resolve and `rocblas_get_version_string` answers. NOT run on a GPU: no call that touches a device has been made, and that bundle ships no gfx1036 kernels (this laptop's iGPU). Linux sonames UNVERIFIED.
 - `vendor/rocblas`: the 10 rocBLAS headers at `ROCm/rocm-libraries` tag `rocm-7.2.4`, byte-identical to the upstream blobs with licence and manifest; `tools/verify-vendor.sh` now checks both vendored sets (`--online` also compares against the forge).
