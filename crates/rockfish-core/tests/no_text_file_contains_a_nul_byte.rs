@@ -12,7 +12,9 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-const EXTENSIONS: &[&str] = &["rs", "md", "toml", "yml", "yaml", "json", "txt", "h", "c", "cpp"];
+const EXTENSIONS: &[&str] = &[
+    "rs", "md", "toml", "yml", "yaml", "json", "txt", "h", "c", "cpp",
+];
 
 fn has_nul(bytes: &[u8]) -> bool {
     bytes.contains(&0u8)
