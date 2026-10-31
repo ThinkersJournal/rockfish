@@ -12,7 +12,7 @@ Order matters: survey, then design, then code. Every code row ships with a negat
 | R4a | `rockfish-core`: loader, per-OS name table, error type, tests against a real system library | merged |
 | R4b-1 | Vendor the HIP headers with provenance and a byte-for-byte check | merged |
 | R4b-2 | `rockfish-hip-sys` and `rockfish-hiprtc-sys`: bindgen-generated HIP runtime + hipRTC bindings on the R4a loader. Library names other than `amdhip64_6.dll` (measured, one laptop) are UNVERIFIED | merged |
-| R5 | `rockfish-hip`: safe HIP layer, design in `docs/DESIGN-R5.md`. R5a (error, devices) merged; R5b (streams, events, buffers, optional `half`) in PR; R5c (modules, kernel launch) next | in progress |
+| R5 | `rockfish-hip`: safe HIP layer, design in `docs/DESIGN-R5.md`. R5a (error, devices) merged; R5b (streams, events, buffers, optional `half`) merged; R5c (modules, kernel launch) in PR, launch path UNVERIFIED (no code object to run); R5d hipRTC next | in progress |
 | R5-H | Finding, UNVERIFIED beyond one machine: parallel first use of HIP hung; see section R5-H below | warm-up in R5b; root cause open |
 | R6 | Math libraries: rocBLAS, hipBLASLt, rocFFT, rocRAND, rocSOLVER, rocSPARSE, MIOpen | after R5 |
 | R7 | HIP C++ parser + emitter on Unpopped's `Frontend`/`Backend` contract (`Unpopped/docs/parser-emitter-ownership-map.md`, ROADMAP 6.7) | after R3 |
