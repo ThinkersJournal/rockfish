@@ -4,9 +4,9 @@ description = "HIP C++ -> IR frontend for the neutral `unpopped` kernel generato
 publish = false
 # TRACKS UNPOPPED, not the Rockfish workspace number (CireSnave's one-version rule, exception for
 # a crate built to work with another project; PM ruling 2026-10-31, as `baracuda-cuda-parse`): the
-# number answers "which Unpopped does this work with?". 0.37.0 = the `unpopped` it was built
+# number answers "which Unpopped does this work with?". 0.38.0 = the `unpopped` it was built
 # against. The PM allocates the number at gate time.
-version = "0.37.0"
+version = "0.38.0"
 edition.workspace = true
 # No `rust-version`: the tree-sitter dependencies' floor is unmeasured here, so none is claimed.
 license.workspace = true
@@ -14,10 +14,10 @@ repository.workspace = true
 
 [dependencies]
 # `Frontend` and the shared CST walkers (`lift_elementwise`, `lift_reduction`, `lift_scan`, `lift`).
-unpopped = { version = "0.37", features = ["convert"] }
+unpopped = { version = "0.38", features = ["convert"] }
 # The same major as `unpopped`'s own `convert` feature, so `Tree` is the same type `Frontend::parse` expects.
 tree-sitter = "0.27"
 tree-sitter-cuda = "0.21"
 
 [dev-dependencies]
-unpopped-vocab = "0.37"
+unpopped-vocab = "0.38"
