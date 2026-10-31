@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.19
+
+- New crate `rockfish-hip-parse` (unpublished; version tracks Unpopped, 0.38.0 = the `unpopped` built against): `parse_hip`, `HIP_RESIDUE` and the `HIP` `unpopped::convert::Frontend`, so HIP C++ elementwise, reduction and scan kernels lift to Unpopped's IR. Grammar is `tree-sitter-cuda` 0.21 (no HIP grammar is on crates.io); 11 hand-written HIP idioms (HIP index macros, `__launch_bounds__`, `__restrict__`, `extern "C"`, `__device__` helpers, `<<<>>>`, `hipLaunchKernelGGL`, `__half`) parse with no error node. Residue (shared memory, atomics, barriers, wave/lane intrinsics, AMDGCN builtins, BLAS/MIOpen calls, host launches, asm) refuses as `Inexpressible`; fast-math spellings (`__expf`) refuse rather than lift as the accurate op. Text-level only: no HIP code was compiled or run, and only these idioms are tested.
+
 ## 0.0.18
 
 - Docs only: new `docs/DESIGN-R7.md` (HIP C++ parser and emitter on Unpopped's `Frontend`/`Backend`/`Compiler`; `rockfish-hip-parse` and `rockfish-hip-emit` track Unpopped's version; nothing compiled or run on a GPU) and a ROADMAP pointer. No code change.
