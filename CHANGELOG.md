@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.24
+
+- `rockfish-hip-emit` (stays 0.38.4, tracking Unpopped): the `Hip` backend lowers `Schedule::Vectorized` for the `f32` elementwise cell on a `rocm:` target, widths 2 and 4 (`float2` / `float4` loads and stores, each lane the scalar body over that lane's components, a scalar tail for `n % width`). Other widths are a typed `UnsupportedPlanShape`. Operand alignment is a stated contract of the cell key, not checked. 4 new tests. **Text only: no HIP compiler has seen it (rig row).**
+
 ## 0.0.23
 
 - Test only: `rockfish-core/tests/no_text_file_contains_a_nul_byte.rs`, a port of Unpopped's guard. It scans `git ls-files` for a 0 byte in any text-extension file, with a population control and a matcher control, and was seen red on an injected NUL. Clean at `origin/main` (0 offenders). No library change.

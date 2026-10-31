@@ -164,11 +164,11 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "rockfish"
-version = "0.0.23"
+version = "0.0.24"
 
 [[package]]
 name = "rockfish-core"
-version = "0.0.23"
+version = "0.0.24"
 dependencies = [
  "libloading",
  "thiserror",
@@ -176,7 +176,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hip"
-version = "0.0.23"
+version = "0.0.24"
 dependencies = [
  "half",
  "rockfish-core",
@@ -206,14 +206,14 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hip-sys"
-version = "0.0.23"
+version = "0.0.24"
 dependencies = [
  "rockfish-core",
 ]
 
 [[package]]
 name = "rockfish-hipblaslt-sys"
-version = "0.0.23"
+version = "0.0.24"
 dependencies = [
  "rockfish-core",
  "rockfish-hip-sys",
@@ -221,7 +221,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hiprtc"
-version = "0.0.23"
+version = "0.0.24"
 dependencies = [
  "rockfish-core",
  "rockfish-hiprtc-sys",
@@ -230,14 +230,14 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hiprtc-sys"
-version = "0.0.23"
+version = "0.0.24"
 dependencies = [
  "rockfish-core",
 ]
 
 [[package]]
 name = "rockfish-miopen-sys"
-version = "0.0.23"
+version = "0.0.24"
 dependencies = [
  "rockfish-core",
  "rockfish-hip-sys",
@@ -245,7 +245,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-rocblas"
-version = "0.0.23"
+version = "0.0.24"
 dependencies = [
  "half",
  "rockfish-core",
@@ -257,7 +257,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-rocblas-sys"
-version = "0.0.23"
+version = "0.0.24"
 dependencies = [
  "rockfish-core",
  "rockfish-hip-sys",
@@ -265,7 +265,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-sys"
-version = "0.0.23"
+version = "0.0.24"
 
 [[package]]
 name = "serde"
