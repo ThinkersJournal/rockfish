@@ -89,6 +89,11 @@ impl<T: DeviceRepr> DeviceBuffer<T> {
         self.ptr
     }
 
+    /// Address of the pointer field, which is what a kernel argument list holds.
+    pub(crate) fn ptr_slot(&self) -> *mut c_void {
+        std::ptr::from_ref(&self.ptr).cast_mut().cast()
+    }
+
     /// Copy `data` from the host into this buffer. Blocks until done.
     pub fn copy_from_host(&mut self, data: &[T]) -> Result<()> {
         same_len(self.len, data.len())?;

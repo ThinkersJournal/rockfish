@@ -11,6 +11,7 @@
 mod buffer;
 mod device;
 mod error;
+mod module;
 mod repr;
 mod stream;
 #[cfg(all(test, any(windows, target_os = "linux")))]
@@ -23,6 +24,7 @@ use rockfish_hip_sys::HipApi;
 pub use buffer::DeviceBuffer;
 pub use device::{Device, MemoryInfo, device_count, runtime_version};
 pub use error::{Error, Result, builtin_name};
+pub use module::{Function, KernelArgs, LaunchConfig, Module};
 pub use repr::DeviceRepr;
 pub use rockfish_core::LoadError;
 pub use stream::{Event, Stream};

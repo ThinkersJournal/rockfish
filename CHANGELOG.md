@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.9
+
+- `rockfish-hip`: `Module::from_code_object` (`hipModuleLoadData`), `Function` (borrows its module), `LaunchConfig`, `KernelArgs` (values and device buffers, borrowed until the call returns) and `unsafe Function::launch` (`hipModuleLaunchKernel`). Measured on the Radeon 610M: a garbage image is rejected with a named error. NOT measured: a successful kernel launch, because no GPU compiler is available on the laptop; that test runs when `ROCKFISH_TEST_CODE_OBJECT` names a code object and otherwise says it did not run.
+
 ## 0.0.8
 
 - `rockfish-hip`: `Stream`, `Event` (record, synchronize, poll, elapsed), `DeviceBuffer<T: DeviceRepr>` (alloc, host/device copies, `fill_zero`, freed on drop), `DeviceRepr` for the primitive ints and floats. Optional feature `half` implements `DeviceRepr` for `half::f16`/`bf16` (`half` 2.7.1, as Fuel resolves). Synchronous copies only; async copies come later. `hip()` now warms the runtime up under a lock (see its docs for the measured hang it prevents). GPU assertions UNVERIFIED in CI; measured locally on the Radeon 610M.
