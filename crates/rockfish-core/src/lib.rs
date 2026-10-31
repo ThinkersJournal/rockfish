@@ -129,6 +129,38 @@ pub fn candidates(
     out
 }
 
+/// Load one candidate.
+///
+/// On Windows a candidate given as an absolute path is loaded with
+/// `LOAD_WITH_ALTERED_SEARCH_PATH`, so the DLLs it depends on are looked for
+/// in its own directory first. Without that flag Windows searches the
+/// application, system and `PATH` directories only, and a library whose
+/// dependencies sit beside it (such as a bundled rocBLAS) fails to load unless
+/// its directory is on `PATH`. A bare name keeps the default search.
+///
+/// # Safety
+///
+/// Loading a library runs its initialisers.
+unsafe fn load(candidate: &OsStr) -> Result<libloading::Library, libloading::Error> {
+    #[cfg(windows)]
+    if Path::new(candidate).is_absolute() {
+        // The altered search needs backslashes: with `C:/dir/x.dll` the loader
+        // fails to find the dependencies (measured), so rebuild the path from
+        // its components, which joins them with `\`.
+        let path: std::path::PathBuf = Path::new(candidate).components().collect();
+        // SAFETY: forwarded to the caller by this function's contract.
+        return unsafe {
+            libloading::os::windows::Library::load_with_flags(
+                path,
+                libloading::os::windows::LOAD_WITH_ALTERED_SEARCH_PATH,
+            )
+        }
+        .map(Into::into);
+    }
+    // SAFETY: forwarded to the caller by this function's contract.
+    unsafe { libloading::Library::new(candidate) }
+}
+
 /// A loaded library. Symbols borrowed from it stay valid while it is alive.
 pub struct Library {
     spec: LibrarySpec,
@@ -166,7 +198,7 @@ impl Library {
             // SAFETY: loading a library runs its initialisers. The candidates
             // are the ROCm libraries the caller asked for by name, found via
             // the search order documented on this crate.
-            match unsafe { libloading::Library::new(candidate) } {
+            match unsafe { load(candidate) } {
                 Ok(inner) => {
                     return Ok(Self {
                         spec: *spec,
@@ -348,5 +380,27 @@ mod tests {
             }
             other => panic!("wrong result: {:?}", other.map(|_| ())),
         }
+    }
+
+    /// An absolute path written with forward slashes loads (it is rebuilt with
+    /// backslashes for the altered search). This cannot reproduce the sibling
+    /// dependency case, which needs a bundle such as Ollama's ROCm directory;
+    /// that was measured by hand (see the changelog).
+    #[cfg(windows)]
+    #[test]
+    fn an_absolute_path_with_forward_slashes_loads() {
+        let root = std::env::var("SystemRoot").unwrap_or_else(|_| r"C:\Windows".into());
+        let path = format!("{}/System32/kernel32.dll", root.replace('\\', "/"));
+        assert!(Path::new(&path).is_absolute(), "{path}");
+        let library = Library::open_with(&SYSTEM, &[OsString::from(&path)]).expect("loads");
+        assert_eq!(library.loaded_from(), OsStr::new(&path));
+    }
+
+    /// Control for the test above: a path that does not exist still fails.
+    #[cfg(windows)]
+    #[test]
+    fn a_missing_absolute_path_still_fails() {
+        let missing = OsString::from("C:/rockfish-no-such-dir/none.dll");
+        assert!(Library::open_with(&SYSTEM, &[missing]).is_err());
     }
 }
