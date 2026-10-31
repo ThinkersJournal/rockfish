@@ -6,7 +6,7 @@ Design note before code. Extends `docs/DESIGN.md` s1, s2 and s5. Labels as there
 
 | PR | Adds | Needs a GPU to test |
 |---|---|---|
-| R5a | `Error`, `Hip` (loaded runtime handle), `runtime_version`, `device_count`, `Device` (properties, set/get) | partly |
+| R5a | `Error`, `hip()` (process-wide loaded runtime table), `runtime_version`, `device_count`, `Device` (properties, set/get) | partly |
 | R5b | `Stream`, `Event`, `DeviceBuffer<T>` (alloc, free, H2D, D2H, D2D, memset, async variants) | yes |
 | R5c | `Module` (load code object from bytes), `Function`, `launch` | yes, and a code object |
 
@@ -24,12 +24,12 @@ Every wrapper returns `Result`; none panics. `hipSuccess` is the only success va
 
 ## 3. Ownership and safety
 
-- `Hip` is an `Arc` around the loaded `HipApi`. Every handle holds a clone, so the library outlives all handles; no handle can outlive the table that frees it.
+- The loaded `HipApi` is one process-wide `&'static` table returned by `hip()` (decision in section 6). Handles do not hold it; the table is never unloaded, so no handle can outlive the table that frees it.
 - `DeviceBuffer<T>` (`T: Copy` plus a marker trait `DeviceRepr` for plain-old-data types, implemented for the primitive ints, `f32`, `f64`, and `f16`/`bf16` via the `half` crate if added): frees on `Drop`, ignoring the free status (logged through a hook, not a panic). Copies check lengths in the safe layer.
 - `Stream` and `Event` destroy on `Drop`. `Stream::synchronize` and `Event::synchronize` are explicit.
 - Raw handles are reachable through `unsafe fn as_raw`. `unsafe` code is confined to the module that calls the table; each block carries a `// SAFETY:` comment.
 - Async copies take a host slice that must stay valid until the stream is synchronised; the first cut offers only the synchronous form and a pinned-host-memory type for the async one, so the safe API cannot express a use-after-free.
-- Thread safety: `Hip`, `Device`, `Event` are `Send + Sync`; `Stream` is `Send`. **[unverified]** against HIP's documentation of per-thread current-device state: `hipSetDevice` is thread-local, so each call that depends on the device sets it first (cheap) rather than assuming it.
+- Thread safety: `Device` and `Event` are `Send + Sync`; `Stream` is `Send`. **[unverified]** against HIP's documentation of per-thread current-device state: `hipSetDevice` is thread-local, so each call that depends on the device sets it first (cheap) rather than assuming it.
 
 ## 4. Kernel launch (R5c)
 
@@ -37,12 +37,17 @@ Every wrapper returns `Result`; none panics. `hipSuccess` is the only success va
 
 ## 5. Tests and negative controls
 
-- **No GPU (ordinary CI, all three OSes):** a library without HIP symbols yields `Error::Load(SymbolMissing)` from every wrapper; length-mismatch copies return `Misuse`; the error-name table is checked against the vendored header's `hipError_t_*` constants (a test parses `vendor/hip` so the table cannot drift); `Drop` of a buffer made against a fake table calls free exactly once (counting stub) and not at all after `into_raw`.
+- **No GPU (ordinary CI, all three OSes):** a library without HIP symbols yields `Error::Load(SymbolMissing)` from every wrapper; length-mismatch copies return `Misuse`; the error-name table is checked against the vendored header's `hipError_t_*` constants (a test parses `vendor/hip` so the table cannot drift). (Superseded: the fake-table `Drop` counting test assumed an injectable table; with the global `hip()` it was not built. Drop-once behaviour is covered by the GPU tests below.)
 - **GPU (self-hosted runner, never `#[ignore]`):** alloc/copy round trip with a byte pattern, a deliberate out-of-memory request returns `Api` with name `hipErrorOutOfMemory`, an event timing pair is non-negative. On this laptop these run against `amdhip64_6.dll`; results are labelled with that device.
 - A round trip that returns the buffer it was given proves nothing: the test fills the host side with a different pattern before reading back.
 
-## 6. Open items
+## 6. Open items and decisions
 
-- Whether to depend on `half` for f16/bf16 (Fuel's dtypes) or define `DeviceRepr` for foreign types behind a feature. Decide in R5b with the Fuel lane.
+- **Decided: `hip()` is a process-wide, lazily loaded global** (as built; the lane's HANDOFF records the decision). Baracuda does the same: `baracuda-cuda-sys/src/driver.rs` has `pub fn driver() -> Result<&'static Driver, LoaderError>` **[read]**, and Rockfish follows that caliber and call shape.
+  - **Not chosen: an explicit `Arc<Hip>` handle** (this note's earlier default, whose stated benefit was testing against a fake library).
+  - **Cost accepted:** no fake-table unit tests of wrappers (section 5 note).
+  - **Load failures are not cached:** a failed `hip()` retries on the next call, so installing HIP mid-process works.
+  - **First use is serialised and warmed up:** `hip()` takes a process-wide lock and creates/destroys one stream on device 0 before any thread gets the table, because parallel first use hung on one machine (ROADMAP R5-H). **[measured]** on the Windows laptop only; cause unknown; not a claim that HIP is not thread-safe. Other devices and runtimes are unmeasured.
+  - The same pattern is used by `rockfish-hiprtc` and `rockfish-rocblas` (`OnceLock` tables).
+- Whether to depend on `half` for f16/bf16: resolved. `half` is an optional feature; Fuel hands Baracuda `half::f16`/`bf16` (half 2.7.1).
 - Linux library names and soname behaviour remain **[unverified]**; no ROCm box.
-- Whether `Hip` should be a process-wide lazily loaded global as in some Baracuda crates; I have not read Baracuda's choice. Default here is an explicit handle (testable with a fake library).
