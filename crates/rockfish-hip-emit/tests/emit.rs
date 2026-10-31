@@ -351,25 +351,110 @@ fn lowering_an_unsupported_dtype_or_target_is_a_typed_error() {
     ));
 }
 
-#[test]
-fn a_vectorized_cell_is_refused_and_the_scalar_cell_of_the_same_op_is_not() {
-    let o = op("v", 2, input(0) + input(1));
-    let scalar_key = gfx906_key(2);
-    let scalar = try_build_plan(&o, &scalar_key).unwrap();
-    assert_eq!(scalar.schedule, Schedule::Scalar);
-    assert!(Hip.lower(&scalar).is_ok());
-
-    let key = key_for(2, ElementKind::F32, target("rocm:gfx906"), 256);
-    let vec_plan: KernelPlan<'_> = try_build_plan(&o, &key).unwrap();
+fn vec_plan_for<'a>(o: &'a OpDef, key: &'a StructureKey) -> KernelPlan<'a> {
+    let plan = try_build_plan(o, key).unwrap();
     assert!(
-        matches!(vec_plan.schedule, Schedule::Vectorized { .. }),
+        matches!(plan.schedule, Schedule::Vectorized { .. }),
         "expected a vectorized cell, got {:?}",
-        vec_plan.schedule
+        plan.schedule
     );
+    plan
+}
+
+#[test]
+fn a_vectorized_cell_lowers_with_vector_loads_and_a_scalar_tail() {
+    let o = op("v", 2, input(0) + input(1));
+    let key = key_for(2, ElementKind::F32, target("rocm:gfx906"), 256);
+    let plan = vec_plan_for(&o, &key);
+    let Schedule::Vectorized { width } = plan.schedule else {
+        unreachable!()
+    };
+    let src = Hip.lower(&plan).expect("a vectorized cell lowers").source;
+    let (vty, lanes): (&str, &[&str]) = match width {
+        2 => ("float2", &["x", "y"]),
+        4 => ("float4", &["x", "y", "z", "w"]),
+        w => panic!("unexpected width {w}"),
+    };
+    assert!(
+        src.contains(&format!(
+            "const {vty}* v0 = reinterpret_cast<const {vty}*>(in0);"
+        )),
+        "{src}"
+    );
+    assert!(
+        src.contains(&format!("{vty}* vout = reinterpret_cast<{vty}*>(out);")),
+        "{src}"
+    );
+    assert!(
+        src.contains(&format!("const long long nv = n / {width};")),
+        "{src}"
+    );
+    for lane in lanes {
+        assert!(
+            src.contains(&format!("r.{lane} = (a0.{lane} + a1.{lane});")),
+            "lane {lane} missing:
+{src}"
+        );
+    }
+    // The scalar tail covers exactly the elements the vector loop did not.
+    assert!(src.contains(&format!("i = nv * {width} +")), "{src}");
+    assert!(src.contains("out[i] = (in0[i] + in1[i]);"), "{src}");
+    assert!(src.contains("#pragma clang fp contract(off)"), "{src}");
+}
+
+#[test]
+fn a_shared_subexpression_in_a_vector_lane_is_hoisted_inside_that_lanes_block() {
+    let t = input(0) * input(1);
+    let o = op("vs", 2, t.clone() + t);
+    let key = key_for(2, ElementKind::F32, target("rocm:gfx906"), 256);
+    let src = Hip.lower(&vec_plan_for(&o, &key)).unwrap().source;
+    // Every lane block is its own scope, so the temporaries of two lanes cannot collide.
+    let opens = src
+        .matches(
+            "        {
+",
+        )
+        .count();
+    let Schedule::Vectorized { width } = try_build_plan(&o, &key).unwrap().schedule else {
+        unreachable!()
+    };
+    assert_eq!(opens, width as usize, "{src}");
+}
+
+#[test]
+fn a_vector_width_that_is_not_spelled_is_refused_not_narrowed() {
+    let o = op("w8", 1, input(0) + input(0));
+    let key = key_for(1, ElementKind::F32, target("rocm:gfx906"), 256);
+    let mut plan = vec_plan_for(&o, &key);
+    plan.schedule = Schedule::Vectorized { width: 8 };
     assert!(matches!(
-        Hip.lower(&vec_plan),
-        Err(LowerError::UnsupportedSchedule { .. })
+        Hip.lower(&plan),
+        Err(LowerError::UnsupportedPlanShape { .. })
     ));
+    // Control: the same plan at a spelled width lowers.
+    plan.schedule = Schedule::Vectorized { width: 4 };
+    assert!(Hip.lower(&plan).is_ok());
+}
+
+#[test]
+fn the_vector_lanes_are_the_scalar_body_over_that_lanes_components() {
+    // Same op on the scalar cell: its body, with `inN[i]` rewritten to `aN.<lane>`, is lane x.
+    let o = op("eq", 2, (input(0) - input(1)) * konst(0.5));
+    let scalar = lower_op(&o).unwrap();
+    let key = key_for(2, ElementKind::F32, target("rocm:gfx906"), 256);
+    let vec_src = Hip.lower(&vec_plan_for(&o, &key)).unwrap().source;
+    let scalar_rhs = scalar
+        .lines()
+        .find_map(|l| l.trim().strip_prefix("out[i] = "))
+        .expect("scalar store");
+    let lane_x = scalar_rhs
+        .replace("in0[i]", "a0.x")
+        .replace("in1[i]", "a1.x");
+    assert!(
+        vec_src.contains(&format!("r.x = {lane_x}")),
+        "{lane_x}
+{vec_src}"
+    );
 }
 
 #[test]
