@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.24
+
+- `rockfish-hip-emit` (stays 0.38.4, tracking Unpopped): the `Hip` backend lowers `Schedule::Vectorized` for the `f32` elementwise cell on a `rocm:` target, widths 2 and 4 (`float2` / `float4` loads and stores, each lane the scalar body over that lane's components, a scalar tail for `n % width`). Other widths are a typed `UnsupportedPlanShape`. Operand alignment is a stated contract of the cell key, not checked. 4 new tests. **Text only: no HIP compiler has seen it (rig row).**
+
+## 0.0.23
+
+- Test only: `rockfish-core/tests/no_text_file_contains_a_nul_byte.rs`, a port of Unpopped's guard. It scans `git ls-files` for a 0 byte in any text-extension file, with a population control and a matcher control, and was seen red on an injected NUL. Clean at `origin/main` (0 offenders). No library change.
+
 ## 0.0.22
 
 - `rockfish-hip-emit` (new feature `hiprtc`, off by default; runtime-loaded, no ROCm needed to build): `HipRtcCompiler`, an `unpopped::Compiler` over `rockfish-hiprtc` that compiles HIP source to an AMD GPU code object with `--offload-arch=<gfx>` and reports `ArtifactKind::HipCodeObject` (Unpopped 0.38.0+). `HipRtcCompiler::new` declines, as a typed `HipRtcTargetError`, a target outside `rocm:` or whose capability set is not `gfx<lowercase hex>`; a compile failure returns hipRTC's log in the error string; `max_compile_ms` is not enforced (hipRTC has no deadline API). Tests: 4 (target grammar with both decline arms, artifact kind, and a compile that passes both ways, printing which). **hipRTC compile UNVERIFIED: this laptop has no `hiprtc.dll` (measured: the compile test took the absent-library path), so the option spelling and the produced bytes have never run; rig row.**
