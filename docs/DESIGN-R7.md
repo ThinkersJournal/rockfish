@@ -83,7 +83,7 @@ Scope is one cell: `Schedule::Scalar`, one output, `f32`, target namespace `rocm
 - **Grid-stride loop** with the first index widened to `long long` before the multiply, so the result does not depend on the launch covering `n` exactly.
 - **`supports_dtype`:** `Supported` only for `f32` on a `rocm:` target (a fact about the language and this emitter's scope, not about any gfx part's instructions). Every other dtype, and every other namespace, is `Unsupported`.
 - **No status text in the emitted source.** A comment saying "unverified" would be false the day the rig verifies it.
-- **Not done in R7b:** `Vectorized` and `Strided` schedules (an aligned contiguous cell keys `Vectorized`, so a default `rocm:` cell is declined today; the tests use a small alignment to get `Scalar`), runtime scalar parameters, multiple outputs, `f16`/`bf16`/`f64`/integers.
+- **Not done in R7b:** the `Strided` schedule (`Vectorized` landed afterwards: section 5c), runtime scalar parameters, multiple outputs, `f16`/`bf16`/`f64`/integers.
 
 ## 5b. What R7c shipped, and what it decided
 
@@ -112,3 +112,12 @@ Two more schedules, same `f32` / `rocm:` / one-output scope, same refusal rule. 
 - **Unpopped, `ArtifactKind` (request, via the PM):** `unpopped::jit::ArtifactKind` has `Ptx`, `Cubin` and `Stub` **[read]**, is **not** `#[non_exhaustive]`, and `Compiler::artifact_kind()` defaults to `Ptx`. `HipRtcCompiler` (R7d) would otherwise report a HIP code object as PTX. Proposal: add a variant `HipCodeObject` (an AMD GPU code object, architecture-specific like `Cubin`) and mark the enum `#[non_exhaustive]` so the next addition is not breaking. **The `#[non_exhaustive]` marking is itself breaking for any out-of-crate exhaustive `match`, and so is adding a variant to the current enum, so it needs Unpopped's next breaking release: pre-1.0 that is 0.38.0 (current 0.37.0 when read), not a 0.37.x patch.** I need that release before R7d only; R7a-R7c do not touch `ArtifactKind`.
 - **Fuel (R8):** whether Fuel will consume the `Hip` backend through Unpopped's `generate`/`synthesize` path as it does Baracuda's. Not read yet.
 - Which crate names are reserved on crates.io for the emit/parse crates is **[unverified]** here.
+
+## 5c. What the Vectorized slice shipped
+
+`Schedule::Vectorized { width }` for the same elementwise cell (`f32`, `rocm:`, one output). Read from Unpopped 0.38.4 **[read]**; not compiled by a HIP compiler.
+
+- **Widths 2 and 4** (`float2`, `float4`). HIP has no `float8`; any other width is a typed `UnsupportedPlanShape`, never narrowed to a smaller width.
+- **Shape:** a grid-stride loop over `nv = n / width` vectors loads each operand as one vector (`reinterpret_cast<const float4*>`), computes each lane as the scalar body over that lane's components (`a0.x`, `a0.y`, ...; one block per lane so temporaries cannot collide), and stores one vector; a scalar grid-stride tail then covers the last `n % width` elements.
+- **Alignment is a contract, not a check.** The cell key promises that every operand pointer is aligned to the vector type; the emitter cannot see pointers. A misaligned launch is the caller's fault.
+- **Tested** by text: vector loads/stores, per-lane bodies, the tail start, per-lane scoping of hoisted subexpressions, a width-8 refusal with a width-4 control, and lane x equal to the scalar cell's body with the leaves renamed. The HIP frontend does not lift `float4` components, so there is no round trip for this schedule. **No HIP compiler has seen the text (`float4` member access under hipRTC UNVERIFIED; rig row).**
