@@ -1,4 +1,4 @@
-//! Generates `generated.rs` for the `-sys` crates (HIP, hipRTC, rocBLAS, hipBLASLt) from the
+//! Generates `generated.rs` for the `-sys` crates (HIP, hipRTC, rocBLAS, hipBLASLt, MIOpen) from the
 //! vendored headers.
 //!
 //! bindgen produces the types and a plain `extern "C"` block; this tool removes
@@ -24,7 +24,7 @@ struct Target {
     preinclude: Option<&'static str>,
     /// Types provided by another `-sys` crate: (type, `use` path). Kept out of the output.
     reused: &'static [(&'static str, &'static str)],
-    /// Parse the header as C++ (its API is `extern "C"`, but the file is not valid C).
+    /// Parse the header as C++ (the API is `extern "C"`, but the file is not valid C).
     cxx: bool,
     /// Provenance written at the top of the generated file.
     origin: &'static str,
@@ -156,6 +156,65 @@ const HIPBLASLT: Target = Target {
     ],
 };
 
+const MIOPEN: Target = Target {
+    krate: "rockfish-miopen-sys",
+    include: "vendor/miopen/include",
+    header: "miopen/miopen.h",
+    stubs: &[".", "miopen"],
+    preinclude: None,
+    reused: &[("hipStream_t", "rockfish_hip_sys::hipStream_t")],
+    cxx: true,
+    origin: "vendor/miopen (ROCm/rocm-libraries rocm-7.2.4",
+    table: "MiopenApi",
+    spec: "MIOPEN",
+    library: "MIOPEN",
+    extra_types: "^(miopenStatus_t|miopenDataType_t|miopenTensorLayout_t|miopenTensorOp_t|miopenConvolutionMode_t|miopenPaddingMode_t|miopenConvFwdAlgorithm_t|miopenConvBwdWeightsAlgorithm_t|miopenConvBwdDataAlgorithm_t|miopenConvAlgoPerf_t|miopenActivationMode_t)$",
+    functions: &[
+        "miopenGetErrorString",
+        "miopenGetVersion",
+        "miopenCreate",
+        "miopenCreateWithStream",
+        "miopenDestroy",
+        "miopenSetStream",
+        "miopenGetStream",
+        "miopenCreateTensorDescriptor",
+        "miopenDestroyTensorDescriptor",
+        "miopenSet4dTensorDescriptor",
+        "miopenSetTensorDescriptor",
+        "miopenGet4dTensorDescriptor",
+        "miopenGetTensorDescriptor",
+        "miopenGetTensorDescriptorSize",
+        "miopenGetTensorNumBytes",
+        "miopenSetTensor",
+        "miopenScaleTensor",
+        "miopenOpTensor",
+        "miopenCreateConvolutionDescriptor",
+        "miopenDestroyConvolutionDescriptor",
+        "miopenInitConvolutionDescriptor",
+        "miopenInitConvolutionNdDescriptor",
+        "miopenSetConvolutionGroupCount",
+        "miopenGetConvolutionGroupCount",
+        "miopenGetConvolutionForwardOutputDim",
+        "miopenGetConvolutionNdForwardOutputDim",
+        "miopenConvolutionForwardGetWorkSpaceSize",
+        "miopenFindConvolutionForwardAlgorithm",
+        "miopenConvolutionForward",
+        "miopenConvolutionForwardBias",
+        "miopenConvolutionBackwardDataGetWorkSpaceSize",
+        "miopenFindConvolutionBackwardDataAlgorithm",
+        "miopenConvolutionBackwardData",
+        "miopenConvolutionBackwardWeightsGetWorkSpaceSize",
+        "miopenFindConvolutionBackwardWeightsAlgorithm",
+        "miopenConvolutionBackwardWeights",
+        "miopenConvolutionBackwardBias",
+        "miopenCreateActivationDescriptor",
+        "miopenDestroyActivationDescriptor",
+        "miopenSetActivationDescriptor",
+        "miopenActivationForward",
+        "miopenActivationBackward",
+    ],
+};
+
 const HIP: Target = Target {
     krate: "rockfish-hip-sys",
     include: "vendor/hip/include",
@@ -268,7 +327,8 @@ fn main() {
         "hiprtc" => &HIPRTC,
         "rocblas" => &ROCBLAS,
         "hipblaslt" => &HIPBLASLT,
-        other => panic!("usage: gen-bindings (hip|hiprtc|rocblas|hipblaslt); got `{other}`"),
+        "miopen" => &MIOPEN,
+        other => panic!("usage: gen-bindings (hip|hiprtc|rocblas|hipblaslt|miopen); got `{other}`"),
     };
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let out = root
