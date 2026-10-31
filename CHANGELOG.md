@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.17
+
+- Docs only: `docs/DESIGN-R5.md` records the decision that `hip()` is a process-wide lazily loaded table (as Baracuda's `driver()`), and corrects the section 3 and 5 text that described the superseded `Arc<Hip>` handle and fake-table test. No code change.
+
 ## 0.0.16
 
 - `rockfish-core` (Windows): a library candidate given as an absolute path (`ROCKFISH_<NAME>_PATH`, or a found install) is now loaded with `LOAD_WITH_ALTERED_SEARCH_PATH`, with forward slashes rewritten to backslashes, so DLLs it depends on are found beside it. Measured on one Windows laptop, same DLL, directory not on `PATH`: Ollama's ROCm 7.1 `rocblas.dll` failed to load before (`LoadLibraryExW failed`) and loads after (56 symbols resolve, version `5.1.1.787bb67272-dirty`), also when the path is written `C:\Users\...\Local/Programs/...`. Bare names keep the default search. Unchanged on Linux. The sibling-dependency case is measured by hand only; the tests cover the forward-slash path and a missing path.
