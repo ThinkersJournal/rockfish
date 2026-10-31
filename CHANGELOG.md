@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased (version allocated by the PM at gate time)
+
+- `rockfish-core` (Windows): a library candidate given as an absolute path (`ROCKFISH_<NAME>_PATH`, or a found install) is now loaded with `LOAD_WITH_ALTERED_SEARCH_PATH`, with forward slashes rewritten to backslashes, so DLLs it depends on are found beside it. Measured on one Windows laptop, same DLL, directory not on `PATH`: Ollama's ROCm 7.1 `rocblas.dll` failed to load before (`LoadLibraryExW failed`) and loads after (56 symbols resolve, version `5.1.1.787bb67272-dirty`), also when the path is written `C:\Users\...\Local/Programs/...`. Bare names keep the default search. Unchanged on Linux. The sibling-dependency case is measured by hand only; the tests cover the forward-slash path and a missing path.
+
 ## 0.0.14
 
 - New crate `rockfish-miopen-sys` (unpublished): runtime-loaded bindings for the MIOpen HIP backend, 42 functions: handle and stream, tensor descriptors and tensor ops, convolution descriptors, workspace size, find, forward / backward data / backward weights / bias, and activation. This is the part Fuel's cuDNN-backed Conv1D/Conv2D maps onto. `hipStream_t` is the `rockfish-hip-sys` type. UNVERIFIED end to end: no MIOpen library exists on the one machine used, so neither the library names (`MIOpen.dll`, `libMIOpen.so.1`: guesses) nor the exported symbols were checked; the symbol test passes through its not-found arm and says so. The other 224 functions in `miopen.h` (pooling, batchnorm, RNN, fusion, solution API, ...) are not bound.
