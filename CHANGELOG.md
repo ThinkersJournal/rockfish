@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.21
 
 - `rockfish-hip-emit`: the `Hip` backend now also lowers the sequential last-axis reduction (`Sum`, `Mean`, `Prod`, `Max`, `Min`) and the serial prefix scan (`Sum`, `Prod`, `Max`, `Min`; `reverse`, `exclusive`), `f32` on a `rocm:` target, as one-thread-per-row kernels with a `double` accumulator (the oracle's width) and the launch ABI `(in0.., out, rows, k)`. Outer/middle/multi-axis reductions, fused post-expressions, the cooperative block scan, `RowReduce`, `Window`, `Contraction` and `RowSort` stay typed `LowerError`s. No wavefront width is used or assumed (the emitter owns the width; `KernelPlan` carries none). Tests: 11 new (goldens, per-op text with a pairwise-different control, flag effects, each refusal paired with a lowering control, a no-warp-assumption check). One-off host check (VS `clang++` with a HIP built-in shim, not in CI): 21 kernels match a reference transcription of the oracle loops. **Still no HIP compiler has seen any emitted text, and nothing ran on a GPU (compilation UNVERIFIED; rig row).**
 
