@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.13
 
 - New crate `rockfish-hipblaslt-sys` (unpublished): runtime-loaded bindings for the whole hipBLASLt C API in `hipblaslt.h`, 24 functions (handle, matrix layout, matmul descriptor and preference, algorithm heuristic, `hipblasLtMatmul`, matrix transform). `hipStream_t` is the `rockfish-hip-sys` type. Measured on one Windows laptop against Ollama's ROCm 7.1 `libhipblaslt.dll`: it exports exactly these 24 and all resolve (headers are hipBLASLt 1.2.2). NOT run on a GPU: no handle has been created. Linux sonames UNVERIFIED. The C++ extension API (`hipblaslt-ext.hpp`) is not bound.
 - `vendor/hipblaslt`: 4 hipBLASLt headers and `hipblas-common.h` (from `projects/hipblas-common`) at `ROCm/rocm-libraries` tag `rocm-7.2.4`; `vendor/hip` gains `hip/library_types.h` (`hipDataType`) from `rocm-systems` at the pinned commit. All byte-identical to upstream blobs; `tools/verify-vendor.sh` checks all three sets.
