@@ -17,7 +17,7 @@
 //!
 //! The emitter does not call `unpopped::cfamily`'s shared spellers and does not rewrite CUDA
 //! output. Each operation this crate spells appears below as a literal match arm; an operation
-//! with no arm is declined (see [`unary`], [`binary`]). The set is exactly the inverse of the
+//! with no arm is declined (see `unary` and `binary`). The set is exactly the inverse of the
 //! call names `rockfish-hip-parse` lifts, which is what makes the round-trip tests meaningful.
 //!
 //! # Wavefront size

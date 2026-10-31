@@ -18,4 +18,4 @@ unpopped-vocab = "0.38"
 
 [dev-dependencies]
 # The parse side of the same ownership: the round-trip tests lift what `Hip` emits.
-rockfish-hip-parse = { path = "../rockfish-hip-parse" }
+rockfish-hip-parse = { path = "../rockfish-hip-parse", version = "0.38" }
