@@ -1,8 +1,12 @@
 # Changelog
 
-## Unreleased (version allocated by the PM at gate time)
+## 0.0.16
 
 - `rockfish-core` (Windows): a library candidate given as an absolute path (`ROCKFISH_<NAME>_PATH`, or a found install) is now loaded with `LOAD_WITH_ALTERED_SEARCH_PATH`, with forward slashes rewritten to backslashes, so DLLs it depends on are found beside it. Measured on one Windows laptop, same DLL, directory not on `PATH`: Ollama's ROCm 7.1 `rocblas.dll` failed to load before (`LoadLibraryExW failed`) and loads after (56 symbols resolve, version `5.1.1.787bb67272-dirty`), also when the path is written `C:\Users\...\Local/Programs/...`. Bare names keep the default search. Unchanged on Linux. The sibling-dependency case is measured by hand only; the tests cover the forward-slash path and a missing path.
+
+## 0.0.15
+
+- New crate `rockfish-rocblas` (unpublished): safe rocBLAS layer on `rockfish-hip`. `rocblas()` process-wide table, `version()`, `Handle` (on a device's default stream, or `Handle::on_stream(&Stream)` whose lifetime ties it to the stream; host-pointer-mode scalars; `synchronize`), and `Handle::gemm` / `gemm_strided_batched` over `DeviceBuffer`s for `f32`, `f64` and, with feature `half`, `half::f16` / `bf16` (accumulating in `f32`) via `rocblas_gemm_ex`. Shapes, leading dimensions, buffer lengths, strides and device mismatches are checked before any call and reported as `Error::Misuse`; `Error::Api` names the status from `rocblas_status_to_string`, else a built-in table. Measured on one Windows laptop: `version()` returns `5.1.1.787bb67272-dirty` from Ollama's ROCm 7.1 bundle (on `PATH`), and the absent-library and missing-symbol paths give error values. NOT run on a GPU: no handle has been created against a real rocBLAS and no GEMM has run (that bundle has no gfx1036 kernels and uses `amdhip64_7.dll`, not System32's `_6`); the GEMM correctness test skips, printing why, when no rocBLAS loads. GEMM on a real device is a rig row.
 
 ## 0.0.14
 
