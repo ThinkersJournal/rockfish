@@ -55,11 +55,11 @@ dependencies = [
 
 [[package]]
 name = "rockfish"
-version = "0.0.13"
+version = "0.0.14"
 
 [[package]]
 name = "rockfish-core"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "libloading",
  "thiserror",
@@ -67,7 +67,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hip"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "half",
  "rockfish-core",
@@ -77,14 +77,14 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hip-sys"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "rockfish-core",
 ]
 
 [[package]]
 name = "rockfish-hipblaslt-sys"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "rockfish-core",
  "rockfish-hip-sys",
@@ -92,7 +92,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hiprtc"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "rockfish-core",
  "rockfish-hiprtc-sys",
@@ -101,14 +101,14 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hiprtc-sys"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "rockfish-core",
 ]
 
 [[package]]
 name = "rockfish-miopen-sys"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "rockfish-core",
  "rockfish-hip-sys",
@@ -116,7 +116,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-rocblas-sys"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "rockfish-core",
  "rockfish-hip-sys",
@@ -124,7 +124,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-sys"
-version = "0.0.13"
+version = "0.0.14"
 
 [[package]]
 name = "syn"
