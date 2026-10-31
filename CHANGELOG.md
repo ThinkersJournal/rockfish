@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.18
+
+- Docs only: new `docs/DESIGN-R7.md` (HIP C++ parser and emitter on Unpopped's `Frontend`/`Backend`/`Compiler`; `rockfish-hip-parse` and `rockfish-hip-emit` track Unpopped's version; nothing compiled or run on a GPU) and a ROADMAP pointer. No code change.
+
 ## 0.0.17
 
 - Docs only: `docs/DESIGN-R5.md` records the decision that `hip()` is a process-wide lazily loaded table (as Baracuda's `driver()`), and corrects the section 3 and 5 text that described the superseded `Arc<Hip>` handle and fake-table test. No code change.
