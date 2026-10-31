@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.25
+
+- Docs only: `ROADMAP.md` status cells match what merged. R5 reads merged with R5-H as its own open item (needs a second AMD machine, board 329); R6c (`rockfish-miopen-sys`, #15) and R6-L (#17) no longer say "in PR"; R7 lists R7c, R7d and the `Vectorized` schedule as merged. No code change.
+
 ## 0.0.24
 
 - `rockfish-hip-emit` (stays 0.38.4, tracking Unpopped): the `Hip` backend lowers `Schedule::Vectorized` for the `f32` elementwise cell on a `rocm:` target, widths 2 and 4 (`float2` / `float4` loads and stores, each lane the scalar body over that lane's components, a scalar tail for `n % width`). Other widths are a typed `UnsupportedPlanShape`. Operand alignment is a stated contract of the cell key, not checked. 4 new tests. **Text only: no HIP compiler has seen it (rig row).**
