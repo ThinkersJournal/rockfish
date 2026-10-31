@@ -45,7 +45,7 @@ Items the emitter must decide, each **[unverified]** until checked against a HIP
 - Kernel entry: `extern "C" __global__ void name(...)`, as the CUDA backend does; `__launch_bounds__` use.
 - Thread/block indices (`threadIdx.x` form, which HIP accepts alongside its older `hipThreadIdx_x` macros) **[unverified]**.
 - f16 and bf16 type names and conversion intrinsics.
-- **Wavefront size is not 32.** `hipDeviceProp_t.warpSize` exists **[measured]** in the vendored header; AMD's gfx906 (the rig's GPU) is a 64-wide wavefront part **[read, AMD documentation; not measured]**, while this laptop's gfx1036 is RDNA. Any warp-level reduction, shuffle or ballot must take the width from the target, never assume 32. Whether `KernelPlan` carries a subgroup size is not yet read; that is the first thing R7b reads.
+- **Wavefront size is not 32.** `hipDeviceProp_t.warpSize` exists **[measured]** in the vendored header; AMD's gfx906 (the rig's GPU) is a 64-wide wavefront part **[read, AMD documentation; not measured]**, while this laptop's gfx1036 is RDNA. Any warp-level reduction, shuffle or ballot must take the width from the target, never assume 32. **`KernelPlan` carries no subgroup / wavefront size [read]** (Unpopped 0.38.4 `plan.rs`: the only `warp` mentions are doc comments on the scan and reduce schedules; `grep` for `subgroup` finds none). Elementwise needs none. R7c must take the width from the target or from the device-side `warpSize`, and must not assume 32.
 - Atomics, shared memory and barrier spellings: not needed for the first slice (section 5).
 - Fast-math: the same rule as the parse side; never lower a fast variant as the accurate op or the reverse.
 
@@ -68,9 +68,22 @@ Residue (constructs the neutral IR does not hold, refused rather than lifted): s
 | PR | Adds | Verifiable here? |
 |---|---|---|
 | R7a | `rockfish-hip-parse`: grammar choice settled by corpus, `HIP` frontend, elementwise lift | yes (no GPU) |
-| R7b | `rockfish-hip-emit`: `Hip` backend, elementwise `lower`; `supports_dtype` | emitted text yes; compilation **no** (no amdgcn compiler on this box **[measured]**: HANDOFF) |
+| R7b | `rockfish-hip-emit`: `Hip` backend, elementwise `lower`; `supports_dtype` (see section 5a for what shipped) | emitted text yes; compilation **no** (no amdgcn compiler on this box **[measured]**: HANDOFF) |
 | R7c | reductions and scans, matching what the parse side lifts | text only |
 | R7d | `HipRtcCompiler` over `rockfish-hiprtc` | **no**: no `hiprtc.dll` here **[measured]**; rig row |
+
+## 5a. What R7b shipped, and what it decided
+
+Scope is one cell: `Schedule::Scalar`, one output, `f32`, target namespace `rocm:` (Unpopped's vectors spell an AMD target `rocm:gfx942`). Everything else is a typed `LowerError`, never source. Read from Unpopped 0.38.4 **[read]**; the emitted text has not been through a HIP compiler.
+
+- **Closed spelling set, stated by the emitter.** Infix `+ - * /`; unary `Neg`, `fabsf`, `sqrtf`, `expf`, `logf`, `tanhf`, `sinf`, `cosf`, `floorf`, `ceilf`, `truncf`, `exp2f`; binary `fmaxf`, `fminf` (IEEE, NaN-suppressing: the IR's `FmaxIeee`/`FminIeee`), `powf`, `atan2f`, `copysignf`. This is exactly the inverse of the call names the shared lifter reads, so the round trip is a real test. The NaN-propagating `Max`/`Min`, `Fma`, `Select`, comparisons, remainders, `Rsqrt`/`Recip`/`Sqr`, `Round` (ties-to-even vs C `roundf`) and the rest are declined until a spelling is decided and checked.
+- **Floating-point contraction.** The kernel body starts with `#pragma clang fp contract(off)`. Clang's default for HIP is, as far as the author has read, fused contraction, which would turn the IR's two-rounding `Add(Mul(a, b), c)` into one rounding. **[unverified]**: the pragma's effect is not checked against a HIP compiler; if it is wrong the kernel is still a valid-looking kernel computing a different function, which is why it is stated and tested for in the golden.
+- **Constants.** At an `f32` compute dtype the IR rounds a constant to `f32`, round to nearest even (`unpopped::optimize::Compute::F32`), and `generate` does not run the optimizer, so the emitter spells `(v as f32)` once, with an `f` suffix and the shortest digits that name that `f32`. Non-finite values, overflow to infinity and underflow of a nonzero value to zero are refused. The HIP frontend reads a literal's digits as an `f64`, so the lifted constant equals the authored one after the same `f32` rounding, not bit for bit (tested that way).
+- **No `__restrict__`.** It would assert that `out` does not alias an input, which the emitter has no basis to claim.
+- **Grid-stride loop** with the first index widened to `long long` before the multiply, so the result does not depend on the launch covering `n` exactly.
+- **`supports_dtype`:** `Supported` only for `f32` on a `rocm:` target (a fact about the language and this emitter's scope, not about any gfx part's instructions). Every other dtype, and every other namespace, is `Unsupported`.
+- **No status text in the emitted source.** A comment saying "unverified" would be false the day the rig verifies it.
+- **Not done in R7b:** `Vectorized` and `Strided` schedules (an aligned contiguous cell keys `Vectorized`, so a default `rocm:` cell is declined today; the tests use a small alignment to get `Scalar`), runtime scalar parameters, multiple outputs, `f16`/`bf16`/`f64`/integers.
 
 ## 6. Tests and negative controls
 
