@@ -10,3 +10,9 @@ check = "version-consistency"
 file = "crates/rockfish-hip-parse/Cargo.toml"
 symbol = "rockfish-hip-parse"
 reason = "HIP frontend for Unpopped; version follows the unpopped release it builds against (CireSnave's one-version-rule exception, PM ruling 2026-10-31)"
+
+[[allow]]
+check = "version-consistency"
+file = "crates/rockfish-hip-emit/Cargo.toml"
+symbol = "rockfish-hip-emit"
+reason = "HIP emitter for Unpopped; version follows the unpopped release it builds against (CireSnave's one-version-rule exception, PM ruling 2026-10-31)"

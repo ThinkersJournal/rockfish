@@ -1,0 +1,21 @@
+[package]
+name = "rockfish-hip-emit"
+description = "HIP C++ emitter for the neutral `unpopped` kernel generator: the `Hip` `Backend` that lowers a `KernelPlan` to HIP kernel source text. Emits text only; compilation by a HIP compiler is UNVERIFIED. No ROCm or GPU needed to build or test."
+publish = false
+# TRACKS UNPOPPED, not the Rockfish workspace number (CireSnave's one-version rule, exception for
+# a crate built to work with another project; PM ruling 2026-10-31, as `baracuda-cuda-emit`): the
+# number answers "which Unpopped does this work with?". 0.38.4 = the `unpopped` it was built and
+# tested against. The PM allocates the number at gate time.
+version = "0.38.4"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+unpopped = "0.38"
+unpopped-vocab = "0.38"
+
+[dev-dependencies]
+# The parse side of the same ownership: the round-trip tests lift what `Hip` emits.
+rockfish-hip-parse = { path = "../rockfish-hip-parse", version = "0.38" }
