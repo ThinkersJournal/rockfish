@@ -1,0 +1,12 @@
+# CodeRipper waivers for this repository. Each entry names one finding and must say why.
+# Scope: `version-consistency` only. Every crate shares the `[workspace.package]` version
+# except the track-Unpopped crates below.
+
+# The documented exception to "one version per project" (CireSnave's one-version rule; PM ruling
+# 2026-10-31): a crate whose version answers "which version of the other project does this work
+# with?" carries that project's version. Same pattern as Baracuda's `baracuda-cuda-parse`.
+[[allow]]
+check = "version-consistency"
+file = "crates/rockfish-hip-parse/Cargo.toml"
+symbol = "rockfish-hip-parse"
+reason = "HIP frontend for Unpopped; version follows the unpopped release it builds against (CireSnave's one-version-rule exception, PM ruling 2026-10-31)"
