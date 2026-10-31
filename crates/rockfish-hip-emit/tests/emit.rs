@@ -479,24 +479,50 @@ fn an_op_name_that_is_not_an_identifier_is_refused() {
 }
 
 #[test]
-fn a_runtime_parameter_is_refused() {
-    let with_param = Expr(ScalarExpr::Add(
-        Box::new(ScalarExpr::Input(0)),
-        Box::new(ScalarExpr::Param(0)),
-    ));
-    let o = op("p", 1, with_param);
-    let key = gfx906_key(1);
-    match try_build_plan(&o, &key) {
-        Ok(plan) => assert!(
-            matches!(
-                Hip.lower(&plan),
-                Err(LowerError::UnsupportedPlanShape { .. })
-            ),
-            "a Param body must not reach `p0` in the source"
-        ),
-        Err(e) => panic!("the plan gate refused the Param body before the emitter could: {e:?}"),
-    }
-    assert!(lower_op(&op("np", 1, input(0) + input(0))).is_ok());
+fn a_runtime_parameter_is_a_trailing_float_argument_and_the_body_reads_it() {
+    let o = op(
+        "p",
+        1,
+        input(0) * unpopped::ir::param(1) + unpopped::ir::param(0),
+    );
+    let src = lower_op(&o).expect("a Param body lowers");
+    // Ascending by index, after the last fixed argument.
+    assert!(
+        src.contains("    long long n,\n    float p0,\n    float p1)\n{\n"),
+        "{src}"
+    );
+    assert!(src.contains("(in0[i] * p1)") && src.contains("p0"), "{src}");
+    // Control: an op with no param declares none.
+    let none = lower_op(&op("np", 1, input(0) + input(0))).unwrap();
+    assert!(!none.contains("float p"), "{none}");
+    assert!(none.contains("    long long n)\n{\n"), "{none}");
+}
+
+#[test]
+fn only_the_params_the_body_reads_are_declared_even_when_sparse() {
+    let src = lower_op(&op("sp", 1, input(0) + unpopped::ir::param(2))).unwrap();
+    assert!(src.contains("    float p2)\n{\n"), "{src}");
+    assert!(
+        !src.contains("float p0") && !src.contains("float p1"),
+        "{src}"
+    );
+}
+
+#[test]
+fn a_vectorized_kernel_takes_its_params_as_scalar_floats_used_by_every_lane() {
+    let o = op("vp", 1, input(0) * unpopped::ir::param(0));
+    let key = key_for(1, ElementKind::F32, target("rocm:gfx906"), 256);
+    let plan = vec_plan_for(&o, &key);
+    let Schedule::Vectorized { width } = plan.schedule else {
+        unreachable!()
+    };
+    let src = Hip.lower(&plan).unwrap().source;
+    assert!(src.contains("    float p0)\n{\n"), "{src}");
+    assert!(
+        !src.contains("float2 p0") && !src.contains("float4 p0"),
+        "{src}"
+    );
+    assert_eq!(src.matches("* p0)").count(), width as usize + 1, "{src}");
 }
 
 #[test]

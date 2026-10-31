@@ -161,6 +161,38 @@ fn the_pre_reduction_body_is_lowered_over_the_row_offset() {
 }
 
 #[test]
+fn a_reduction_and_a_scan_declare_the_params_their_pre_body_reads() {
+    use unpopped::ir::param;
+    let red = reduce(ReduceOp::Sum, input(0) * param(0)).unwrap();
+    assert!(
+        red.contains("    long long k,\n    float p0)\n{\n"),
+        "{red}"
+    );
+    assert!(red.contains("(in0[r * k + j] * p0)"), "{red}");
+
+    let o = OpDef::scan(
+        "scp",
+        1,
+        F32,
+        ReduceOp::Sum,
+        1,
+        false,
+        false,
+        input(0) + param(1),
+        unpopped::ir::reduced(0),
+    );
+    let key = scan_key();
+    let plan = try_build_plan(&o, &key).expect("plan");
+    let scn = lower_plan(&plan).unwrap();
+    assert!(
+        scn.contains("    long long k,\n    float p1)\n{\n"),
+        "{scn}"
+    );
+    // Control: the param-free forms declare none.
+    assert!(!reduce(ReduceOp::Sum, input(0)).unwrap().contains("float p"));
+}
+
+#[test]
 fn scan_flags_change_the_text_and_each_op_lowers() {
     let base = scan(ReduceOp::Sum, false, false).unwrap();
     let rev = scan(ReduceOp::Sum, true, false).unwrap();
