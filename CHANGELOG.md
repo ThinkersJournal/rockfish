@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.15
+
+- New crate `rockfish-rocblas` (unpublished): safe rocBLAS layer on `rockfish-hip`. `rocblas()` process-wide table, `version()`, `Handle` (on a device's default stream, or `Handle::on_stream(&Stream)` whose lifetime ties it to the stream; host-pointer-mode scalars; `synchronize`), and `Handle::gemm` / `gemm_strided_batched` over `DeviceBuffer`s for `f32`, `f64` and, with feature `half`, `half::f16` / `bf16` (accumulating in `f32`) via `rocblas_gemm_ex`. Shapes, leading dimensions, buffer lengths, strides and device mismatches are checked before any call and reported as `Error::Misuse`; `Error::Api` names the status from `rocblas_status_to_string`, else a built-in table. Measured on one Windows laptop: `version()` returns `5.1.1.787bb67272-dirty` from Ollama's ROCm 7.1 bundle (on `PATH`), and the absent-library and missing-symbol paths give error values. NOT run on a GPU: no handle has been created against a real rocBLAS and no GEMM has run (that bundle has no gfx1036 kernels and uses `amdhip64_7.dll`, not System32's `_6`); the GEMM correctness test skips, printing why, when no rocBLAS loads. GEMM on a real device is a rig row.
+
 ## 0.0.14
 
 - New crate `rockfish-miopen-sys` (unpublished): runtime-loaded bindings for the MIOpen HIP backend, 42 functions: handle and stream, tensor descriptors and tensor ops, convolution descriptors, workspace size, find, forward / backward data / backward weights / bias, and activation. This is the part Fuel's cuDNN-backed Conv1D/Conv2D maps onto. `hipStream_t` is the `rockfish-hip-sys` type. UNVERIFIED end to end: no MIOpen library exists on the one machine used, so neither the library names (`MIOpen.dll`, `libMIOpen.so.1`: guesses) nor the exported symbols were checked; the symbol test passes through its not-found arm and says so. The other 224 functions in `miopen.h` (pooling, batchnorm, RNN, fusion, solution API, ...) are not bound.
