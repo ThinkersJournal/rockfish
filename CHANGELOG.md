@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- New crate `rockfish-miopen-sys` (unpublished): runtime-loaded bindings for the MIOpen HIP backend, 42 functions: handle and stream, tensor descriptors and tensor ops, convolution descriptors, workspace size, find, forward / backward data / backward weights / bias, and activation. This is the part Fuel's cuDNN-backed Conv1D/Conv2D maps onto. `hipStream_t` is the `rockfish-hip-sys` type. UNVERIFIED end to end: no MIOpen library exists on the one machine used, so neither the library names (`MIOpen.dll`, `libMIOpen.so.1`: guesses) nor the exported symbols were checked; the symbol test passes through its not-found arm and says so. The other 224 functions in `miopen.h` (pooling, batchnorm, RNN, fusion, solution API, ...) are not bound.
+- `vendor/miopen`: `miopen/miopen.h` (MIOpen 3.5.1) at `ROCm/rocm-libraries` tag `rocm-7.2.4`, byte-identical to the upstream blob, with licence and manifest; `tools/verify-vendor.sh` checks it with the other sets. `miopen.h` is C++-valid but not C-valid, so `tools/gen-bindings miopen` parses it as C++.
+
 ## 0.0.13
 
 - New crate `rockfish-hipblaslt-sys` (unpublished): runtime-loaded bindings for the whole hipBLASLt C API in `hipblaslt.h`, 24 functions (handle, matrix layout, matmul descriptor and preference, algorithm heuristic, `hipblasLtMatmul`, matrix transform). `hipStream_t` is the `rockfish-hip-sys` type. Measured on one Windows laptop against Ollama's ROCm 7.1 `libhipblaslt.dll`: it exports exactly these 24 and all resolve (headers are hipBLASLt 1.2.2). NOT run on a GPU: no handle has been created. Linux sonames UNVERIFIED. The C++ extension API (`hipblaslt-ext.hpp`) is not bound.

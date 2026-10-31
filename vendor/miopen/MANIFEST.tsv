@@ -1,0 +1,2 @@
+# local path (under vendor/miopen/include)	upstream path in ROCm/rocm-libraries@3a2a9bc877edcf5decd36eeaf897a8c9b6017030 (tag rocm-7.2.4)	git blob sha
+miopen/miopen.h	projects/miopen/include/miopen/miopen.h	b7b9214905e0a8e765c51434ac92db2196389bb6

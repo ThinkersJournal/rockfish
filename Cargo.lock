@@ -107,6 +107,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rockfish-miopen-sys"
+version = "0.0.13"
+dependencies = [
+ "rockfish-core",
+ "rockfish-hip-sys",
+]
+
+[[package]]
 name = "rockfish-rocblas-sys"
 version = "0.0.13"
 dependencies = [
