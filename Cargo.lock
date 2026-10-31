@@ -99,6 +99,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rockfish-rocblas-sys"
+version = "0.0.11"
+dependencies = [
+ "rockfish-core",
+ "rockfish-hip-sys",
+]
+
+[[package]]
 name = "rockfish-sys"
 version = "0.0.11"
 

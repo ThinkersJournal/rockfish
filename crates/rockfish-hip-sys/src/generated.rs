@@ -3770,6 +3770,191 @@ impl HipApi {
     pub fn library(&self) -> &Library {
         &self.library
     }
+    /// Names of the bound entry points the loaded library does not export.
+    pub fn unresolved(&self) -> Vec<&'static str> {
+        let mut missing = Vec::new();
+        if self.hipInit.is_none() {
+            missing.push("hipInit");
+        }
+        if self.hipDriverGetVersion.is_none() {
+            missing.push("hipDriverGetVersion");
+        }
+        if self.hipRuntimeGetVersion.is_none() {
+            missing.push("hipRuntimeGetVersion");
+        }
+        if self.hipDeviceGet.is_none() {
+            missing.push("hipDeviceGet");
+        }
+        if self.hipDeviceGetName.is_none() {
+            missing.push("hipDeviceGetName");
+        }
+        if self.hipDeviceSynchronize.is_none() {
+            missing.push("hipDeviceSynchronize");
+        }
+        if self.hipDeviceReset.is_none() {
+            missing.push("hipDeviceReset");
+        }
+        if self.hipSetDevice.is_none() {
+            missing.push("hipSetDevice");
+        }
+        if self.hipGetDevice.is_none() {
+            missing.push("hipGetDevice");
+        }
+        if self.hipGetDeviceCount.is_none() {
+            missing.push("hipGetDeviceCount");
+        }
+        if self.hipDeviceGetAttribute.is_none() {
+            missing.push("hipDeviceGetAttribute");
+        }
+        if self.hipGetDevicePropertiesR0600.is_none() {
+            missing.push("hipGetDevicePropertiesR0600");
+        }
+        if self.hipGetLastError.is_none() {
+            missing.push("hipGetLastError");
+        }
+        if self.hipPeekAtLastError.is_none() {
+            missing.push("hipPeekAtLastError");
+        }
+        if self.hipGetErrorName.is_none() {
+            missing.push("hipGetErrorName");
+        }
+        if self.hipGetErrorString.is_none() {
+            missing.push("hipGetErrorString");
+        }
+        if self.hipStreamCreate.is_none() {
+            missing.push("hipStreamCreate");
+        }
+        if self.hipStreamCreateWithFlags.is_none() {
+            missing.push("hipStreamCreateWithFlags");
+        }
+        if self.hipStreamCreateWithPriority.is_none() {
+            missing.push("hipStreamCreateWithPriority");
+        }
+        if self.hipDeviceGetStreamPriorityRange.is_none() {
+            missing.push("hipDeviceGetStreamPriorityRange");
+        }
+        if self.hipStreamDestroy.is_none() {
+            missing.push("hipStreamDestroy");
+        }
+        if self.hipStreamQuery.is_none() {
+            missing.push("hipStreamQuery");
+        }
+        if self.hipStreamSynchronize.is_none() {
+            missing.push("hipStreamSynchronize");
+        }
+        if self.hipStreamWaitEvent.is_none() {
+            missing.push("hipStreamWaitEvent");
+        }
+        if self.hipEventCreateWithFlags.is_none() {
+            missing.push("hipEventCreateWithFlags");
+        }
+        if self.hipEventCreate.is_none() {
+            missing.push("hipEventCreate");
+        }
+        if self.hipEventRecord.is_none() {
+            missing.push("hipEventRecord");
+        }
+        if self.hipEventDestroy.is_none() {
+            missing.push("hipEventDestroy");
+        }
+        if self.hipEventSynchronize.is_none() {
+            missing.push("hipEventSynchronize");
+        }
+        if self.hipEventElapsedTime.is_none() {
+            missing.push("hipEventElapsedTime");
+        }
+        if self.hipEventQuery.is_none() {
+            missing.push("hipEventQuery");
+        }
+        if self.hipMalloc.is_none() {
+            missing.push("hipMalloc");
+        }
+        if self.hipHostMalloc.is_none() {
+            missing.push("hipHostMalloc");
+        }
+        if self.hipMallocAsync.is_none() {
+            missing.push("hipMallocAsync");
+        }
+        if self.hipFreeAsync.is_none() {
+            missing.push("hipFreeAsync");
+        }
+        if self.hipFree.is_none() {
+            missing.push("hipFree");
+        }
+        if self.hipHostFree.is_none() {
+            missing.push("hipHostFree");
+        }
+        if self.hipMemcpy.is_none() {
+            missing.push("hipMemcpy");
+        }
+        if self.hipMemcpyHtoD.is_none() {
+            missing.push("hipMemcpyHtoD");
+        }
+        if self.hipMemcpyDtoH.is_none() {
+            missing.push("hipMemcpyDtoH");
+        }
+        if self.hipMemcpyDtoD.is_none() {
+            missing.push("hipMemcpyDtoD");
+        }
+        if self.hipMemcpyHtoDAsync.is_none() {
+            missing.push("hipMemcpyHtoDAsync");
+        }
+        if self.hipMemcpyDtoHAsync.is_none() {
+            missing.push("hipMemcpyDtoHAsync");
+        }
+        if self.hipMemcpyDtoDAsync.is_none() {
+            missing.push("hipMemcpyDtoDAsync");
+        }
+        if self.hipModuleGetGlobal.is_none() {
+            missing.push("hipModuleGetGlobal");
+        }
+        if self.hipMemcpyAsync.is_none() {
+            missing.push("hipMemcpyAsync");
+        }
+        if self.hipMemset.is_none() {
+            missing.push("hipMemset");
+        }
+        if self.hipMemsetD8.is_none() {
+            missing.push("hipMemsetD8");
+        }
+        if self.hipMemsetD32.is_none() {
+            missing.push("hipMemsetD32");
+        }
+        if self.hipMemsetAsync.is_none() {
+            missing.push("hipMemsetAsync");
+        }
+        if self.hipMemGetInfo.is_none() {
+            missing.push("hipMemGetInfo");
+        }
+        if self.hipDeviceCanAccessPeer.is_none() {
+            missing.push("hipDeviceCanAccessPeer");
+        }
+        if self.hipDeviceEnablePeerAccess.is_none() {
+            missing.push("hipDeviceEnablePeerAccess");
+        }
+        if self.hipDeviceDisablePeerAccess.is_none() {
+            missing.push("hipDeviceDisablePeerAccess");
+        }
+        if self.hipModuleUnload.is_none() {
+            missing.push("hipModuleUnload");
+        }
+        if self.hipModuleGetFunction.is_none() {
+            missing.push("hipModuleGetFunction");
+        }
+        if self.hipFuncGetAttribute.is_none() {
+            missing.push("hipFuncGetAttribute");
+        }
+        if self.hipModuleLoadData.is_none() {
+            missing.push("hipModuleLoadData");
+        }
+        if self.hipModuleLoadDataEx.is_none() {
+            missing.push("hipModuleLoadDataEx");
+        }
+        if self.hipModuleLaunchKernel.is_none() {
+            missing.push("hipModuleLaunchKernel");
+        }
+        missing
+    }
     #[doc = concat!(
         "The `",
         "hipInit",

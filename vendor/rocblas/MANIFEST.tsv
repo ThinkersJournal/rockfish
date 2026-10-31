@@ -1,0 +1,11 @@
+# local path (under vendor/rocblas/include/rocblas)	upstream path in ROCm/rocm-libraries@3a2a9bc877edcf5decd36eeaf897a8c9b6017030 (tag rocm-7.2.4)	git blob sha
+internal/rocblas-auxiliary.h	projects/rocblas/library/include/internal/rocblas-auxiliary.h	47ea6972966fe1b423ed84325a9acfa7a7989a27
+internal/rocblas-beta.h	projects/rocblas/library/include/internal/rocblas-beta.h	99a3db63b00a9f4b4061e9b98c94d753c7ea89a9
+internal/rocblas-complex-types.h	projects/rocblas/library/include/internal/rocblas-complex-types.h	8faddca762601b44ca0d3003580453974cefb293
+internal/rocblas-functions.h	projects/rocblas/library/include/internal/rocblas-functions.h	af4675cd8f73413a5a0de55f16225fb8e0b4d782
+internal/rocblas-macros.h	projects/rocblas/library/include/internal/rocblas-macros.h	c939e1ab7866c33f0aac7bd018d4dc6b5b92634d
+internal/rocblas-types.h	projects/rocblas/library/include/internal/rocblas-types.h	61a49b6d8170c87e8d6f56e29aa3fc79b29226b1
+internal/rocblas_bfloat16.h	projects/rocblas/library/include/internal/rocblas_bfloat16.h	3bde5078d59ad7f38a9fd58706daf80a5964e417
+internal/rocblas_block_sizes.h	projects/rocblas/library/include/internal/rocblas_block_sizes.h	4b01634f8951a136ef2849adf795c85cf3ea76a4
+internal/rocblas_xfloat32.h	projects/rocblas/library/include/internal/rocblas_xfloat32.h	427bd309a4937a4d47bf6dba502436996417aea8
+rocblas.h	projects/rocblas/library/include/rocblas.h	39d0d644f8a93548c788f49ba1b93944e3ba15f7

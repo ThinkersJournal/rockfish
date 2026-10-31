@@ -174,6 +174,44 @@ impl HiprtcApi {
     pub fn library(&self) -> &Library {
         &self.library
     }
+    /// Names of the bound entry points the loaded library does not export.
+    pub fn unresolved(&self) -> Vec<&'static str> {
+        let mut missing = Vec::new();
+        if self.hiprtcGetErrorString.is_none() {
+            missing.push("hiprtcGetErrorString");
+        }
+        if self.hiprtcVersion.is_none() {
+            missing.push("hiprtcVersion");
+        }
+        if self.hiprtcAddNameExpression.is_none() {
+            missing.push("hiprtcAddNameExpression");
+        }
+        if self.hiprtcCompileProgram.is_none() {
+            missing.push("hiprtcCompileProgram");
+        }
+        if self.hiprtcCreateProgram.is_none() {
+            missing.push("hiprtcCreateProgram");
+        }
+        if self.hiprtcDestroyProgram.is_none() {
+            missing.push("hiprtcDestroyProgram");
+        }
+        if self.hiprtcGetLoweredName.is_none() {
+            missing.push("hiprtcGetLoweredName");
+        }
+        if self.hiprtcGetProgramLog.is_none() {
+            missing.push("hiprtcGetProgramLog");
+        }
+        if self.hiprtcGetProgramLogSize.is_none() {
+            missing.push("hiprtcGetProgramLogSize");
+        }
+        if self.hiprtcGetCode.is_none() {
+            missing.push("hiprtcGetCode");
+        }
+        if self.hiprtcGetCodeSize.is_none() {
+            missing.push("hiprtcGetCodeSize");
+        }
+        missing
+    }
     #[doc = concat!(
         "The `",
         "hiprtcGetErrorString",

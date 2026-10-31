@@ -12,9 +12,9 @@ Order matters: survey, then design, then code. Every code row ships with a negat
 | R4a | `rockfish-core`: loader, per-OS name table, error type, tests against a real system library | merged |
 | R4b-1 | Vendor the HIP headers with provenance and a byte-for-byte check | merged |
 | R4b-2 | `rockfish-hip-sys` and `rockfish-hiprtc-sys`: bindgen-generated HIP runtime + hipRTC bindings on the R4a loader. Library names other than `amdhip64_6.dll` (measured, one laptop) are UNVERIFIED | merged |
-| R5 | `rockfish-hip`: safe HIP layer, design in `docs/DESIGN-R5.md`. R5a (error, devices) merged; R5b (streams, events, buffers, optional `half`) merged; R5c (modules, kernel launch) merged, launch path UNVERIFIED (no code object to run); R5d `rockfish-hiprtc` in PR, UNVERIFIED (no hipRTC on the laptop); async copies next | in progress |
+| R5 | `rockfish-hip`: safe HIP layer, design in `docs/DESIGN-R5.md`. R5a (error, devices) merged; R5b (streams, events, buffers, optional `half`) merged; R5c (modules, kernel launch) merged, launch path UNVERIFIED (no code object to run); R5d `rockfish-hiprtc` merged, UNVERIFIED (no hipRTC on the laptop); R5e pinned memory and async copies merged | in progress |
 | R5-H | Finding, UNVERIFIED beyond one machine: parallel first use of HIP hung; see section R5-H below | warm-up in R5b; root cause open |
-| R6 | Math libraries: rocBLAS, hipBLASLt, rocFFT, rocRAND, rocSOLVER, rocSPARSE, MIOpen | after R5 |
+| R6 | Math libraries: rocBLAS, hipBLASLt, rocFFT, rocRAND, rocSOLVER, rocSPARSE, MIOpen. R6a `rockfish-rocblas-sys` (headers vendored, 56 functions bound; symbols and version measured against Ollama's ROCm 7.1 `rocblas.dll`, no GPU call yet) in PR; next: safe `rockfish-rocblas`, then hipBLASLt (`libhipblaslt.dll` and `libhipblas.dll` are on the laptop too). Follow-up R6-L: `rockfish-core` loads by absolute path without the DLL's own directory, so a library whose dependencies sit beside it (Ollama's bundle) fails unless that directory is on `PATH` | in progress |
 | R7 | HIP C++ parser + emitter on Unpopped's `Frontend`/`Backend` contract (`Unpopped/docs/parser-emitter-ownership-map.md`, ROADMAP 6.7) | after R3 |
 | R8 | Fuel ROCm backend built on Rockfish (design with the Fuel lane; Baracuda is the precedent) | after R5 |
 
