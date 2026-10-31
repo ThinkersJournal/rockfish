@@ -1,0 +1,15 @@
+[package]
+name = "rockfish-hiprtc"
+description = "Safe Rust layer over the AMD hipRTC runtime compiler, runtime-loaded and optional; no ROCm needed to build."
+publish = false
+readme = "../../README.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+rockfish-core = { path = "../rockfish-core", version = "=0.0.10" }
+rockfish-hiprtc-sys = { path = "../rockfish-hiprtc-sys", version = "=0.0.10" }
+thiserror = "2.0.21"

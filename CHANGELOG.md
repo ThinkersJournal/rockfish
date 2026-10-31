@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.10
+
+- New crate `rockfish-hiprtc` (unpublished): optional safe hipRTC wrapper. `hiprtc()` process-wide table, `Program` (new, name expressions, compile with options, log, code object, lowered names; destroyed on drop), `version()`, `Error` with a `Compile { log }` variant. UNVERIFIED end to end: the laptop has no hipRTC (`hiprtc.dll` not found, measured), so the compile path has never run; tested are the absent-library error, a missing entry point, NUL-byte refusal and log handling.
+
 ## 0.0.9
 
 - `rockfish-hip`: `Module::from_code_object` (`hipModuleLoadData`), `Function` (borrows its module), `LaunchConfig`, `KernelArgs` (values and device buffers, borrowed until the call returns) and `unsafe Function::launch` (`hipModuleLaunchKernel`). Measured on the Radeon 610M: a garbage image is rejected with a named error. NOT measured: a successful kernel launch, because no GPU compiler is available on the laptop; that test runs when `ROCKFISH_TEST_CODE_OBJECT` names a code object and otherwise says it did not run.
