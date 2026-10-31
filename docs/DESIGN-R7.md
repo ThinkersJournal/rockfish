@@ -83,7 +83,7 @@ Scope is one cell: `Schedule::Scalar`, one output, `f32`, target namespace `rocm
 - **Grid-stride loop** with the first index widened to `long long` before the multiply, so the result does not depend on the launch covering `n` exactly.
 - **`supports_dtype`:** `Supported` only for `f32` on a `rocm:` target (a fact about the language and this emitter's scope, not about any gfx part's instructions). Every other dtype, and every other namespace, is `Unsupported`.
 - **No status text in the emitted source.** A comment saying "unverified" would be false the day the rig verifies it.
-- **Not done in R7b:** the `Strided` schedule (`Vectorized` landed afterwards: section 5c), runtime scalar parameters, multiple outputs, `f16`/`bf16`/`f64`/integers.
+- **Not done in R7b:** the `Strided` schedule (`Vectorized` landed afterwards: section 5c; runtime scalar parameters: section 5d), multiple outputs, `f16`/`bf16`/`f64`/integers.
 
 ## 5b. What R7c shipped, and what it decided
 
@@ -121,3 +121,12 @@ Two more schedules, same `f32` / `rocm:` / one-output scope, same refusal rule. 
 - **Shape:** a grid-stride loop over `nv = n / width` vectors loads each operand as one vector (`reinterpret_cast<const float4*>`), computes each lane as the scalar body over that lane's components (`a0.x`, `a0.y`, ...; one block per lane so temporaries cannot collide), and stores one vector; a scalar grid-stride tail then covers the last `n % width` elements.
 - **Alignment is a contract, not a check.** The cell key promises that every operand pointer is aligned to the vector type; the emitter cannot see pointers. A misaligned launch is the caller's fault.
 - **Tested** by text: vector loads/stores, per-lane bodies, the tail start, per-lane scoping of hoisted subexpressions, a width-8 refusal with a width-4 control, and lane x equal to the scalar cell's body with the leaves renamed. The HIP frontend does not lift `float4` components, so there is no round trip for this schedule. **No HIP compiler has seen the text (`float4` member access under hipRTC UNVERIFIED; rig row).**
+
+## 5d. What the runtime-parameter slice shipped
+
+A body that reads `Param(i)` lowers instead of being refused. Read from Unpopped 0.38.4 **[read]**: the shared lowering already spells the leaf `p<i>` (as the CUDA emitter does), and the plan gate admits `Param` only at `f32`.
+
+- **Signature:** the params the body reads are appended after the last fixed argument as `float p<i>`, ascending, one per distinct index, indices the body never reads omitted (a body reading only `Param(2)` declares only `p2`). The fixed tails are `long long n` (elementwise, vectorized) and `long long rows, long long k` (reduction, scan); a reduction or scan reads its params from the pre-reduction body (the post-expression is identity-only).
+- **Vectorized:** a param is a scalar `float`, never `float4`; every lane reads the same `p<i>`.
+- **The argument order is a stated launch contract**, not a checked one: the plan carries no parameter list, so a host that passes arguments by position must sort the used indices the same way.
+- **Tested** by text: the trailing `float p0, float p1`, a sparse single `p2`, vector lanes sharing one param, reduction and scan signatures, and param-free controls that declare none. **No HIP compiler has seen the text (rig row).**
