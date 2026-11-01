@@ -414,3 +414,46 @@ fn a_reduction_does_not_use_a_warp_width() {
         }
     }
 }
+
+fn f64_mat() -> OperandDesc {
+    OperandDesc::new(2, &[64, 1024], &[1024, 1], ElementKind::F64, 4)
+}
+
+/// At f64 the reduction and the scan read and write `double` (the accumulator was already
+/// `double`), and the kernel name carries `_f64`. Control: the f32 reduction narrows to `float`.
+#[test]
+fn f64_reduction_and_scan_store_double() {
+    let f64s = &[ElementKind::F64];
+    let row = OperandDesc::new(1, &[64], &[1], ElementKind::F64, 4);
+    let key = structure_key(OpCategory::Reduction, &[f64_mat(), row], gfx906());
+    let o = OpDef::reduction("red", 1, f64s, input(0), ReduceOp::Sum);
+    let plan = try_build_plan(&o, &key).expect("plan");
+    let k = Hip.lower(&plan).expect("lower f64 reduction");
+    assert_eq!(k.name, "rockfish_hip_red_f64");
+    assert!(k.source.contains("const double* in0,"), "{}", k.source);
+    assert!(k.source.contains("out[r] = (double)(acc);"), "{}", k.source);
+    assert!(!k.source.contains("float"), "{}", k.source);
+
+    let key = structure_key(OpCategory::Scan, &[f64_mat(), f64_mat()], gfx906());
+    let o = OpDef::scan(
+        "scn",
+        1,
+        f64s,
+        ReduceOp::Sum,
+        1,
+        false,
+        false,
+        input(0),
+        unpopped::ir::reduced(0),
+    );
+    let plan = try_build_plan(&o, &key).expect("plan");
+    let k = Hip.lower(&plan).expect("lower f64 scan");
+    assert!(
+        k.source.contains("out[r * k + j] = (double)acc;"),
+        "{}",
+        k.source
+    );
+
+    let f32_red = reduce(ReduceOp::Sum, input(0)).unwrap();
+    assert!(f32_red.contains("out[r] = (float)(acc);"), "{f32_red}");
+}

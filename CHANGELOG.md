@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.29
+
+- `rockfish-hip-emit` (stays 0.40.0, tracking Unpopped): the `Hip` backend now lowers `f64` as well as `f32` on a `rocm:` target, across all four shapes (scalar, vectorized, reduction, scan). At `f64` operands and outputs are `double` (`double2` / `double4` vectors), math calls drop the `f` suffix (`sqrt`, `fma`, `fmax`), a constant is printed as the unsuffixed `f64` (non-finite still refused), `Select` tests against `0.0`, and the kernel is named `rockfish_hip_<op>_f64`. The `f32` text is unchanged. Not done, deliberately: total integer `Div`/`Shl`/`Shr`. Unpopped 0.40 rejects an integer `Div` at the plan gate and admits integer dtypes only with `const_int`/`int_op` seams, so those spellings are a separate integer-dtype row, not a change to this float path. **Text only: no HIP compiler has seen it (rig row).**
 ## 0.0.28
 
 - `rockfish-hip-emit` (stays 0.40.0, tracking Unpopped): the `Hip` backend spells three more `f32` nodes it used to refuse. `Max`/`Min` are the NaN-propagating compare-select with A on ties (`a != a ? a : (b != b ? b : (a >= b ? a : b))`), never `fmaxf`/`fminf` (those are `FmaxIeee`/`FminIeee`). `Fma` is `fmaf(a, b, c)`, one rounding. `Select` tests the condition against `0.0f` in f32 and picks an arm without computing on it. `rockfish-hip-parse` lifts neither `fmaf` nor a C cast, so Fma and Select are pinned by a text test; Max/Min lift to their compare-select expansion (test with a `>=` to `>` control). **Text only: no HIP compiler has seen it (rig row).**

@@ -343,17 +343,18 @@ fn constants_that_change_class_are_refused() {
 }
 
 #[test]
-fn only_f32_on_a_rocm_target_is_supported() {
+fn only_f32_and_f64_on_a_rocm_target_are_supported() {
     for t in ["rocm:gfx906", "rocm:gfx1036", "rocm:gfx942"] {
-        assert_eq!(
-            Hip.supports_dtype(ElementKind::F32, target(t)),
-            DtypeSupport::Supported,
-            "{t}"
-        );
+        for dt in [ElementKind::F32, ElementKind::F64] {
+            assert_eq!(
+                Hip.supports_dtype(dt, target(t)),
+                DtypeSupport::Supported,
+                "{dt:?} on {t}"
+            );
+        }
         for dt in [
             ElementKind::F16,
             ElementKind::Bf16,
-            ElementKind::F64,
             ElementKind::F32Strict,
             ElementKind::I32,
             ElementKind::U8,
@@ -583,4 +584,71 @@ fn an_input_past_the_declared_operands_is_refused() {
         matches!(r, Err(LowerError::UnsupportedOp { .. })),
         "emitted a read of an undeclared input: {r:?}"
     );
+}
+
+fn f64_plan_for<'a>(o: &'a OpDef, key: &'a StructureKey) -> KernelPlan<'a> {
+    try_build_plan(o, key).expect("plan")
+}
+
+/// An f64 elementwise op: `double` operands, the unsuffixed math functions, an unsuffixed
+/// literal and a `_f64` kernel name. Control: the same body at f32 spells `sqrtf` and `0.1f`.
+#[test]
+fn f64_kernels_use_double_unsuffixed_math_and_literals() {
+    let body = |x: Expr| x.clone().sqrt() * konst(0.1) + x;
+    let o = OpDef::elementwise("scale", 1, &[ElementKind::F64], body(input(0)));
+    let key = key_for(1, ElementKind::F64, target("rocm:gfx906"), 4);
+    let k = Hip.lower(&f64_plan_for(&o, &key)).expect("lower f64");
+    assert_eq!(k.name, "rockfish_hip_scale_f64");
+    let s = &k.source;
+    assert!(s.contains("const double* in0,"), "{s}");
+    assert!(s.contains("double* out,"), "{s}");
+    assert!(s.contains("sqrt(in0[i])"), "{s}");
+    assert!(!s.contains("sqrtf") && !s.contains("float"), "{s}");
+    assert!(s.contains("0.1)") || s.contains("0.1 "), "{s}");
+    assert!(!s.contains("0.1f"), "{s}");
+
+    let o32 = op("scale", 1, body(input(0)));
+    let s32 = lower_op(&o32).expect("lower f32");
+    assert!(
+        s32.contains("sqrtf(in0[i])") && s32.contains("0.1f"),
+        "{s32}"
+    );
+}
+
+/// The vectorized f64 kernel is `double2` / `double4`, and Select / Fma take the double forms.
+#[test]
+fn f64_vectorized_uses_double_vectors_and_double_fma_select() {
+    let o = OpDef::elementwise(
+        "v",
+        3,
+        &[ElementKind::F64],
+        input(0).fma(input(1), input(2)),
+    );
+    let key = key_for(3, ElementKind::F64, target("rocm:gfx906"), 256);
+    let plan = f64_plan_for(&o, &key);
+    let Schedule::Vectorized { width } = plan.schedule else {
+        panic!("expected a vectorized cell, got {:?}", plan.schedule);
+    };
+    let s = Hip.lower(&plan).expect("lower").source;
+    let vty = format!("double{width}");
+    assert!(s.contains(&format!("const {vty}* v0")), "{s}");
+    assert!(s.contains("fma(") && !s.contains("fmaf"), "{s}");
+}
+
+/// A non-finite or integer-valued-class constant behaves as at f32 for non-finite, but an f64
+/// constant that f32 would overflow is fine at f64.
+#[test]
+fn f64_constants_keep_their_full_value() {
+    let o = OpDef::elementwise("big", 1, &[ElementKind::F64], input(0) + konst(1e300));
+    let key = key_for(1, ElementKind::F64, target("rocm:gfx906"), 4);
+    let s = Hip.lower(&f64_plan_for(&o, &key)).expect("lower").source;
+    assert!(s.contains("1e300"), "{s}");
+    let o = OpDef::elementwise(
+        "inf",
+        1,
+        &[ElementKind::F64],
+        input(0) + konst(f64::INFINITY),
+    );
+    let r = Hip.lower(&f64_plan_for(&o, &key));
+    assert!(is_unsupported_op(&r.map(|k| k.source)));
 }
