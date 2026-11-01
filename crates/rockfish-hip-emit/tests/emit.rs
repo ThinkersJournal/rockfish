@@ -343,7 +343,7 @@ fn constants_that_change_class_are_refused() {
 }
 
 #[test]
-fn only_f32_and_f64_on_a_rocm_target_are_supported() {
+fn only_the_float_and_32_64_bit_integer_dtypes_on_a_rocm_target_are_supported() {
     for t in ["rocm:gfx906", "rocm:gfx1036", "rocm:gfx942"] {
         for dt in [ElementKind::F32, ElementKind::F64] {
             assert_eq!(
@@ -356,7 +356,7 @@ fn only_f32_and_f64_on_a_rocm_target_are_supported() {
             ElementKind::F16,
             ElementKind::Bf16,
             ElementKind::F32Strict,
-            ElementKind::I32,
+            ElementKind::I8,
             ElementKind::U8,
             ElementKind::Bool,
         ] {

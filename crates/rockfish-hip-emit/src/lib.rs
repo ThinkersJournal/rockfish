@@ -7,7 +7,12 @@
 //! golden kernels (a rig row in `docs/DESIGN-R7.md` section 6). The emitted text deliberately
 //! carries no status comment: a claim written into an artifact is invalidated by verifying it.
 //!
-//! # Scope (R7b, R7c, vectorized; f32 and f64)
+//! # Scope (R7b, R7c, vectorized; f32 and f64; scalar integer)
+//!
+//! Integer compute (`i32`, `i64`, `u32`, `u64`) is the scalar elementwise cell only, and the
+//! backend declares `Backend::total_integer_ops`: `Div`, `Shl`, `Shr` and `ConstInt` follow Unpopped's
+//! total rule (`docs/int-div-shift-semantics.md`). Integer `Rem` is that document's `Select` over the
+//! total `Div`, which the plan gate does not admit at an integer dtype, so it is not spelled here.
 //!
 //! Four shapes (the first two are the same elementwise cell at two schedules; the vectorized one
 //! is `float2` / `float4`, widths 2 and 4), each one output, `f32` or `f64`, on a `rocm:` target: the scalar contiguous elementwise
@@ -64,7 +69,9 @@ impl Backend for Hip {
         "rockfish"
     }
 
-    /// `f32` on a `rocm:` target is the only `Supported` answer.
+    /// `f32`, `f64`, `i32`, `i64`, `u32` and `u64` on a `rocm:` target are the `Supported` answers.
+    /// The integer four are the dtypes Unpopped's total integer rule defines (see
+    /// [`Backend::total_integer_ops`] below), and only the scalar elementwise cell spells them.
     ///
     /// `float` is a type of the language, so this is a statement about the emitter's scope and
     /// not about any one gfx part's instruction set. Every other dtype answers `Unsupported`
@@ -77,9 +84,24 @@ impl Backend for Hip {
             return DtypeSupport::Unsupported;
         }
         match dtype {
-            ElementKind::F32 | ElementKind::F64 => DtypeSupport::Supported,
+            ElementKind::F32
+            | ElementKind::F64
+            | ElementKind::I32
+            | ElementKind::I64
+            | ElementKind::U32
+            | ElementKind::U64 => DtypeSupport::Supported,
             _ => DtypeSupport::Unsupported,
         }
+    }
+
+    /// This backend spells integer `Div`, `Shl` and `Shr`, and a `ConstInt` at an integer compute
+    /// dtype, by the total rule of Unpopped's `docs/int-div-shift-semantics.md`: `a / 0 = a`,
+    /// signed `MIN / -1 = MIN`, the shift count taken modulo the width (31 or 63), `<<` through
+    /// the unsigned type. Each is a small `__device__` helper emitted into the kernel (see
+    /// `Fp::helpers`); the guard sits in a conditional, so the division is not evaluated when
+    /// the guard fails. Text only: no HIP compiler has seen it (rig row).
+    fn total_integer_ops(&self) -> bool {
+        true
     }
 
     fn lower(&self, plan: &KernelPlan<'_>) -> Result<GeneratedKernel, LowerError> {
@@ -90,8 +112,8 @@ impl Backend for Hip {
             return Err(LowerError::UnsupportedDtype {
                 dtype: plan.dtype,
                 detail: format!(
-                    "hip backend: only f32 and f64 on a `{NAMESPACE}:` target are spelled (target `{}`); \
-                     see `Hip::supports_dtype`",
+                    "hip backend: only f32, f64, i32, i64, u32 and u64 on a `{NAMESPACE}:` target are \
+                     spelled (target `{}`); see `Hip::supports_dtype`",
                     plan.key.target
                 ),
             });
@@ -106,9 +128,18 @@ impl Backend for Hip {
         let Some(fp) = Fp::of(plan.dtype) else {
             return Err(LowerError::UnsupportedDtype {
                 dtype: plan.dtype,
-                detail: "hip backend: no floating type spelled for this dtype".to_string(),
+                detail: "hip backend: no C type spelled for this dtype".to_string(),
             });
         };
+        if fp.is_int() && !matches!(plan.schedule, Schedule::Scalar) {
+            return Err(LowerError::UnsupportedSchedule {
+                detail: format!(
+                    "hip backend: integer dtype {:?} is spelled on the scalar elementwise schedule \
+                     only, got {:?}",
+                    plan.dtype, plan.schedule
+                ),
+            });
+        }
         match plan.schedule {
             Schedule::Scalar => {
                 require_elementwise(plan)?;
@@ -211,6 +242,7 @@ fn emit_scalar(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerEr
         plan.key.to_token()
     ));
     s.push_str("#include <hip/hip_runtime.h>\n\n");
+    s.push_str(&fp.helpers(&format!("{}\n{root}", prelude.join("\n"))));
     s.push_str(&format!("extern \"C\" __global__ void {name}(\n"));
     for i in 0..n_inputs {
         s.push_str(&format!("    const {}* in{i},\n", fp.c()));
@@ -358,18 +390,53 @@ fn lower_expr_with(
             })
         })
     };
-    let un = |op: UnaryOp, x: String| unary(fp, op, &x);
-    let bin = |op: BinaryOp, a: String, b: String| binary(fp, op, &a, &b);
-    let ar = |op: ArithOp, a: String, b: String| arith(op, &a, &b);
-    let cst = |v: f64| constant(fp, v);
+    // At an integer compute dtype the float seams are replaced, not reused: every float-only
+    // node (unary, `Const`, `Fma`, `Select`) is a typed decline, and `Add`/`Sub`/`Mul` wrap.
+    let int_only =
+        |op: DeclinedOp| declined_op(op, "no integer spelling for this node in rockfish-hip-emit");
+    let un = |op: UnaryOp, x: String| {
+        if fp.is_int() {
+            int_only(DeclinedOp::Unary(op))
+        } else {
+            unary(fp, op, &x)
+        }
+    };
+    let bin = |op: BinaryOp, a: String, b: String| {
+        if fp.is_int() {
+            int_binary(fp, op, &a, &b)
+        } else {
+            binary(fp, op, &a, &b)
+        }
+    };
+    let ar = |op: ArithOp, a: String, b: String| {
+        if fp.is_int() {
+            int_arith(fp, op, &a, &b)
+        } else {
+            arith(op, &a, &b)
+        }
+    };
+    let cst = |v: f64| {
+        if fp.is_int() {
+            int_only(DeclinedOp::Constant)
+        } else {
+            constant(fp, v)
+        }
+    };
+    let cst_int = |v: i64, t: ElementKind| int_const(fp, v, t);
     // `fmaf` is one rounding of `a * b + c`, the contract of `ScalarExpr::Fma`; `a * b + c`
     // would be two roundings (or a contraction the compiler chooses).
     let fma = |a: String, b: String, c: String| {
+        if fp.is_int() {
+            return int_only(DeclinedOp::Fma);
+        }
         Ok(Spelling::Spelled(format!("fma{}({a}, {b}, {c})", fp.sfx())))
     };
     // Condition tested against zero in f32 (NaN is true, -0.0 false); arms are picked, not
     // computed, so the sign of zero and NaN payloads survive.
     let select = |c: String, a: String, b: String| {
+        if fp.is_int() {
+            return int_only(DeclinedOp::Select);
+        }
         Ok(Spelling::Spelled(format!(
             "((({t})({c})) != {z} ? ({t})({a}) : ({t})({b}))",
             t = fp.c(),
@@ -389,13 +456,14 @@ fn lower_expr_with(
                 .to_string(),
         }))
     };
-    // Seams not set here (cast, bitcast, qualified, integer ops, locals) keep the
+    // Seams not set here (cast, bitcast, qualified, `int_op`, locals) keep the
     // builder's declining defaults: those nodes are refused, not approximated.
     let lowering = Lowering::builder(&leaf, &un, &bin)
         .arith(&ar)
         .fma(&fma)
         .select(&select)
         .constant(&cst)
+        .const_int(&cst_int)
         .reduced(&no_reduced)
         .coord(&no_coord)
         .compute_dtype(fp.kind())
@@ -699,6 +767,9 @@ fn constant(fp: Fp, v: f64) -> Result<Spelling, LowerError> {
             }
             (format!("{v:?}"), v.is_sign_negative())
         }
+        Fp::I32 | Fp::I64 | Fp::U32 | Fp::U64 => {
+            return declined_op(DeclinedOp::Constant, "a float Const at an integer dtype");
+        }
     };
     // Debug of a float is always a literal body ("1.0", "0.1", "1e-7"); a negative value is
     // parenthesised so it can follow any operator.
@@ -709,12 +780,93 @@ fn constant(fp: Fp, v: f64) -> Result<Spelling, LowerError> {
     }))
 }
 
-/// The floating type a kernel computes in. The type name, the math-function suffix and the
+/// `Add`/`Sub`/`Mul` and the total `Div` at an integer compute dtype. Signed `+ - *` wrap in two's
+/// complement through the unsigned type (C++ signed overflow is undefined); unsigned wrap natively.
+fn int_arith(fp: Fp, op: ArithOp, a: &str, b: &str) -> Result<Spelling, LowerError> {
+    let (t, u) = (fp.c(), fp.unsigned_c());
+    let wrap = |sym: &str| {
+        if fp.is_signed() {
+            Spelling::Spelled(format!("(({t})(({u}){a} {sym} ({u}){b}))"))
+        } else {
+            Spelling::Spelled(format!("({a} {sym} {b})"))
+        }
+    };
+    Ok(match op {
+        ArithOp::Add => wrap("+"),
+        ArithOp::Sub => wrap("-"),
+        ArithOp::Mul => wrap("*"),
+        ArithOp::Div => Spelling::Spelled(format!("rockfish_div_{}({a}, {b})", fp.tag())),
+        other => {
+            return declined_op(
+                DeclinedOp::Arith(other),
+                "no HIP spelling for this integer arithmetic node",
+            );
+        }
+    })
+}
+
+/// The integer binary ops the plan gate admits at an integer compute dtype: the bitwise three
+/// and the total `Shl`/`Shr`. Everything else (comparisons, `Max`/`Min`, the logical ops, the
+/// float functions) is a typed decline.
+fn int_binary(fp: Fp, op: BinaryOp, a: &str, b: &str) -> Result<Spelling, LowerError> {
+    Ok(match op {
+        BinaryOp::BitAnd => Spelling::Spelled(format!("({a} & {b})")),
+        BinaryOp::BitOr => Spelling::Spelled(format!("({a} | {b})")),
+        BinaryOp::BitXor => Spelling::Spelled(format!("({a} ^ {b})")),
+        BinaryOp::Shl => Spelling::Spelled(format!("rockfish_shl_{}({a}, {b})", fp.tag())),
+        BinaryOp::Shr => Spelling::Spelled(format!("rockfish_shr_{}({a}, {b})", fp.tag())),
+        other => {
+            return declined_op(
+                DeclinedOp::Binary(other),
+                "no HIP spelling decided for this binary op at an integer dtype",
+            );
+        }
+    })
+}
+
+/// An exact integer literal of the compute type. The type must be the kernel's own; a value
+/// outside its range, or a negative one for an unsigned type, is declined, never wrapped. The
+/// signed minimum is spelled `(-MAX - 1)` because `-MIN` is not a literal.
+fn int_const(fp: Fp, v: i64, t: ElementKind) -> Result<Spelling, LowerError> {
+    let decline = |why: &str| declined_op(DeclinedOp::Integer, why);
+    if !fp.is_int() || t != fp.kind() {
+        return decline("a ConstInt must have the kernel's own integer compute type");
+    }
+    let lit = match fp {
+        Fp::I32 => match i32::try_from(v) {
+            Ok(i32::MIN) => "(-2147483647 - 1)".to_string(),
+            Ok(x) if x < 0 => format!("({x})"),
+            Ok(x) => format!("{x}"),
+            Err(_) => return decline("ConstInt is outside the i32 range"),
+        },
+        Fp::I64 => match v {
+            i64::MIN => "(-9223372036854775807LL - 1)".to_string(),
+            x if x < 0 => format!("({x}LL)"),
+            x => format!("{x}LL"),
+        },
+        Fp::U32 => match u32::try_from(v) {
+            Ok(x) => format!("{x}u"),
+            Err(_) => return decline("ConstInt is outside the u32 range"),
+        },
+        Fp::U64 => match u64::try_from(v) {
+            Ok(x) => format!("{x}ull"),
+            Err(_) => return decline("ConstInt is outside the u64 range"),
+        },
+        Fp::F32 | Fp::F64 => unreachable!("is_int checked above"),
+    };
+    Ok(Spelling::Spelled(lit))
+}
+
+/// The type a kernel computes in. The type name, the math-function suffix and the
 /// literal spelling follow from it; nothing else in the emitter is dtype-specific.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 enum Fp {
     F32,
     F64,
+    I32,
+    I64,
+    U32,
+    U64,
 }
 
 impl Fp {
@@ -722,6 +874,10 @@ impl Fp {
         match kind {
             ElementKind::F32 => Some(Fp::F32),
             ElementKind::F64 => Some(Fp::F64),
+            ElementKind::I32 => Some(Fp::I32),
+            ElementKind::I64 => Some(Fp::I64),
+            ElementKind::U32 => Some(Fp::U32),
+            ElementKind::U64 => Some(Fp::U64),
             _ => None,
         }
     }
@@ -730,7 +886,71 @@ impl Fp {
         match self {
             Fp::F32 => ElementKind::F32,
             Fp::F64 => ElementKind::F64,
+            Fp::I32 => ElementKind::I32,
+            Fp::I64 => ElementKind::I64,
+            Fp::U32 => ElementKind::U32,
+            Fp::U64 => ElementKind::U64,
         }
+    }
+
+    fn is_int(self) -> bool {
+        matches!(self, Fp::I32 | Fp::I64 | Fp::U32 | Fp::U64)
+    }
+
+    fn is_signed(self) -> bool {
+        matches!(self, Fp::I32 | Fp::I64)
+    }
+
+    /// The unsigned type of the same width (the type itself when already unsigned).
+    fn unsigned_c(self) -> &'static str {
+        match self {
+            Fp::I32 | Fp::U32 => "unsigned int",
+            Fp::I64 | Fp::U64 => "unsigned long long",
+            Fp::F32 | Fp::F64 => unreachable!("only integer types have an unsigned form"),
+        }
+    }
+
+    /// The `__device__` helpers whose names appear in `body`, as source text ending in a blank
+    /// line (empty for a float kernel or a body that uses none). The total integer rule of
+    /// Unpopped's `docs/int-div-shift-semantics.md`: a zero divisor gives the dividend, signed
+    /// `MIN / -1` gives `MIN`, the shift count is `count & (N - 1)` and `<<` runs through the
+    /// unsigned type. The division sits in a conditional arm so it is not evaluated when a guard
+    /// fails.
+    fn helpers(self, body: &str) -> String {
+        if !self.is_int() {
+            return String::new();
+        }
+        let (t, u, tag) = (self.c(), self.unsigned_c(), self.tag());
+        let (mask, min) = match self {
+            Fp::I32 => ("31u", "(-2147483647 - 1)"),
+            Fp::I64 => ("63ull", "(-9223372036854775807LL - 1)"),
+            Fp::U32 => ("31u", ""),
+            _ => ("63ull", ""),
+        };
+        let mut out = String::new();
+        let mut add = |name: &str, args: &str, expr: String| {
+            let full = format!("rockfish_{name}_{tag}");
+            if body.contains(&full) {
+                out.push_str(&format!(
+                    "static __device__ __forceinline__ {t} {full}({args})\n{{\n    return {expr};\n}}\n\n"
+                ));
+            }
+        };
+        let args = format!("{t} a, {t} b");
+        if self.is_signed() {
+            add(
+                "div",
+                &args,
+                format!("b == 0 ? a : ((a == {min} && b == -1) ? a : a / b)"),
+            );
+            add("shl", &args, format!("({t})(({u})a << (({u})b & {mask}))"));
+            add("shr", &args, format!("a >> (({u})b & {mask})"));
+        } else {
+            add("div", &args, "b == 0 ? a : a / b".to_string());
+            add("shl", &args, format!("a << (b & {mask})"));
+            add("shr", &args, format!("a >> (b & {mask})"));
+        }
+        out
     }
 
     /// The C++ type name.
@@ -738,6 +958,10 @@ impl Fp {
         match self {
             Fp::F32 => "float",
             Fp::F64 => "double",
+            Fp::I32 => "int",
+            Fp::I64 => "long long",
+            Fp::U32 => "unsigned int",
+            Fp::U64 => "unsigned long long",
         }
     }
 
@@ -746,6 +970,10 @@ impl Fp {
         match self {
             Fp::F32 => "f32",
             Fp::F64 => "f64",
+            Fp::I32 => "i32",
+            Fp::I64 => "i64",
+            Fp::U32 => "u32",
+            Fp::U64 => "u64",
         }
     }
 
@@ -753,7 +981,7 @@ impl Fp {
     fn sfx(self) -> &'static str {
         match self {
             Fp::F32 => "f",
-            Fp::F64 => "",
+            Fp::F64 | Fp::I32 | Fp::I64 | Fp::U32 | Fp::U64 => "",
         }
     }
 
@@ -761,6 +989,7 @@ impl Fp {
         match self {
             Fp::F32 => "0.0f",
             Fp::F64 => "0.0",
+            Fp::I32 | Fp::I64 | Fp::U32 | Fp::U64 => "0",
         }
     }
 }
