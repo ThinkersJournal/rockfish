@@ -6,7 +6,7 @@ publish = false
 # a crate built to work with another project; PM ruling 2026-10-31, as `baracuda-cuda-emit`): the
 # number answers "which Unpopped does this work with?". 0.40.0 = the `unpopped` it was built and
 # tested against. The PM allocates the number at gate time.
-version = "0.40.7"
+version = "0.40.11"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -17,10 +17,10 @@ repository.workspace = true
 hiprtc = ["dep:rockfish-hiprtc"]
 
 [dependencies]
-unpopped = "0.40.7"
-rockfish-hiprtc = { path = "../rockfish-hiprtc", version = "=0.0.30", optional = true }
-unpopped-vocab = "0.40.7"
+unpopped = "0.40.11"
+rockfish-hiprtc = { path = "../rockfish-hiprtc", version = "=0.0.31", optional = true }
+unpopped-vocab = "0.40.11"
 
 [dev-dependencies]
 # The parse side of the same ownership: the round-trip tests lift what `Hip` emits.
-rockfish-hip-parse = { path = "../rockfish-hip-parse", version = "0.40.7" }
+rockfish-hip-parse = { path = "../rockfish-hip-parse", version = "0.40.11" }

@@ -11,8 +11,9 @@
 //!
 //! Integer compute (`i32`, `i64`, `u32`, `u64`) is the scalar elementwise cell only, and the
 //! backend declares `Backend::total_integer_ops`: `Div`, `Shl`, `Shr` and `ConstInt` follow Unpopped's
-//! total rule (`docs/int-div-shift-semantics.md`). Integer `Rem` is that document's `Select` over the
-//! total `Div`, which the plan gate does not admit at an integer dtype, so it is not spelled here.
+//! total rule (`docs/int-div-shift-semantics.md`). Integer comparisons (1 or 0 in the compute
+//! type) and `Select` (condition `!= 0`) are spelled too, so integer `Rem`, that document's
+//! `Select(b == 0, 0, a - (a / b) * b)` over the total `Div`, composes from them; there is no native `Rem` op.
 //!
 //! Four shapes (the first two are the same elementwise cell at two schedules; the vectorized one
 //! is `float2` / `float4`, widths 2 and 4), each one output, `f32` or `f64`, on a `rocm:` target: the scalar contiguous elementwise
@@ -435,7 +436,12 @@ fn lower_expr_with(
     // computed, so the sign of zero and NaN payloads survive.
     let select = |c: String, a: String, b: String| {
         if fp.is_int() {
-            return int_only(DeclinedOp::Select);
+            // The condition is an integer of the compute type (a comparison's 1/0, or any
+            // value), true when `!= 0`; only the arm taken is evaluated.
+            return Ok(Spelling::Spelled(format!(
+                "(({c}) != 0 ? ({t})({a}) : ({t})({b}))",
+                t = fp.c()
+            )));
         }
         Ok(Spelling::Spelled(format!(
             "((({t})({c})) != {z} ? ({t})({a}) : ({t})({b}))",
@@ -815,6 +821,14 @@ fn int_binary(fp: Fp, op: BinaryOp, a: &str, b: &str) -> Result<Spelling, LowerE
         BinaryOp::BitXor => Spelling::Spelled(format!("({a} ^ {b})")),
         BinaryOp::Shl => Spelling::Spelled(format!("rockfish_shl_{}({a}, {b})", fp.tag())),
         BinaryOp::Shr => Spelling::Spelled(format!("rockfish_shr_{}({a}, {b})", fp.tag())),
+        // A comparison is exactly 1 or 0 in the compute type (the IR's `Cmp*` rule); integer
+        // operands have no NaN, so the C operator is the whole definition.
+        BinaryOp::CmpEq => int_cmp(fp, "==", a, b),
+        BinaryOp::CmpNe => int_cmp(fp, "!=", a, b),
+        BinaryOp::CmpLt => int_cmp(fp, "<", a, b),
+        BinaryOp::CmpLe => int_cmp(fp, "<=", a, b),
+        BinaryOp::CmpGt => int_cmp(fp, ">", a, b),
+        BinaryOp::CmpGe => int_cmp(fp, ">=", a, b),
         other => {
             return declined_op(
                 DeclinedOp::Binary(other),
@@ -822,6 +836,10 @@ fn int_binary(fp: Fp, op: BinaryOp, a: &str, b: &str) -> Result<Spelling, LowerE
             );
         }
     })
+}
+
+fn int_cmp(fp: Fp, c_op: &str, a: &str, b: &str) -> Spelling {
+    Spelling::Spelled(format!("(({a} {c_op} {b}) ? ({t})1 : ({t})0)", t = fp.c()))
 }
 
 /// An exact integer literal of the compute type. The type must be the kernel's own; a value

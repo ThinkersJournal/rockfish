@@ -197,8 +197,8 @@ fn a_const_int_that_does_not_fit_or_has_the_wrong_type_is_declined() {
 
 #[test]
 fn what_the_integer_cell_does_not_spell_stays_refused() {
-    // An integer comparison is not admitted at an integer compute dtype by the plan gate.
-    let o = bin("cmp", ElementKind::I32, |a, b| a.binary(BinaryOp::CmpLt, b));
+    // An integer `Max`/`Min` is still not admitted at an integer compute dtype by the plan gate.
+    let o = bin("mx", ElementKind::I32, |a, b| a.binary(BinaryOp::Max, b));
     assert!(try_build_plan_for(&o, &key(2, ElementKind::I32, 4), &Hip).is_err());
     // A vectorized integer cell is a typed schedule refusal, not float vectors over ints.
     let o = bin("v", ElementKind::I32, |a, b| a / b);
@@ -218,6 +218,71 @@ fn what_the_integer_cell_does_not_spell_stays_refused() {
         assert!(
             try_build_plan_for(&o, &key(2, dt, 4), &Hip).is_err(),
             "{dt:?}"
+        );
+    }
+}
+
+#[test]
+fn comparisons_are_one_or_zero_in_the_compute_type() {
+    for (dt, tag, c, _) in INTS {
+        for (op, c_op) in [
+            (BinaryOp::CmpEq, "=="),
+            (BinaryOp::CmpNe, "!="),
+            (BinaryOp::CmpLt, "<"),
+            (BinaryOp::CmpLe, "<="),
+            (BinaryOp::CmpGt, ">"),
+            (BinaryOp::CmpGe, ">="),
+        ] {
+            let s = src(&bin("cmp", dt, |a, b| a.binary(op, b)), dt);
+            let want = format!("((in0[i] {c_op} in1[i]) ? ({c})1 : ({c})0)");
+            assert!(s.contains(&want), "{tag} {c_op}: want `{want}`\n{s}");
+        }
+    }
+}
+
+/// The remainder of `docs/int-div-shift-semantics.md`: `Select(b == 0, 0, a - (a / b) * b)`
+/// over the total `Div`. `b == 0` gives 0 (not `a`), and `MIN % -1` is 0 because `MIN / -1`
+/// wraps to `MIN`.
+fn rem(dt: ElementKind) -> OpDef {
+    let (a, b) = (input(0), input(1));
+    let zero = konst_int(0, dt);
+    let body = b
+        .clone()
+        .binary(BinaryOp::CmpEq, zero.clone())
+        .select(zero, a.clone() - (a / b.clone()) * b);
+    OpDef::elementwise("irem", 2, &[dt], body)
+}
+
+fn zero_lit(tag: &str) -> &'static str {
+    match tag {
+        "i32" => "0",
+        "i64" => "0LL",
+        "u32" => "0u",
+        _ => "0ull",
+    }
+}
+
+#[test]
+fn rem_is_a_select_over_the_total_div_at_every_integer_dtype() {
+    for (dt, tag, c, _) in INTS {
+        let s = src(&rem(dt), dt);
+        assert!(
+            s.contains(&format!(
+                "((in1[i] == {}) ? ({c})1 : ({c})0)",
+                zero_lit(tag)
+            )),
+            "{tag}: condition\n{s}"
+        );
+        assert!(s.contains("!= 0 ? "), "{tag}: select tests != 0\n{s}");
+        let call = format!("rockfish_div_{tag}(in0[i], in1[i])");
+        assert!(s.contains(&call), "{tag}: total Div inside the Rem\n{s}");
+        // The call sits in the kernel body, after the select's condition (the helper's own
+        // definition above does not call itself).
+        let sel = s.find("!= 0 ? ").expect("select");
+        let at = s.rfind(&call).expect("call");
+        assert!(
+            sel < at,
+            "{tag}: the division is in an arm of the select\n{s}"
         );
     }
 }
