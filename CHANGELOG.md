@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.27
+
+- `rockfish-hip-emit` and `rockfish-hip-parse` move to Unpopped 0.40.0 (Breaking, pre-1.0: the second number) and take its version, 0.40.0, as the crates that track Unpopped. The dependency is `unpopped` / `unpopped-vocab` `0.40`. **No source change was needed:** 0.40.0's one addition, `Stmt::AtomicRmw` (relaxed, global integer buffer element), is in the kernel statement layer, and Rockfish lowers `KernelPlan`s only; nothing here matches on `Stmt`, so there is no arm to add and no atomic is emitted (a kernel-layer HIP emitter would spell `atomicAdd` / `atomicMax` / `atomicMin` on `int`; that row does not exist yet). Unpopped 0.39 oracle changes (a window with no in-bounds tap panics; `Shl`/`Shr` counts are taken modulo the width) do not touch the text emitter. Re-verified: workspace clippy `-D warnings` clean and every test green with `--all-features`.
+
 ## 0.0.26
 
 - `rockfish-hip-emit` (stays 0.38.4, tracking Unpopped): the `Hip` backend now lowers a body that reads runtime scalar parameters (`Param(i)`), where it used to refuse it. Every kernel (scalar, vectorized, reduction, scan) takes the params it reads as trailing `float p<i>` arguments after its last fixed argument, ascending by index, distinct, unread indices omitted; the body spells the leaf `p<i>`. In a vectorized kernel a param stays a scalar `float` used by every lane. The argument order is a stated launch contract. Params are `f32` only, as Unpopped's plan gate already requires. Tests: 3 new in `emit.rs`, 1 in `fold.rs` (the old "a param is refused" test is replaced). **Text only: no HIP compiler has seen it (rig row).** Also: the vectorized emitter's string literals are written with `\n` escapes instead of raw line breaks (same text).
