@@ -153,6 +153,8 @@ fn round_trip_cases() -> Vec<(&'static str, u8, Expr)> {
     ] {
         v.push((name, 2, input(0).binary(b, input(1))));
     }
+    // Fma and Select are not here: `rockfish-hip-parse` lifts neither `fmaf` nor a C cast yet
+    // (see the textual test).
     v
 }
 
@@ -229,8 +231,6 @@ fn unspelled_unary_ops_are_refused_not_approximated() {
 fn unspelled_binary_and_ternary_ops_are_refused() {
     assert!(lower_op(&op("c", 2, input(0).binary(BinaryOp::FmaxIeee, input(1)))).is_ok());
     for b in [
-        BinaryOp::Max,
-        BinaryOp::Min,
         BinaryOp::Rem,
         BinaryOp::RemTrunc,
         BinaryOp::Nextafter,
@@ -240,11 +240,58 @@ fn unspelled_binary_and_ternary_ops_are_refused() {
         let r = lower_op(&op("b", 2, input(0).binary(b, input(1))));
         assert!(is_unsupported_op(&r), "{b:?}: {r:?}");
     }
-    // A fused multiply-add is one rounding; spelling it as `a * b + c` would be two. Refused.
-    let fma = lower_op(&op("f", 3, input(0).fma(input(1), input(2))));
-    assert!(is_unsupported_op(&fma), "{fma:?}");
-    let sel = lower_op(&op("s", 3, input(0).select(input(1), input(2))));
-    assert!(is_unsupported_op(&sel), "{sel:?}");
+}
+
+/// The frontend has no `Max`/`Min` call to lift, so the compare-select text lifts to its own
+/// expansion (`Select`/`CmpNe`/`CmpGe`), which is the IR's definition of NaN-propagating Max
+/// with A on ties. The control flips `>=` to `>` (A-on-ties lost) and must change the lift.
+#[test]
+fn max_min_lift_to_their_compare_select_expansion() {
+    for (name, b, cmp) in [
+        ("mx", BinaryOp::Max, BinaryOp::CmpGe),
+        ("mn", BinaryOp::Min, BinaryOp::CmpLe),
+    ] {
+        let a = || input(0);
+        let c = || input(1);
+        let expected = a().binary(BinaryOp::CmpNe, a()).select(
+            a(),
+            c().binary(BinaryOp::CmpNe, c())
+                .select(c(), a().binary(cmp, c()).select(a(), c())),
+        );
+        let src = lower_op(&op(name, 2, a().binary(b, c()))).unwrap();
+        assert_eq!(
+            lifts_to(&src, 2),
+            expected.0,
+            "{name}
+{src}"
+        );
+        let sym = if b == BinaryOp::Max { ">=" } else { "<=" };
+        assert_eq!(src.matches(sym).count(), 1, "{src}");
+        let flipped = src.replace(sym, &sym[..1]);
+        assert_ne!(lifts_to(&flipped, 2), expected.0, "control: {name}");
+    }
+}
+
+/// Fma is one rounding, so it is `fmaf`, never `a * b + c`; Max/Min are the NaN-propagating
+/// compare-select, never `fmaxf`/`fminf` (those are `FmaxIeee`/`FminIeee`).
+#[test]
+fn fma_max_min_select_have_their_stated_spellings() {
+    let fma = lower_op(&op("f", 3, input(0).fma(input(1), input(2)))).unwrap();
+    assert_eq!(
+        fma.matches("fmaf(in0[i], in1[i], in2[i])").count(),
+        1,
+        "{fma}"
+    );
+    let max = lower_op(&op("m", 2, input(0).binary(BinaryOp::Max, input(1)))).unwrap();
+    assert!(max.contains("in0[i] >= in1[i] ? in0[i] : in1[i]"), "{max}");
+    assert!(!max.contains("fmaxf"), "{max}");
+    let min = lower_op(&op("n", 2, input(0).binary(BinaryOp::Min, input(1)))).unwrap();
+    assert!(min.contains("in0[i] <= in1[i] ? in0[i] : in1[i]"), "{min}");
+    let sel = lower_op(&op("s", 3, input(0).select(input(1), input(2)))).unwrap();
+    assert!(
+        sel.contains("(float)(in0[i])) != 0.0f ? (float)(in1[i]) : (float)(in2[i])"),
+        "{sel}"
+    );
 }
 
 /// The constant `c` in a lifted `Mul(Input(0), Const(c))`.

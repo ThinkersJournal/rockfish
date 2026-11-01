@@ -347,6 +347,17 @@ fn lower_expr_with(
     let bin = |op: BinaryOp, a: String, b: String| binary(op, &a, &b);
     let ar = |op: ArithOp, a: String, b: String| arith(op, &a, &b);
     let cst = |v: f64| constant(v);
+    // `fmaf` is one rounding of `a * b + c`, the contract of `ScalarExpr::Fma`; `a * b + c`
+    // would be two roundings (or a contraction the compiler chooses).
+    let fma =
+        |a: String, b: String, c: String| Ok(Spelling::Spelled(format!("fmaf({a}, {b}, {c})")));
+    // Condition tested against zero in f32 (NaN is true, -0.0 false); arms are picked, not
+    // computed, so the sign of zero and NaN payloads survive.
+    let select = |c: String, a: String, b: String| {
+        Ok(Spelling::Spelled(format!(
+            "(((float)({c})) != 0.0f ? (float)({a}) : (float)({b}))"
+        )))
+    };
     let no_reduced = |i: u8| {
         Ok(Spelling::Declined(Decline::UnsupportedOp {
             op: DeclinedOp::Reduced(i),
@@ -360,10 +371,12 @@ fn lower_expr_with(
                 .to_string(),
         }))
     };
-    // Seams not set here (select, fma, cast, bitcast, qualified, integer ops, locals) keep the
+    // Seams not set here (cast, bitcast, qualified, integer ops, locals) keep the
     // builder's declining defaults: those nodes are refused, not approximated.
     let lowering = Lowering::builder(&leaf, &un, &bin)
         .arith(&ar)
+        .fma(&fma)
+        .select(&select)
         .constant(&cst)
         .reduced(&no_reduced)
         .coord(&no_coord)
@@ -592,6 +605,15 @@ fn unary(op: UnaryOp, x: &str) -> Result<Spelling, LowerError> {
 fn binary(op: BinaryOp, a: &str, b: &str) -> Result<Spelling, LowerError> {
     let f = |name: &str| Ok(Spelling::Spelled(format!("{name}({a}, {b})")));
     match op {
+        // NaN-propagating, A on ties (`>=` / `<=`): the IR's `Max` / `Min`, which are not C
+        // `fmaxf` / `fminf` (those suppress NaN). Operands appear three times, so they must be
+        // side-effect free; every expression this emitter builds is.
+        BinaryOp::Max => Ok(Spelling::Spelled(format!(
+            "({a} != {a} ? {a} : ({b} != {b} ? {b} : ({a} >= {b} ? {a} : {b})))"
+        ))),
+        BinaryOp::Min => Ok(Spelling::Spelled(format!(
+            "({a} != {a} ? {a} : ({b} != {b} ? {b} : ({a} <= {b} ? {a} : {b})))"
+        ))),
         BinaryOp::FmaxIeee => f("fmaxf"),
         BinaryOp::FminIeee => f("fminf"),
         BinaryOp::Pow => f("powf"),
