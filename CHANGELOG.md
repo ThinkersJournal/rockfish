@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.26
+
+- `rockfish-hip-emit` (stays 0.38.4, tracking Unpopped): the `Hip` backend now lowers a body that reads runtime scalar parameters (`Param(i)`), where it used to refuse it. Every kernel (scalar, vectorized, reduction, scan) takes the params it reads as trailing `float p<i>` arguments after its last fixed argument, ascending by index, distinct, unread indices omitted; the body spells the leaf `p<i>`. In a vectorized kernel a param stays a scalar `float` used by every lane. The argument order is a stated launch contract. Params are `f32` only, as Unpopped's plan gate already requires. Tests: 3 new in `emit.rs`, 1 in `fold.rs` (the old "a param is refused" test is replaced). **Text only: no HIP compiler has seen it (rig row).** Also: the vectorized emitter's string literals are written with `\n` escapes instead of raw line breaks (same text).
+
 ## 0.0.25
 
 - Docs only: `ROADMAP.md` status cells match what merged. R5 reads merged with R5-H as its own open item (needs a second AMD machine, board 329); R6c (`rockfish-miopen-sys`, #15) and R6-L (#17) no longer say "in PR"; R7 lists R7c, R7d and the `Vectorized` schedule as merged. No code change.
