@@ -10,10 +10,10 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-rockfish-core = { path = "../rockfish-core", version = "=0.0.27" }
-rockfish-hip = { path = "../rockfish-hip", version = "=0.0.27" }
-rockfish-hip-sys = { path = "../rockfish-hip-sys", version = "=0.0.27" }
-rockfish-rocblas-sys = { path = "../rockfish-rocblas-sys", version = "=0.0.27" }
+rockfish-core = { path = "../rockfish-core", version = "=0.0.28" }
+rockfish-hip = { path = "../rockfish-hip", version = "=0.0.28" }
+rockfish-hip-sys = { path = "../rockfish-hip-sys", version = "=0.0.28" }
+rockfish-rocblas-sys = { path = "../rockfish-rocblas-sys", version = "=0.0.28" }
 half = { version = "2.7.1", optional = true, default-features = false }
 thiserror = "2.0.21"
 

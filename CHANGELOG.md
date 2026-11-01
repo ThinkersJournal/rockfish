@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.28
+
+- `rockfish-hip-emit` (stays 0.40.0, tracking Unpopped): the `Hip` backend spells three more `f32` nodes it used to refuse. `Max`/`Min` are the NaN-propagating compare-select with A on ties (`a != a ? a : (b != b ? b : (a >= b ? a : b))`), never `fmaxf`/`fminf` (those are `FmaxIeee`/`FminIeee`). `Fma` is `fmaf(a, b, c)`, one rounding. `Select` tests the condition against `0.0f` in f32 and picks an arm without computing on it. `rockfish-hip-parse` lifts neither `fmaf` nor a C cast, so Fma and Select are pinned by a text test; Max/Min lift to their compare-select expansion (test with a `>=` to `>` control). **Text only: no HIP compiler has seen it (rig row).**
+
 ## 0.0.27
 
 - `rockfish-hip-emit` and `rockfish-hip-parse` move to Unpopped 0.40.0 (Breaking, pre-1.0: the second number) and take its version, 0.40.0, as the crates that track Unpopped. The dependency is `unpopped` / `unpopped-vocab` `0.40`. **No source change was needed:** 0.40.0's one addition, `Stmt::AtomicRmw` (relaxed, global integer buffer element), is in the kernel statement layer, and Rockfish lowers `KernelPlan`s only; nothing here matches on `Stmt`, so there is no arm to add and no atomic is emitted (a kernel-layer HIP emitter would spell `atomicAdd` / `atomicMax` / `atomicMin` on `int`; that row does not exist yet). Unpopped 0.39 oracle changes (a window with no in-bounds tap panics; `Shl`/`Shr` counts are taken modulo the width) do not touch the text emitter. Re-verified: workspace clippy `-D warnings` clean and every test green with `--all-features`.
