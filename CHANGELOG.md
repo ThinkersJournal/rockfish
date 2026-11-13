@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.33
+
+- Docs only: `docs/PATENT-SWEEP.md` records the NVIDIA async-scheduling and barrier-aggregation (`Collective`) patent notices (CireSnave 2026-11-13) and Rockfish's exposure: none today (the emitter lowers `KernelPlan`s, never `Stmt`).
 ## 0.0.32
 
 - `rockfish-hip-emit` and `rockfish-hip-parse` move to Unpopped 0.43.2 (the newest on crates.io; Unpopped's own main is ahead at 0.45.x, unpublished) and take its version, 0.43.2. `ReduceOp` is now `#[non_exhaustive]` and gained `And`/`Or`/`Xor`/`MaxNum`/`MinNum`/arg-reductions; the emitter spells only `Sum`/`Mean`/`Prod`/`Max`/`Min`, so `check_fold_op` now returns a typed `shape` refusal ("not spelled by this emitter") for any other op instead of failing to compile. Test: `unspelled_reduce_ops_are_refused_not_panicked` (2 of the 5 probed ops reach the emitter; the plan gate refuses the others). The refusal was not mutation-checked. All other tests unchanged and green. **Text only: no HIP compiler has seen it (rig row).**
