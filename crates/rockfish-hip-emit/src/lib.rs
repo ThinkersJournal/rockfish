@@ -7,7 +7,7 @@
 //! golden kernels (a rig row in `docs/DESIGN-R7.md` section 6). The emitted text deliberately
 //! carries no status comment: a claim written into an artifact is invalidated by verifying it.
 //!
-//! # Scope (R7b, R7c, vectorized; f32 and f64; scalar integer)
+//! # Scope (R7b, R7c, vectorized; f32, f64, f16, bf16; scalar integer)
 //!
 //! Integer compute (`i32`, `i64`, `u32`, `u64`) is the scalar elementwise cell only, and the
 //! backend declares `Backend::total_integer_ops`: `Div`, `Shl`, `Shr` and `ConstInt` follow Unpopped's
@@ -70,15 +70,18 @@ impl Backend for Hip {
         "rockfish"
     }
 
-    /// `f32`, `f64`, `i32`, `i64`, `u32` and `u64` on a `rocm:` target are the `Supported` answers.
+    /// `f32`, `f64`, `f16`, `bf16`, `i32`, `i64`, `u32` and `u64` on a `rocm:` target are the
+    /// `Supported` answers. The halves are stored as `unsigned short` and computed at `float`
+    /// through Unpopped's software codec (see `emit_narrow`), on the scalar and 2/4-wide
+    /// vectorized elementwise cells only.
     /// The integer four are the dtypes Unpopped's total integer rule defines (see
     /// [`Backend::total_integer_ops`] below), and only the scalar elementwise cell spells them.
     ///
     /// `float` is a type of the language, so this is a statement about the emitter's scope and
     /// not about any one gfx part's instruction set. Every other dtype answers `Unsupported`
     /// (the safe answer when unsure, per `Backend::supports_dtype`) until its HIP type name,
-    /// header and per-architecture availability are read from AMD's headers or measured: the
-    /// vendored `vendor/hip/include/hip` has neither `hip_fp16.h` nor `hip_bf16.h`. A target
+    /// header and per-architecture availability are read from AMD's headers or measured (the
+    /// halves need none: they use the software codec, not `__half`). A target
     /// outside the `rocm:` namespace is `Unsupported` too: this text could never compile there.
     fn supports_dtype(&self, dtype: ElementKind, target: TargetId) -> DtypeSupport {
         if target.namespace() != NAMESPACE {
@@ -90,7 +93,9 @@ impl Backend for Hip {
             | ElementKind::I32
             | ElementKind::I64
             | ElementKind::U32
-            | ElementKind::U64 => DtypeSupport::Supported,
+            | ElementKind::U64
+            | ElementKind::F16
+            | ElementKind::Bf16 => DtypeSupport::Supported,
             _ => DtypeSupport::Unsupported,
         }
     }
@@ -113,7 +118,7 @@ impl Backend for Hip {
             return Err(LowerError::UnsupportedDtype {
                 dtype: plan.dtype,
                 detail: format!(
-                    "hip backend: only f32, f64, i32, i64, u32 and u64 on a `{NAMESPACE}:` target are \
+                    "hip backend: only f32, f64, f16, bf16, i32, i64, u32 and u64 on a `{NAMESPACE}:` target are \
                      spelled (target `{}`); see `Hip::supports_dtype`",
                     plan.key.target
                 ),
@@ -126,6 +131,9 @@ impl Backend for Hip {
             )));
         }
         check_plan_shape(plan)?;
+        if matches!(plan.dtype, ElementKind::F16 | ElementKind::Bf16) {
+            return emit_narrow(plan);
+        }
         let Some(fp) = Fp::of(plan.dtype) else {
             return Err(LowerError::UnsupportedDtype {
                 dtype: plan.dtype,
@@ -261,6 +269,133 @@ fn emit_scalar(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerEr
     }
     s.push_str(&format!("        out[i] = {root};\n    }}\n}}\n"));
     Ok(GeneratedKernel::new(name, s))
+}
+
+/// Only a `rocm:` target and the scalar and 2/4-wide vectorized elementwise cells (`ushort2` /
+/// `ushort4` loads, each lane through the codec) spell `f16`/`bf16`, and only for a body with no
+/// runtime parameter. The halves are **stored** as `unsigned short` and **computed** at `float`,
+/// the rule of `unpopped::optimize::Compute` and of Unpopped's own C-family emitter: an element is
+/// widened by the dtype's codec on load and narrowed (round to nearest even) on store, so each
+/// intermediate is an `f32` and only the result is rounded to the half. The codec is
+/// `unpopped::cfamily::half_helpers`, the plain-C software codec that `unpopped-cpu-c` checks bit
+/// for bit against an independent codec; it is used unchanged except for HIP's spelling (each
+/// helper is `__device__`; `INFINITY`/`NAN` are the clang builtins, because the macros' HIP
+/// availability is unchecked). No `__half` / `__hip_bfloat16` is used, so no AMD header beyond
+/// `hip_runtime.h` is needed. UNVERIFIED under a HIP compiler (rig row): `ldexpf`, `frexpf` and
+/// `floorf` on the device are assumed from `hip_runtime.h`.
+fn emit_narrow(plan: &KernelPlan<'_>) -> Result<GeneratedKernel, LowerError> {
+    let kind = plan.dtype;
+    let (load, store, tag) = match kind {
+        ElementKind::F16 => ("unpopped_f16_load", "unpopped_f16_store", "f16"),
+        ElementKind::Bf16 => ("unpopped_bf16_load", "unpopped_bf16_store", "bf16"),
+        other => unreachable!("emit_narrow is reached for F16/Bf16 only, got {other:?}"),
+    };
+    let width = match plan.schedule {
+        Schedule::Scalar => None,
+        Schedule::Vectorized { width: w @ (2 | 4) } => Some(w),
+        other => {
+            return Err(LowerError::UnsupportedSchedule {
+                detail: format!(
+                    "hip backend: {kind:?} is spelled on the scalar and 2/4-wide vectorized \
+                     elementwise schedules only, got {other:?}"
+                ),
+            });
+        }
+    };
+    require_elementwise(plan)?;
+    if !param_args(plan.body, Fp::F32).is_empty() {
+        return Err(shape(format!(
+            "hip backend: op '{}': a runtime parameter at {kind:?} is not spelled (its dtype is \
+             not settled)",
+            plan.op_name
+        )));
+    }
+    let name = format!("rockfish_hip_{}_{tag}", plan.op_name);
+    let mut s = String::new();
+    s.push_str(&format!(
+        "// Generated by rockfish-hip-emit (hip backend) - do not edit.\n// op: {} | cell: {}\n",
+        plan.op_name,
+        plan.key.to_token()
+    ));
+    s.push_str("#include <hip/hip_runtime.h>\n\n");
+    s.push_str(&half_codec(kind));
+    s.push_str(&format!("extern \"C\" __global__ void {name}(\n"));
+    for i in 0..plan.n_inputs {
+        s.push_str(&format!("    const unsigned short* in{i},\n"));
+    }
+    s.push_str("    unsigned short* out,\n    long long n)\n{\n");
+    s.push_str("    #pragma clang fp contract(off)\n");
+    let grid = "(long long)blockIdx.x * blockDim.x + threadIdx.x";
+    let stride = "(long long)gridDim.x * blockDim.x";
+    // The grid-stride scalar loop: the whole kernel for the scalar cell, the tail for a vector one.
+    let scalar_loop = |s: &mut String, start: &str| -> Result<(), LowerError> {
+        let (prelude, root) = lower_expr_with(plan, Fp::F32, plan.body, &|idx| {
+            format!("{load}(in{idx}[i])")
+        })?;
+        s.push_str(&format!(
+            "    for (long long i = {start}; i < n;\n         i += {stride}) {{\n"
+        ));
+        for decl in &prelude {
+            s.push_str(&format!("        {decl}\n"));
+        }
+        s.push_str(&format!("        out[i] = {store}({root});\n    }}\n"));
+        Ok(())
+    };
+    if let Some(w) = width {
+        let (vty, lanes): (&str, &[&str]) = if w == 2 {
+            ("ushort2", &["x", "y"])
+        } else {
+            ("ushort4", &["x", "y", "z", "w"])
+        };
+        s.push_str(&format!("    const long long nv = n / {w};\n"));
+        for i in 0..plan.n_inputs {
+            s.push_str(&format!(
+                "    const {vty}* v{i} = reinterpret_cast<const {vty}*>(in{i});\n"
+            ));
+        }
+        s.push_str(&format!(
+            "    {vty}* vout = reinterpret_cast<{vty}*>(out);\n"
+        ));
+        s.push_str(&format!(
+            "    for (long long i = {grid}; i < nv;\n         i += {stride}) {{\n"
+        ));
+        for i in 0..plan.n_inputs {
+            s.push_str(&format!("        const {vty} a{i} = v{i}[i];\n"));
+        }
+        s.push_str(&format!("        {vty} r;\n"));
+        for lane in lanes {
+            let (prelude, root) = lower_expr_with(plan, Fp::F32, plan.body, &|idx| {
+                format!("{load}(a{idx}.{lane})")
+            })?;
+            s.push_str("        {\n");
+            for decl in &prelude {
+                s.push_str(&format!("            {decl}\n"));
+            }
+            s.push_str(&format!(
+                "            r.{lane} = {store}({root});\n        }}\n"
+            ));
+        }
+        s.push_str("        vout[i] = r;\n    }\n");
+        scalar_loop(&mut s, &format!("nv * {w} + {grid}"))?;
+    } else {
+        scalar_loop(&mut s, grid)?;
+    }
+    s.push_str("}\n");
+    Ok(GeneratedKernel::new(name, s))
+}
+
+/// Unpopped's half codec in HIP's spelling (see [`emit_narrow`]).
+fn half_codec(kind: ElementKind) -> String {
+    let src = unpopped::cfamily::half_helpers(kind).expect("F16 and Bf16 have a codec");
+    let out = src
+        .replace("static float ", "static __device__ float ")
+        .replace(
+            "static unsigned short ",
+            "static __device__ unsigned short ",
+        )
+        .replace("INFINITY", "__builtin_inff()")
+        .replace("NAN", "__builtin_nanf(\"\")");
+    format!("{}\n", out.trim_start_matches('\n'))
 }
 
 /// The vectorized contiguous elementwise kernel: `width` (2 or 4) lanes per thread through
