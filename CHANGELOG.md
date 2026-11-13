@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.34
+
+- `rockfish-hip-emit` and `rockfish-hip-parse` move to Unpopped 0.45.12 and take its version, 0.45.12 (`unpopped` / `unpopped-vocab` `0.45.12`). No source change was needed; every test unchanged and green. The four patent-flagged statements (`AsyncWait`/`CopyAsync`/`AsyncCommit`/`Collective`) are not lowered: the emitter handles `KernelPlan`s only (see `docs/PATENT-SWEEP.md`). **Text only: no HIP compiler has seen it (rig row).**
 ## 0.0.33
 
 - Docs only: `docs/PATENT-SWEEP.md` records the NVIDIA async-scheduling and barrier-aggregation (`Collective`) patent notices (CireSnave 2026-11-13) and Rockfish's exposure: none today (the emitter lowers `KernelPlan`s, never `Stmt`).
