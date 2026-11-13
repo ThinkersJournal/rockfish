@@ -140,11 +140,16 @@ impl Backend for Hip {
                 detail: "hip backend: no C type spelled for this dtype".to_string(),
             });
         };
-        if fp.is_int() && !matches!(plan.schedule, Schedule::Scalar | Schedule::Reduction { .. }) {
+        if fp.is_int()
+            && !matches!(
+                plan.schedule,
+                Schedule::Scalar | Schedule::Reduction { .. } | Schedule::Scan { .. }
+            )
+        {
             return Err(LowerError::UnsupportedSchedule {
                 detail: format!(
-                    "hip backend: integer dtype {:?} is spelled on the scalar elementwise and the \
-                     sequential reduction schedules only, got {:?}",
+                    "hip backend: integer dtype {:?} is spelled on the scalar elementwise, the \
+                     sequential reduction and the serial scan schedules only, got {:?}",
                     plan.dtype, plan.schedule
                 ),
             });
@@ -849,7 +854,11 @@ fn emit_scan(
     };
     require_identity_post(plan, post)?;
     let (prelude, root) = lower_expr(plan, fp, pre, "r * k + j")?;
-    let (name, mut s) = fold_header(plan, fp, "scan", pre, "");
+    let helpers = fp.helpers(&format!("{}\n{root}", prelude.join("\n")));
+    let (name, mut s) = fold_header(plan, fp, "scan", pre, &helpers);
+    if fp.is_int() {
+        return emit_int_scan(plan, op, reverse, exclusive, fp, &prelude, &root, name, s);
+    }
     let ident = match op {
         ReduceOp::Sum => "0.0",
         ReduceOp::Prod => "1.0",
@@ -877,6 +886,83 @@ fn emit_scan(
     }
     if !exclusive {
         s.push_str(&format!("            out[r * k + j] = ({})acc;\n", fp.c()));
+    }
+    s.push_str("        }\n    }\n}\n");
+    Ok(GeneratedKernel::new(name, s))
+}
+
+/// The serial-fold prefix scan at an integer compute dtype (`i32`/`i64`/`u32`/`u64`): `Sum`,
+/// `Prod`, `Max`, `Min`, mirroring Unpopped's `eval_scan`. `Sum`/`Prod` run in the **unsigned**
+/// type of the same width (wrapping equals the oracle's wrap-at-every-step; C++ signed overflow
+/// is undefined). `Max`/`Min` compare in the dtype with a `have` flag; an exclusive scan writes
+/// the dtype's extreme (`Max` -> the minimum, `Min` -> the maximum) before the first visited
+/// element, as the oracle's `scan_identity` does. `Mean`, `And`, `Or`, `Xor` are typed refusals
+/// (the oracle rejects the bitwise ops in a scan and has no integer `Mean`). Text only:
+/// UNVERIFIED against a HIP compiler (rig row).
+#[allow(clippy::too_many_arguments)]
+fn emit_int_scan(
+    plan: &KernelPlan<'_>,
+    op: ReduceOp,
+    reverse: bool,
+    exclusive: bool,
+    fp: Fp,
+    prelude: &[String],
+    root: &str,
+    name: String,
+    mut s: String,
+) -> Result<GeneratedKernel, LowerError> {
+    if !matches!(
+        op,
+        ReduceOp::Sum | ReduceOp::Prod | ReduceOp::Max | ReduceOp::Min
+    ) {
+        return Err(shape(format!(
+            "hip backend: op '{}': an integer scan spells Sum/Prod/Max/Min only, got {op:?}",
+            plan.op_name
+        )));
+    }
+    let (t, u) = (fp.c(), fp.unsigned_c());
+    let by_compare = matches!(op, ReduceOp::Max | ReduceOp::Min);
+    if by_compare {
+        s.push_str(&format!(
+            "        {t} acc = 0;\n        bool have = false;\n"
+        ));
+    } else {
+        let init = if matches!(op, ReduceOp::Prod) {
+            "1"
+        } else {
+            "0"
+        };
+        s.push_str(&format!("        {u} acc = ({u}){init};\n"));
+    }
+    s.push_str("        for (long long t = 0; t < k; ++t) {\n");
+    let j = if reverse { "k - 1 - t" } else { "t" };
+    s.push_str(&format!("            long long j = {j};\n"));
+    for decl in prelude {
+        s.push_str(&format!("            {decl}\n"));
+    }
+    s.push_str(&format!("            {t} v = ({t})({root});\n"));
+    if exclusive {
+        if by_compare {
+            let ident = fp.extreme(matches!(op, ReduceOp::Max));
+            s.push_str(&format!(
+                "            out[r * k + j] = have ? acc : ({t})({ident});\n"
+            ));
+        } else {
+            s.push_str(&format!("            out[r * k + j] = ({t})acc;\n"));
+        }
+    }
+    match op {
+        ReduceOp::Sum => s.push_str(&format!("            acc = acc + ({u})v;\n")),
+        ReduceOp::Prod => s.push_str(&format!("            acc = acc * ({u})v;\n")),
+        ReduceOp::Max => s.push_str("            if (!have || v > acc) { acc = v; }\n"),
+        ReduceOp::Min => s.push_str("            if (!have || v < acc) { acc = v; }\n"),
+        _ => unreachable!("checked above"),
+    }
+    if by_compare {
+        s.push_str("            have = true;\n");
+    }
+    if !exclusive {
+        s.push_str(&format!("            out[r * k + j] = ({t})acc;\n"));
     }
     s.push_str("        }\n    }\n}\n");
     Ok(GeneratedKernel::new(name, s))
@@ -1135,6 +1221,21 @@ impl Fp {
 
     fn is_signed(self) -> bool {
         matches!(self, Fp::I32 | Fp::I64)
+    }
+
+    /// The C literal of this integer dtype's most negative (`most_negative`) or most positive
+    /// value: the scan identity of `Max` and `Min` (Unpopped's `int_extreme`).
+    fn extreme(self, most_negative: bool) -> &'static str {
+        match (self, most_negative) {
+            (Fp::I32, true) => "(-2147483647 - 1)",
+            (Fp::I32, false) => "2147483647",
+            (Fp::I64, true) => "(-9223372036854775807LL - 1)",
+            (Fp::I64, false) => "9223372036854775807LL",
+            (Fp::U32, true) | (Fp::U64, true) => "0",
+            (Fp::U32, false) => "4294967295u",
+            (Fp::U64, false) => "18446744073709551615ull",
+            (Fp::F32 | Fp::F64, _) => unreachable!("only integer types have an integer extreme"),
+        }
     }
 
     /// The unsigned type of the same width (the type itself when already unsigned).
