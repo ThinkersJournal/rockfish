@@ -343,9 +343,14 @@ fn constants_that_change_class_are_refused() {
 }
 
 #[test]
-fn only_the_float_and_32_64_bit_integer_dtypes_on_a_rocm_target_are_supported() {
+fn only_the_float_half_and_32_64_bit_integer_dtypes_on_a_rocm_target_are_supported() {
     for t in ["rocm:gfx906", "rocm:gfx1036", "rocm:gfx942"] {
-        for dt in [ElementKind::F32, ElementKind::F64] {
+        for dt in [
+            ElementKind::F32,
+            ElementKind::F64,
+            ElementKind::F16,
+            ElementKind::Bf16,
+        ] {
             assert_eq!(
                 Hip.supports_dtype(dt, target(t)),
                 DtypeSupport::Supported,
@@ -353,8 +358,6 @@ fn only_the_float_and_32_64_bit_integer_dtypes_on_a_rocm_target_are_supported() 
             );
         }
         for dt in [
-            ElementKind::F16,
-            ElementKind::Bf16,
             ElementKind::F32Strict,
             ElementKind::I8,
             ElementKind::U8,
@@ -376,13 +379,13 @@ fn only_the_float_and_32_64_bit_integer_dtypes_on_a_rocm_target_are_supported() 
 
 #[test]
 fn lowering_an_unsupported_dtype_or_target_is_a_typed_error() {
-    let o = OpDef::elementwise("h", 1, &[ElementKind::F16], input(0) + input(0));
-    let key = key_for(1, ElementKind::F16, target("rocm:gfx906"), 4);
+    let o = OpDef::elementwise("h", 1, &[ElementKind::F32Strict], input(0) + input(0));
+    let key = key_for(1, ElementKind::F32Strict, target("rocm:gfx906"), 4);
     let plan = try_build_plan(&o, &key).expect("plan");
     assert!(matches!(
         Hip.lower(&plan),
         Err(LowerError::UnsupportedDtype {
-            dtype: ElementKind::F16,
+            dtype: ElementKind::F32Strict,
             ..
         })
     ));
