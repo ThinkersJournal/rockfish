@@ -479,6 +479,15 @@ fn lower_expr_with(
 
 /// Reject any reduction/scan feature this slice does not spell, so it is never ignored.
 fn check_fold_op(plan: &KernelPlan<'_>, op: ReduceOp, allow_mean: bool) -> Result<(), LowerError> {
+    if !matches!(
+        op,
+        ReduceOp::Sum | ReduceOp::Mean | ReduceOp::Prod | ReduceOp::Max | ReduceOp::Min
+    ) {
+        return Err(shape(format!(
+            "hip backend: op '{}': reduce op {op:?} is not spelled by this emitter (Sum/Mean/Prod/Max/Min only)",
+            plan.op_name
+        )));
+    }
     if matches!(op, ReduceOp::Mean) && !allow_mean {
         return Err(shape(format!(
             "hip backend: op '{}': Mean is not a monoid, so it has no scan",
@@ -578,6 +587,7 @@ fn emit_reduction(
         ReduceOp::Prod => s.push_str("            acc = acc * v;\n"),
         ReduceOp::Max => s.push_str("            if (!have || v != v || v > acc) { acc = v; }\n"),
         ReduceOp::Min => s.push_str("            if (!have || v != v || v < acc) { acc = v; }\n"),
+        _ => unreachable!("check_fold_op admits Sum/Mean/Prod/Max/Min for a reduction"),
     }
     if have {
         s.push_str("            have = true;\n");

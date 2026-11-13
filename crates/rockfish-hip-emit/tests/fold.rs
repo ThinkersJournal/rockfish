@@ -457,3 +457,28 @@ fn f64_reduction_and_scan_store_double() {
     let f32_red = reduce(ReduceOp::Sum, input(0)).unwrap();
     assert!(f32_red.contains("out[r] = (float)(acc);"), "{f32_red}");
 }
+
+/// Unpopped 0.42+ added reduce ops this emitter does not spell. One that reaches `lower` must be a
+/// typed refusal (never a panic or wrong text); the plan gate may also refuse it first.
+#[test]
+fn unspelled_reduce_ops_are_refused_not_panicked() {
+    let mut reached = 0;
+    for op in [
+        ReduceOp::And,
+        ReduceOp::Or,
+        ReduceOp::Xor,
+        ReduceOp::MaxNum,
+        ReduceOp::MinNum,
+    ] {
+        let o = OpDef::reduction("red", 1, F32, input(0), op);
+        let key = reduction_key();
+        if let Ok(plan) = try_build_plan(&o, &key) {
+            reached += 1;
+            let err = Hip
+                .lower(&plan)
+                .expect_err("an unspelled reduce op must be refused");
+            assert!(err.to_string().contains("not spelled"), "{op:?}: {err}");
+        }
+    }
+    eprintln!("{reached} of 5 unspelled ops reached the emitter");
+}
