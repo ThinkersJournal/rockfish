@@ -140,11 +140,11 @@ impl Backend for Hip {
                 detail: "hip backend: no C type spelled for this dtype".to_string(),
             });
         };
-        if fp.is_int() && !matches!(plan.schedule, Schedule::Scalar) {
+        if fp.is_int() && !matches!(plan.schedule, Schedule::Scalar | Schedule::Reduction { .. }) {
             return Err(LowerError::UnsupportedSchedule {
                 detail: format!(
-                    "hip backend: integer dtype {:?} is spelled on the scalar elementwise schedule \
-                     only, got {:?}",
+                    "hip backend: integer dtype {:?} is spelled on the scalar elementwise and the \
+                     sequential reduction schedules only, got {:?}",
                     plan.dtype, plan.schedule
                 ),
             });
@@ -644,7 +644,13 @@ fn require_identity_post(plan: &KernelPlan<'_>, post: &ScalarExpr) -> Result<(),
 }
 
 /// The serial fold kernel header: one thread per row, `rows` rows of `k` contiguous elements.
-fn fold_header(plan: &KernelPlan<'_>, fp: Fp, what: &str, body: &ScalarExpr) -> (String, String) {
+fn fold_header(
+    plan: &KernelPlan<'_>,
+    fp: Fp,
+    what: &str,
+    body: &ScalarExpr,
+    helpers: &str,
+) -> (String, String) {
     let name = format!("rockfish_hip_{}_{}", plan.op_name, fp.tag());
     let mut s = String::new();
     s.push_str(&format!(
@@ -653,6 +659,7 @@ fn fold_header(plan: &KernelPlan<'_>, fp: Fp, what: &str, body: &ScalarExpr) -> 
         plan.key.to_token()
     ));
     s.push_str("#include <hip/hip_runtime.h>\n\n");
+    s.push_str(helpers);
     s.push_str(&format!("extern \"C\" __global__ void {name}(\n"));
     for i in 0..plan.n_inputs {
         s.push_str(&format!("    const {}* in{i},\n", fp.c()));
@@ -702,7 +709,11 @@ fn emit_reduction(
         }
     }
     let (prelude, root) = lower_expr(plan, fp, plan.body, "r * k + j")?;
-    let (name, mut s) = fold_header(plan, fp, "reduction", plan.body);
+    let helpers = fp.helpers(&format!("{}\n{root}", prelude.join("\n")));
+    let (name, mut s) = fold_header(plan, fp, "reduction", plan.body, &helpers);
+    if fp.is_int() {
+        return emit_int_reduction(plan, op, fp, &prelude, &root, name, s);
+    }
     let init = match op {
         ReduceOp::Prod => "1.0",
         _ => "0.0",
@@ -737,6 +748,68 @@ fn emit_reduction(
         "        out[r] = ({})({fin});\n    }}\n}}\n",
         fp.c()
     ));
+    Ok(GeneratedKernel::new(name, s))
+}
+
+/// The sequential last-axis reduction at an integer compute dtype (`i32`/`i64`/`u32`/`u64`):
+/// `Sum`, `Prod`, `Max`, `Min`. Unpopped's oracle folds these exactly and wraps on store, and for
+/// `Sum` and `Prod` wrapping at the end equals wrapping at every step, so the accumulator is the
+/// **unsigned** type of the same width: C++ signed overflow is undefined, unsigned wraps. `Max`
+/// and `Min` compare in the dtype itself (no NaN, no promotion) and, like the oracle, answer `0`
+/// for an empty axis (`have` stays false). `Mean`, `And`, `Or` and `Xor` are typed refusals:
+/// the oracle has no integer `Mean`, and the bitwise folds' identities are not settled here.
+/// The body is lowered by the integer seams (so a total `Div`, a `Select` or a comparison inside
+/// it work), and its helpers are emitted ahead of the kernel by the caller. Text only: UNVERIFIED
+/// against a HIP compiler (rig row).
+fn emit_int_reduction(
+    plan: &KernelPlan<'_>,
+    op: ReduceOp,
+    fp: Fp,
+    prelude: &[String],
+    root: &str,
+    name: String,
+    mut s: String,
+) -> Result<GeneratedKernel, LowerError> {
+    if !matches!(
+        op,
+        ReduceOp::Sum | ReduceOp::Prod | ReduceOp::Max | ReduceOp::Min
+    ) {
+        return Err(shape(format!(
+            "hip backend: op '{}': an integer reduction spells Sum/Prod/Max/Min only, got {op:?}",
+            plan.op_name
+        )));
+    }
+    let (t, u) = (fp.c(), fp.unsigned_c());
+    let folds_by_compare = matches!(op, ReduceOp::Max | ReduceOp::Min);
+    if folds_by_compare {
+        s.push_str(&format!(
+            "        {t} acc = 0;\n        bool have = false;\n"
+        ));
+    } else {
+        let init = if matches!(op, ReduceOp::Prod) {
+            "1"
+        } else {
+            "0"
+        };
+        s.push_str(&format!("        {u} acc = ({u}){init};\n"));
+    }
+    s.push_str("        for (long long j = 0; j < k; ++j) {\n");
+    for decl in prelude {
+        s.push_str(&format!("            {decl}\n"));
+    }
+    s.push_str(&format!("            {t} v = ({t})({root});\n"));
+    match op {
+        ReduceOp::Sum => s.push_str(&format!("            acc = acc + ({u})v;\n")),
+        ReduceOp::Prod => s.push_str(&format!("            acc = acc * ({u})v;\n")),
+        ReduceOp::Max => s.push_str("            if (!have || v > acc) { acc = v; }\n"),
+        ReduceOp::Min => s.push_str("            if (!have || v < acc) { acc = v; }\n"),
+        _ => unreachable!("checked above"),
+    }
+    if folds_by_compare {
+        s.push_str("            have = true;\n");
+    }
+    s.push_str("        }\n");
+    s.push_str(&format!("        out[r] = ({t})acc;\n    }}\n}}\n"));
     Ok(GeneratedKernel::new(name, s))
 }
 
@@ -776,7 +849,7 @@ fn emit_scan(
     };
     require_identity_post(plan, post)?;
     let (prelude, root) = lower_expr(plan, fp, pre, "r * k + j")?;
-    let (name, mut s) = fold_header(plan, fp, "scan", pre);
+    let (name, mut s) = fold_header(plan, fp, "scan", pre, "");
     let ident = match op {
         ReduceOp::Sum => "0.0",
         ReduceOp::Prod => "1.0",
