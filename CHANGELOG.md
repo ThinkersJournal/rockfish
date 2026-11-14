@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.41
+
+- Repin `unpopped` and `unpopped-vocab` to ^0.45.17 (includes U33) in `rockfish-hip-emit` and `rockfish-hip-parse`; both crates now track Unpopped 0.45.17. Unpopped 0.45.17's plan gate admits integer elementwise `Max`/`Min`, so `rockfish-hip-emit` now spells them at `i32`/`i64`/`u32`/`u64` as a plain compare (`((a) > (b) ? (a) : (b))`; integers have no NaN); test `integer_max_min_is_a_plain_compare_at_every_integer_dtype`. **UNVERIFIED against a HIP compiler or an executed run (rig row).** Workspace 0.0.41.
+
 ## 0.0.40
 
 - `rockfish-hip-emit` spells the strided elementwise cell at `i32`/`i64`/`u32`/`u64` (the float-only refusal and the schedule gate for integers are lifted). The body goes through the existing integer seams (wrapping `Add`/`Sub`/`Mul`, total `Div`/shifts, comparisons, `Select`); addressing, unravel and the launch ABI are the float cell's, unchanged. Still refused: `Coord` at an integer dtype (Unpopped's plan gate refuses it: "int-literal coordinate spelling is a follow-up"), `f16`/`bf16` on this schedule, strided window, and strided reduction/scan (not built). Tests: `tests/strided.rs`, text only. **UNVERIFIED against a HIP compiler or an executed run (rig row); no host differential run.** Workspace 0.0.40; `rockfish-hip-emit` and `rockfish-hip-parse` keep tracking Unpopped 0.45.12.

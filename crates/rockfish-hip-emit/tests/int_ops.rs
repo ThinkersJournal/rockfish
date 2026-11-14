@@ -197,9 +197,6 @@ fn a_const_int_that_does_not_fit_or_has_the_wrong_type_is_declined() {
 
 #[test]
 fn what_the_integer_cell_does_not_spell_stays_refused() {
-    // An integer `Max`/`Min` is still not admitted at an integer compute dtype by the plan gate.
-    let o = bin("mx", ElementKind::I32, |a, b| a.binary(BinaryOp::Max, b));
-    assert!(try_build_plan_for(&o, &key(2, ElementKind::I32, 4), &Hip).is_err());
     // A vectorized integer cell is a typed schedule refusal, not float vectors over ints.
     let o = bin("v", ElementKind::I32, |a, b| a / b);
     let k = key(2, ElementKind::I32, 256);
@@ -283,6 +280,24 @@ fn rem_is_a_select_over_the_total_div_at_every_integer_dtype() {
         assert!(
             sel < at,
             "{tag}: the division is in an arm of the select\n{s}"
+        );
+    }
+}
+
+#[test]
+fn integer_max_min_is_a_plain_compare_at_every_integer_dtype() {
+    for (dt, tag, _, _) in INTS {
+        let mx = src(&bin("imx", dt, |a, b| a.binary(BinaryOp::Max, b)), dt);
+        assert!(
+            mx.contains("((in0[i]) > (in1[i]) ? (in0[i]) : (in1[i]))"),
+            "{tag}: max
+{mx}"
+        );
+        let mn = src(&bin("imn", dt, |a, b| a.binary(BinaryOp::Min, b)), dt);
+        assert!(
+            mn.contains("((in0[i]) < (in1[i]) ? (in0[i]) : (in1[i]))"),
+            "{tag}: min
+{mn}"
         );
     }
 }
