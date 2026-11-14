@@ -1385,9 +1385,9 @@ fn int_arith(fp: Fp, op: ArithOp, a: &str, b: &str) -> Result<Spelling, LowerErr
     })
 }
 
-/// The integer binary ops the plan gate admits at an integer compute dtype: the bitwise three
-/// and the total `Shl`/`Shr`. Everything else (comparisons, `Max`/`Min`, the logical ops, the
-/// float functions) is a typed decline.
+/// The integer binary ops the plan gate admits at an integer compute dtype: the bitwise three,
+/// the total `Shl`/`Shr`, the comparisons and `Max`/`Min` (Unpopped 0.45.17 admits integer
+/// `Max`/`Min`). Everything else (the logical ops, the float functions) is a typed decline.
 fn int_binary(fp: Fp, op: BinaryOp, a: &str, b: &str) -> Result<Spelling, LowerError> {
     Ok(match op {
         BinaryOp::BitAnd => Spelling::Spelled(format!("({a} & {b})")),
@@ -1395,6 +1395,9 @@ fn int_binary(fp: Fp, op: BinaryOp, a: &str, b: &str) -> Result<Spelling, LowerE
         BinaryOp::BitXor => Spelling::Spelled(format!("({a} ^ {b})")),
         BinaryOp::Shl => Spelling::Spelled(format!("rockfish_shl_{}({a}, {b})", fp.tag())),
         BinaryOp::Shr => Spelling::Spelled(format!("rockfish_shr_{}({a}, {b})", fp.tag())),
+        // Integers have no NaN: a plain compare is the whole definition (operands are pure).
+        BinaryOp::Max => Spelling::Spelled(format!("(({a}) > ({b}) ? ({a}) : ({b}))")),
+        BinaryOp::Min => Spelling::Spelled(format!("(({a}) < ({b}) ? ({a}) : ({b}))")),
         // A comparison is exactly 1 or 0 in the compute type (the IR's `Cmp*` rule); integer
         // operands have no NaN, so the C operator is the whole definition.
         BinaryOp::CmpEq => int_cmp(fp, "==", a, b),
