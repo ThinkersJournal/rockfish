@@ -143,13 +143,17 @@ impl Backend for Hip {
         if fp.is_int()
             && !matches!(
                 plan.schedule,
-                Schedule::Scalar | Schedule::Reduction { .. } | Schedule::Scan { .. }
+                Schedule::Scalar
+                    | Schedule::Strided
+                    | Schedule::Reduction { .. }
+                    | Schedule::Scan { .. }
             )
         {
             return Err(LowerError::UnsupportedSchedule {
                 detail: format!(
-                    "hip backend: integer dtype {:?} is spelled on the scalar elementwise, the \
-                     sequential reduction and the serial scan schedules only, got {:?}",
+                    "hip backend: integer dtype {:?} is spelled on the scalar and strided \
+                     elementwise, the sequential reduction and the serial scan schedules only, \
+                     got {:?}",
                     plan.dtype, plan.schedule
                 ),
             });
@@ -1142,7 +1146,8 @@ fn strided_offset(o: unpopped_vocab::OperandKey, stride: &str, rank: usize) -> S
     }
 }
 
-/// The strided elementwise cell (`Schedule::Strided`, `Access::Elementwise`) at `f32`/`f64`: one
+/// The strided elementwise cell (`Schedule::Strided`, `Access::Elementwise`) at `f32`/`f64` and
+/// `i32`/`i64`/`u32`/`u64`: one
 /// grid-stride loop over the `n` output elements, each unravelled row-major (last axis fastest)
 /// into coordinates `c0..c{rank-1}` against the iteration shape, then every input and the output
 /// addressed by its own element strides, so a transposed, sliced or broadcast operand is read in
@@ -1153,14 +1158,9 @@ fn strided_offset(o: unpopped_vocab::OperandKey, stride: &str, rank: usize) -> S
 /// Launch ABI (a stated contract, not a checked one; element strides, not bytes):
 /// `(in0.., out, shape0..shape{rank-1}, s{i}_{d} for each input i and axis d, so_0..so_{rank-1},
 /// n, params..)`. Views, gather, scatter and base offsets are refused by `check_plan_shape`;
-/// integers and halves are refused here. Text only: UNVERIFIED against a HIP compiler.
+/// halves are refused here. Text only: UNVERIFIED against a HIP compiler.
 fn emit_strided(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerError> {
     require_elementwise(plan)?;
-    if fp.is_int() {
-        return Err(LowerError::UnsupportedSchedule {
-            detail: "hip backend: the strided schedule is spelled at f32 and f64 only".to_string(),
-        });
-    }
     let rank = usize::from(plan.key.rank);
     let n_in = usize::from(plan.n_inputs);
     let name = format!("rockfish_hip_{}_{}", plan.op_name, fp.tag());
