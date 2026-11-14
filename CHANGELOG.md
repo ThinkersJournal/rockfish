@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.40
+
+- `rockfish-hip-emit` spells the strided elementwise cell at `i32`/`i64`/`u32`/`u64` (the float-only refusal and the schedule gate for integers are lifted). The body goes through the existing integer seams (wrapping `Add`/`Sub`/`Mul`, total `Div`/shifts, comparisons, `Select`); addressing, unravel and the launch ABI are the float cell's, unchanged. Still refused: `Coord` at an integer dtype (Unpopped's plan gate refuses it: "int-literal coordinate spelling is a follow-up"), `f16`/`bf16` on this schedule, strided window, and strided reduction/scan (not built). Tests: `tests/strided.rs`, text only. **UNVERIFIED against a HIP compiler or an executed run (rig row); no host differential run.** Workspace 0.0.40; `rockfish-hip-emit` and `rockfish-hip-parse` keep tracking Unpopped 0.45.12.
+
 ## 0.0.39
 
 - `rockfish-hip-emit` spells the strided elementwise cell (`Schedule::Strided`, `Access::Elementwise`) at `f32`/`f64`: a grid-stride loop over the `n` output elements, each unravelled row-major into `c0..c{rank-1}` against the iteration shape, every input and the output addressed by its own element strides (a transposed or sliced operand is read in place; a broadcast axis drops its term; an operand broadcast on every axis is loaded once before the loop). A `Coord(d)` leaf now lowers here (`((float)c{d})`); on the contiguous cells it is still a typed decline. Launch ABI (stated, not checked; element strides): `(in0.., out, shape0.., s{i}_{d}.., so_0.., n, params..)`, the argument names of `baracuda-cuda-emit`'s strided kernel. Still refused, typed: views, gather, scatter and base offsets (`check_plan_shape`), integers and `f16`/`bf16` on this schedule. Tests: `tests/strided.rs`, text only. **UNVERIFIED against a HIP compiler or an executed run (rig row); no host differential run this time.** Workspace 0.0.39; `rockfish-hip-emit` and `rockfish-hip-parse` keep tracking Unpopped 0.45.12.

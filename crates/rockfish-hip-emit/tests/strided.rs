@@ -112,9 +112,20 @@ fn a_coord_leaf_reads_the_unravelled_axis_at_the_compute_type() {
 fn refusals_are_typed_and_each_has_a_control_that_lowers() {
     // Control.
     assert!(lower(ElementKind::F32, input(0) + coord(1), &[TRANSPOSED]).is_ok());
-    // An integer strided cell is not spelled.
-    assert!(matches!(
-        lower(ElementKind::I32, input(0), &[TRANSPOSED]),
-        Err(LowerError::UnsupportedSchedule { .. })
-    ));
+    // A half strided cell is not spelled.
+    assert!(lower(ElementKind::F16, input(0), &[TRANSPOSED]).is_err());
+}
+
+#[test]
+fn an_integer_strided_cell_is_spelled() {
+    let i32k = lower(ElementKind::I32, input(0) + input(1), &[TRANSPOSED, DENSE]).unwrap();
+    assert!(i32k.contains("const int* in0"), "{i32k}");
+    assert!(
+        i32k.contains("out[oo] = ((int)((unsigned int)in0[o0] + (unsigned int)in1[o1]));"),
+        "{i32k}"
+    );
+    assert!(i32k.contains("o0 = c0*s0_0 + c1*s0_1"), "{i32k}");
+    let u64k = lower(ElementKind::U64, input(0) + input(1), &[DENSE, ROW_BCAST]).unwrap();
+    assert!(u64k.contains("const unsigned long long* in1"), "{u64k}");
+    assert!(u64k.contains("o1 = c1*s1_1"), "{u64k}");
 }
