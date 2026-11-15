@@ -1,9 +1,9 @@
-//! The HIP C++ [`unpopped::convert::Frontend`]: the parse side (HIP source -> IR) of Rockfish's
+//! The HIP C++ [`unpopped_convert::Frontend`]: the parse side (HIP source -> IR) of Rockfish's
 //! HIP C++ ownership (see `docs/DESIGN-R7.md`).
 //!
 //! Shape follows Baracuda's `baracuda-cuda-parse` (read for structure only; nothing copied): a
 //! grammar binding ([`parse_hip`]), a residue list ([`HIP_RESIDUE`]) and a [`HIP`] descriptor. The
-//! shared walkers stay in `unpopped::convert`.
+//! shared walkers stay in `unpopped_convert`.
 //!
 //! **Grammar.** No HIP grammar exists on crates.io. This crate binds `tree-sitter-cuda` 0.21,
 //! which `tests/convert.rs` shows parses the HIP kernel idioms used there (the corpus is
@@ -14,7 +14,7 @@
 //! evidence about them, not about HIP parsing in general. Nothing here compiles or runs HIP.
 
 use tree_sitter::{Parser, Tree};
-use unpopped::convert::Frontend;
+use unpopped_convert::Frontend;
 
 /// Parse HIP C++ source into a tree-sitter CST (error-tolerant: constructs the grammar does not
 /// know become `ERROR` nodes rather than failing). `None` only if the grammar cannot be loaded or

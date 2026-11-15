@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.42
+
+- **Breaking (Unpopped sk8, 0.47.0).** Repin `unpopped` and `unpopped-vocab` to ~0.47.0; `rockfish-hip-emit` and `rockfish-hip-parse` now track Unpopped 0.47.0 (version allocated by the PM). Unpopped moved its tree-sitter walkers (`lift_elementwise`, `lift_reduction`, `lift_scan`, `lift`, `Frontend`) out of `unpopped`'s `convert` feature into the new `unpopped-convert` 0.47.0 crate: `rockfish-hip-parse` now depends on `unpopped-convert` and imports `unpopped_convert::...`; the round-trip tests in `rockfish-hip-emit` do likewise. No emitter behaviour change; `Cargo.lock` regenerated (the `structure_key` calls in the tests compile and pass unchanged). Workspace and tests: build and `cargo test --workspace --all-features` pass on the Windows laptop. **Emitted text still UNVERIFIED against a HIP compiler (rig row).**
+
 ## 0.0.41
 
 - Repin `unpopped` and `unpopped-vocab` to ^0.45.17 (includes U33) in `rockfish-hip-emit` and `rockfish-hip-parse`; both crates now track Unpopped 0.45.17. Unpopped 0.45.17's plan gate admits integer elementwise `Max`/`Min`, so `rockfish-hip-emit` now spells them at `i32`/`i64`/`u32`/`u64` as a plain compare (`((a) > (b) ? (a) : (b))`; integers have no NaN); test `integer_max_min_is_a_plain_compare_at_every_integer_dtype`. **UNVERIFIED against a HIP compiler or an executed run (rig row).** Workspace 0.0.41.

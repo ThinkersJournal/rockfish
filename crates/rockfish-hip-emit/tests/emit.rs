@@ -8,10 +8,10 @@
 use rockfish_hip_emit::Hip;
 use rockfish_hip_parse::HIP;
 use unpopped::backend::{Backend, DtypeSupport, LowerError};
-use unpopped::convert::lift_elementwise;
 use unpopped::generate;
 use unpopped::ir::{BinaryOp, Expr, OpDef, ScalarExpr, UnaryOp, input, konst};
 use unpopped::plan::{KernelPlan, Schedule, try_build_plan};
+use unpopped_convert::lift_elementwise;
 use unpopped_vocab::{
     ArchSku, ElementKind, OpCategory, OperandDesc, StructureKey, TargetId, structure_key,
 };
