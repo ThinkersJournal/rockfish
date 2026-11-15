@@ -5,9 +5,9 @@
 //! checked against `tree-sitter-cuda` 0.21; nothing is compiled or run on a GPU.
 
 use rockfish_hip_parse::{HIP, HIP_RESIDUE, parse_hip};
-use unpopped::convert::{lift, lift_elementwise, lift_reduction, lift_scan};
 use unpopped::ir::{Access, BinaryOp, ReduceOp, ScalarExpr, UnaryOp};
 use unpopped::lift::LiftError;
+use unpopped_convert::{lift, lift_elementwise, lift_reduction, lift_scan};
 use unpopped_vocab::ElementKind;
 
 const F32: &[ElementKind] = &[ElementKind::F32];
