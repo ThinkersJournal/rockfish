@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.44
+
+- Docs and refusal control, no behaviour change. `docs/PATENT-SWEEP.md` names its version (0.0.44) and carries Ideas/Queries/Hits headings (CodeRipper WSP-013; no new patent-database search was run), and records CireSnave's 2026-11-16 ruling on NVIDIA US11803380B2: the mbarrier statements `MbarInit`, `MbarArrive`, `MbarCompleteTx`, `MbarWait`, `CopyBulk` (and `WgmmaWait`, on hold) are DECLINED, never lowered to hardware operations for AMD. `README.md` no longer says "No code yet" and lists the declined set. New test `tests/kernel_refusal.rs`: a kernel-layer kernel is refused with `LowerError::UnsupportedKernel` (the by-name refusal waits for an Unpopped release that has the `Mbar*` statements; 0.47.0 has none). ROADMAP R7: a duplicated 0.0.40 entry removed. Workspace 0.0.44.
+
 ## 0.0.43
 
 - CI: move the shared CodeRipper portfolio workflow to `c72a6e03479d914de8ea8a73609ba73e93a0de92` (CodeRipper 0.47.5) and migrate `.coderipper.toml` to numbered rule ids (`version-consistency` -> `WSP-010`). No code change. Workspace 0.0.43.
