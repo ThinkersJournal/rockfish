@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.43
+
+- CI: move the shared CodeRipper portfolio workflow to `c72a6e03479d914de8ea8a73609ba73e93a0de92` (CodeRipper 0.47.5) and migrate `.coderipper.toml` to numbered rule ids (`version-consistency` -> `WSP-010`). No code change. Workspace 0.0.43.
+
 ## 0.0.42
 
 - **Breaking (Unpopped sk8, 0.47.0).** Repin `unpopped` and `unpopped-vocab` to ~0.47.0; `rockfish-hip-emit` and `rockfish-hip-parse` now track Unpopped 0.47.0 (version allocated by the PM). Unpopped moved its tree-sitter walkers (`lift_elementwise`, `lift_reduction`, `lift_scan`, `lift`, `Frontend`) out of `unpopped`'s `convert` feature into the new `unpopped-convert` 0.47.0 crate: `rockfish-hip-parse` now depends on `unpopped-convert` and imports `unpopped_convert::...`; the round-trip tests in `rockfish-hip-emit` do likewise. No emitter behaviour change; `Cargo.lock` regenerated (the `structure_key` calls in the tests compile and pass unchanged). Workspace and tests: build and `cargo test --workspace --all-features` pass on the Windows laptop. **Emitted text still UNVERIFIED against a HIP compiler (rig row).**
