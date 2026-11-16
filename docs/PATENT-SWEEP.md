@@ -6,7 +6,8 @@ Version line covered: 0.0 (workspace `Cargo.toml` version 0.0.44 at origin/main 
 
 1. Async scheduling statements lowered to hardware instructions (hit 22).
 2. Barrier aggregation, `Stmt::Collective` lowered to a barrier-with-reduction instruction (hit 23).
-3. mbarrier statements `MbarInit`, `MbarArrive`, `MbarCompleteTx`, `MbarWait`, `CopyBulk` on an mbarrier (NVIDIA US11803380B2; `WgmmaWait` on hold).
+3. mbarrier statements `MbarInit`, `MbarArrive`, `MbarCompleteTx`, `MbarWait`, `CopyBulk` on an mbarrier (NVIDIA US11803380B2).
+4. `WgmmaWait`, a wait on a count of pending matrix-multiply operations (NVIDIA US12204897B2 and continuation US12710961B2).
 
 ## Queries
 
@@ -20,7 +21,7 @@ Patents named by CireSnave's rulings, none a search result: US12118382B2 / US112
 
 NVIDIA US11803380B2. CireSnave, verbatim: *"For that patent, we add a note about the potential for infringement if non-Nvidia-specific emitters lower those operations to hardware ops and we ensure our projects' emitters for other manufacturers' hardware know about that and we consider ourselves not infringing."*
 
-**DECLINED LIST (ROCm/HIP is AMD hardware; these are never lowered to hardware operations):** `MbarInit`, `MbarArrive`, `MbarCompleteTx`, `MbarWait`, `CopyBulk` on an mbarrier. `WgmmaWait` is on hold, so it is declined too until the hold lifts.
+**DECLINED LIST (ROCm/HIP is AMD hardware; these are never lowered to hardware operations):** `MbarInit`, `MbarArrive`, `MbarCompleteTx`, `MbarWait`, `CopyBulk` on an mbarrier, and `WgmmaWait` (NVIDIA US12204897B2 and continuation US12710961B2: a wait on a count of pending matrix-multiply operations; CireSnave, verbatim, 2026-11-16: *"I think we treat that patent like the others that are Nvidia-only. Add a note and specifically notify our non-Nvidia-emitter builders about the potential for infringement and not to."*). Lowering any of these to a hardware operation on non-NVIDIA hardware risks infringement; the non-NVIDIA emitter builders are notified.
 
 **Rockfish exposure at origin/main (2026-11-16): none.** `rockfish-hip-emit` does not override `Backend::lower_kernel`, so any kernel-layer kernel, these statements included, is refused with `LowerError::UnsupportedKernel`; it only lowers `KernelPlan`s. `unpopped` 0.47.0 (the pin, and the latest on crates.io on 2026-11-16) has no `Mbar*` variant in `Stmt`; they exist on Unpopped's unreleased `main`. **When a release that carries them is pinned,** `Stmt` is exhaustive, so the build breaks until the emitter names them: add a by-name `LowerError::UnsupportedKernel` arm for the declined list and a test per statement that a kernel containing it is refused with that name. Not built yet: it cannot be written against 0.47.0.
 
