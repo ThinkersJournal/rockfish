@@ -164,11 +164,11 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "rockfish"
-version = "0.0.44"
+version = "0.0.45"
 
 [[package]]
 name = "rockfish-core"
-version = "0.0.44"
+version = "0.0.45"
 dependencies = [
  "libloading",
  "thiserror",
@@ -176,7 +176,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hip"
-version = "0.0.44"
+version = "0.0.45"
 dependencies = [
  "half",
  "rockfish-core",
@@ -186,7 +186,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hip-emit"
-version = "0.47.0"
+version = "0.56.1"
 dependencies = [
  "rockfish-hip-parse",
  "rockfish-hiprtc",
@@ -197,7 +197,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hip-parse"
-version = "0.47.0"
+version = "0.56.1"
 dependencies = [
  "tree-sitter",
  "tree-sitter-cuda",
@@ -208,14 +208,14 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hip-sys"
-version = "0.0.44"
+version = "0.0.45"
 dependencies = [
  "rockfish-core",
 ]
 
 [[package]]
 name = "rockfish-hipblaslt-sys"
-version = "0.0.44"
+version = "0.0.45"
 dependencies = [
  "rockfish-core",
  "rockfish-hip-sys",
@@ -223,7 +223,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hiprtc"
-version = "0.0.44"
+version = "0.0.45"
 dependencies = [
  "rockfish-core",
  "rockfish-hiprtc-sys",
@@ -232,14 +232,14 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hiprtc-sys"
-version = "0.0.44"
+version = "0.0.45"
 dependencies = [
  "rockfish-core",
 ]
 
 [[package]]
 name = "rockfish-miopen-sys"
-version = "0.0.44"
+version = "0.0.45"
 dependencies = [
  "rockfish-core",
  "rockfish-hip-sys",
@@ -247,7 +247,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-rocblas"
-version = "0.0.44"
+version = "0.0.45"
 dependencies = [
  "half",
  "rockfish-core",
@@ -259,7 +259,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-rocblas-sys"
-version = "0.0.44"
+version = "0.0.45"
 dependencies = [
  "rockfish-core",
  "rockfish-hip-sys",
@@ -267,7 +267,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-sys"
-version = "0.0.44"
+version = "0.0.45"
 
 [[package]]
 name = "serde"
@@ -405,9 +405,9 @@ checksum = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
 
 [[package]]
 name = "unpopped"
-version = "0.47.0"
+version = "0.56.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64d03be5158fd6e39b8cf9a353bda6d9b5c186614348a0fdd9207b9358af7397"
+checksum = "ee101a01d8cbcc2497ec2ca04dd47afc09384257bb58cb6040d8a5cd609f06a1"
 dependencies = [
  "libm",
  "serde",
@@ -417,9 +417,9 @@ dependencies = [
 
 [[package]]
 name = "unpopped-convert"
-version = "0.47.0"
+version = "0.56.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b589d95332d1e8c165fbf33e4bb48c9b8731feff4cce705dd523ffeac20adf0"
+checksum = "5f8f20dbf79c4779a69fdbfb55c7c2f7cb1bc759583940378677e0996cc2e550"
 dependencies = [
  "tree-sitter",
  "unpopped",
@@ -428,9 +428,9 @@ dependencies = [
 
 [[package]]
 name = "unpopped-vocab"
-version = "0.47.0"
+version = "0.56.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a25cf53ea3814093711ab8a540447029e88c65f9858b61f550ea28f3290dd82e"
+checksum = "cc3fe46c654a70d92e97cc03734613ee8af9170c05bbef32bff874ca10b97715"
 dependencies = [
  "float8",
  "half",

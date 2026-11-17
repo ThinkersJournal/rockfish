@@ -1,6 +1,6 @@
-# Patent sweep: rockfish 0.0.44 (self-serve; not legal advice; no attorney)
+# Patent sweep: rockfish 0.0.45 (self-serve; not legal advice; no attorney)
 
-Version line covered: 0.0 (workspace `Cargo.toml` version 0.0.44 at origin/main 3031f54; before 1.0 the second number is the major). Method: reading the patents CireSnave's rulings name, and grepping `crates/*/src` and `crates/*/tests` for the statements and instructions below. **No independent web search for patents was run for rockfish**; nothing here says the project is clear of any patent.
+Version line covered: 0.0 (workspace `Cargo.toml` version 0.0.45 at the repin branch on origin/main fadf17f; before 1.0 the second number is the major). Method: reading the patents CireSnave's rulings name, and grepping `crates/*/src` and `crates/*/tests` for the statements and instructions below. **No independent web search for patents was run for rockfish**; nothing here says the project is clear of any patent.
 
 ## Ideas swept
 
@@ -23,7 +23,7 @@ NVIDIA US11803380B2. CireSnave, verbatim: *"For that patent, we add a note about
 
 **DECLINED LIST (ROCm/HIP is AMD hardware; these are never lowered to hardware operations):** `MbarInit`, `MbarArrive`, `MbarCompleteTx`, `MbarWait`, `CopyBulk` on an mbarrier, `Tcgen05Commit` (NVIDIA US11803380B2 and CireSnave's 2026-11-16 mbarrier quote above, extended to it by the PM; limit stated by the PM: that is the PM's extension, not read separately against the claims), and `WgmmaWait` (NVIDIA US12204897B2 and continuation US12710961B2: a wait on a count of pending matrix-multiply operations; CireSnave, verbatim, 2026-11-16: *"I think we treat that patent like the others that are Nvidia-only. Add a note and specifically notify our non-Nvidia-emitter builders about the potential for infringement and not to."*). Lowering any of these to a hardware operation on non-NVIDIA hardware risks infringement; the non-NVIDIA emitter builders are notified.
 
-**Rockfish exposure at origin/main (2026-11-16): none.** `rockfish-hip-emit` does not override `Backend::lower_kernel`, so any kernel-layer kernel, these statements included, is refused with `LowerError::UnsupportedKernel`; it only lowers `KernelPlan`s. `unpopped` 0.47.0 (the pin, and the latest on crates.io on 2026-11-16) has no `Mbar*` variant in `Stmt`; they exist on Unpopped's unreleased `main`. **When a release that carries them is pinned,** `Stmt` is exhaustive, so the build breaks until the emitter names them: add a by-name `LowerError::UnsupportedKernel` arm for the declined list and a test per statement that a kernel containing it is refused with that name. Not built yet: it cannot be written against 0.47.0.
+**Rockfish exposure (2026-11-17, `unpopped` 0.56.1): none.** `rockfish-hip-emit` lowers `KernelPlan`s only; `Backend::lower_kernel` is overridden to refuse EVERY kernel-layer kernel with `LowerError::UnsupportedKernel`, and a kernel containing a declined statement (at any `If`/`For`/`While` depth) is refused **by name** with its patent (`first_declined` in `crates/rockfish-hip-emit/src/lib.rs`; tests in `tests/kernel_refusal.rs`, one per statement, nested cases, and a mutation control: dropping the `WgmmaWait` arm fails two tests). `Tcgen05Commit` is declined on the PM's extension of US11803380B2, not read separately against the claims. Unpopped 0.47.0 had none of these `Stmt` variants; 0.56.1 has them all.
 
 ## Async scheduling statements (CireSnave ruling 2026-11-13, board 431 hit 22)
 
