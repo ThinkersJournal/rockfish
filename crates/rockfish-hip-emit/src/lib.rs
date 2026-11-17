@@ -209,6 +209,11 @@ impl Backend for Hip {
     }
 }
 
+/// Patents behind the async-scheduling declines (board 431 hit 22, board 434 C).
+const ASYNC: &str = "US12118382B2, US11294713B2; board 434 C";
+/// Patent behind the barrier-aggregation decline (board 431 hit 23, board 434 C).
+const BARRIER_AGG: &str = "US8539204B2; board 434 C";
+
 /// The declined list (`docs/PATENT-SWEEP.md`): the first NVIDIA-only statement in `block`, at any
 /// nesting depth, with the patent that grounds it. The wildcard is deliberate and safe: this
 /// only chooses the refusal's wording, and `lower_kernel` refuses every kernel regardless.
@@ -224,6 +229,11 @@ fn first_declined(block: &Block) -> Option<(&'static str, &'static str)> {
             Stmt::Tcgen05Commit { .. } => {
                 Some(("Tcgen05Commit", "US11803380B2, the PM's extension"))
             }
+            Stmt::AsyncWait { .. } => Some(("AsyncWait", ASYNC)),
+            Stmt::CopyAsync { .. } => Some(("CopyAsync", ASYNC)),
+            Stmt::AsyncCommit => Some(("AsyncCommit", ASYNC)),
+            Stmt::Collective { .. } => Some(("Collective", BARRIER_AGG)),
+            Stmt::CollectiveTuple { .. } => Some(("CollectiveTuple", BARRIER_AGG)),
             Stmt::If { then, els, .. } => first_declined(then).or_else(|| first_declined(els)),
             Stmt::For { body, .. } | Stmt::While { body, .. } => first_declined(body),
             _ => None,
