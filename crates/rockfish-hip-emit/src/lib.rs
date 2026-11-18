@@ -50,6 +50,7 @@ use unpopped::ir::{
     Access, ArithOp, BaseOffset, BinaryOp, DagNode, ExprDag, ReduceOp, ScalarExpr, UnaryOp,
     WriteIndex,
 };
+use unpopped::kernel::{Block, KernelFn, Stmt};
 use unpopped::plan::{KernelPlan, ReduceAxisClass, Schedule};
 use unpopped_vocab::{Contiguity, ElementKind, TargetId};
 
@@ -108,6 +109,28 @@ impl Backend for Hip {
     /// the guard fails. Text only: no HIP compiler has seen it (rig row).
     fn total_integer_ops(&self) -> bool {
         true
+    }
+
+    /// This backend lowers no kernel-layer kernels: every one is `UnsupportedKernel`. A kernel
+    /// that contains an NVIDIA-only statement named in `docs/PATENT-SWEEP.md` is refused **by
+    /// name**, so the reason is the declined list, not a missing feature. Those statements are
+    /// never lowered to a hardware operation on AMD hardware (CireSnave's rulings of 2026-11-16).
+    fn lower_kernel(&self, kernel: &KernelFn) -> Result<GeneratedKernel, LowerError> {
+        if let Some((name, patent)) = first_declined(&kernel.body) {
+            return Err(LowerError::UnsupportedKernel {
+                detail: format!(
+                    "hip backend: kernel `{}` contains `{name}`, an NVIDIA-only statement declined \
+                     on AMD hardware ({patent}); see docs/PATENT-SWEEP.md",
+                    kernel.name
+                ),
+            });
+        }
+        Err(LowerError::UnsupportedKernel {
+            detail: format!(
+                "hip backend does not lower kernel-layer kernels (kernel `{}`)",
+                kernel.name
+            ),
+        })
     }
 
     fn lower(&self, plan: &KernelPlan<'_>) -> Result<GeneratedKernel, LowerError> {
@@ -184,6 +207,42 @@ impl Backend for Hip {
             }),
         }
     }
+}
+
+/// Patents behind the async-scheduling declines (board 431 hit 22, board 434 C).
+const ASYNC: &str = "US12118382B2, US11294713B2; board 434 C";
+/// Patent behind the barrier-aggregation decline (board 431 hit 23, board 434 C).
+const BARRIER_AGG: &str = "US8539204B2; board 434 C";
+
+/// The declined list (`docs/PATENT-SWEEP.md`): the first NVIDIA-only statement in `block`, at any
+/// nesting depth, with the patent that grounds it. The wildcard is deliberate and safe: this
+/// only chooses the refusal's wording, and `lower_kernel` refuses every kernel regardless.
+fn first_declined(block: &Block) -> Option<(&'static str, &'static str)> {
+    for stmt in &block.0 {
+        let hit = match stmt {
+            Stmt::MbarInit { .. } => Some(("MbarInit", "US11803380B2")),
+            Stmt::MbarArrive { .. } => Some(("MbarArrive", "US11803380B2")),
+            Stmt::MbarCompleteTx { .. } => Some(("MbarCompleteTx", "US11803380B2")),
+            Stmt::MbarWait { .. } => Some(("MbarWait", "US11803380B2")),
+            Stmt::CopyBulk { .. } => Some(("CopyBulk", "US11803380B2")),
+            Stmt::WgmmaWait { .. } => Some(("WgmmaWait", "US12204897B2, US12710961B2")),
+            Stmt::Tcgen05Commit { .. } => {
+                Some(("Tcgen05Commit", "US11803380B2, the PM's extension"))
+            }
+            Stmt::AsyncWait { .. } => Some(("AsyncWait", ASYNC)),
+            Stmt::CopyAsync { .. } => Some(("CopyAsync", ASYNC)),
+            Stmt::AsyncCommit => Some(("AsyncCommit", ASYNC)),
+            Stmt::Collective { .. } => Some(("Collective", BARRIER_AGG)),
+            Stmt::CollectiveTuple { .. } => Some(("CollectiveTuple", BARRIER_AGG)),
+            Stmt::If { then, els, .. } => first_declined(then).or_else(|| first_declined(els)),
+            Stmt::For { body, .. } | Stmt::While { body, .. } => first_declined(body),
+            _ => None,
+        };
+        if hit.is_some() {
+            return hit;
+        }
+    }
+    None
 }
 
 fn shape(detail: String) -> LowerError {
