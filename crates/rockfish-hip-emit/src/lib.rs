@@ -170,6 +170,7 @@ impl Backend for Hip {
                     | Schedule::Strided
                     | Schedule::Reduction { .. }
                     | Schedule::Scan { .. }
+                    | Schedule::Window { .. }
             )
         {
             return Err(LowerError::UnsupportedSchedule {
@@ -1050,7 +1051,7 @@ fn emit_int_scan(
 }
 
 /// The sliding-window pool (`Schedule::Window`, `Access::Window`): `Sum`, `Mean`, `Prod`, `Max`,
-/// `Min` over one pooled axis (any axis), at `f32`/`f64`. One thread per **output** cell, a
+/// `Min` over one pooled axis (any axis), at `f32`/`f64` (integers below). One thread per **output** cell, a
 /// grid-stride loop; each cell is an independent fixed-order fold (ascending tap `kk`), so no
 /// wavefront width plays a part. The fold is `double`, narrowed once at the store, as Unpopped's
 /// `eval_window` folds in `f64`. Tap `kk` of output `o` reads input position
@@ -1063,7 +1064,10 @@ fn emit_int_scan(
 /// `(outer, k, inner)` around the pooled axis, every input is full-width dense, and the output
 /// has `k_out` on the pooled axis and the other extents unchanged. The geometry is baked in as
 /// constants. The caller owes the oracle's precondition (every window holds a real tap).
-/// Integers, `f16`/`bf16`, a fused post-expression and a non-dense operand are typed refusals.
+/// At `i32`/`i64`/`u32`/`u64` it spells `Sum`/`Prod`/`Max`/`Min` (no `Mean`: Unpopped's plan gate
+/// refuses an integer average pool) folding in the dtype itself, as `eval_window` does: `Sum`/`Prod`
+/// wrap in the unsigned type of the same width, `Max`/`Min` compare in the dtype. `f16`/`bf16`, a
+/// fused post-expression and a non-dense operand are typed refusals.
 /// Text only: UNVERIFIED against a HIP compiler (rig row).
 fn emit_window(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerError> {
     let Schedule::Window {
@@ -1098,10 +1102,12 @@ fn emit_window(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerEr
             plan.op_name
         )));
     }
-    if fp.is_int() {
+    if fp.is_int() && matches!(op, ReduceOp::Mean) {
         return Err(LowerError::UnsupportedDtype {
             dtype: plan.dtype,
-            detail: "hip backend: a window is spelled at f32 and f64 only".to_string(),
+            detail: "hip backend: an integer window spells Sum/Prod/Max/Min only: Unpopped's plan \
+                     gate refuses an integer average pool (it would round)"
+                .to_string(),
         });
     }
     if axis >= plan.key.rank || size == 0 || stride == 0 || dilation == 0 {
@@ -1152,11 +1158,27 @@ fn emit_window(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerEr
     s.push_str("        const long long o = rem / inner;\n");
     s.push_str("        const long long ib = rem - o * inner;\n");
     s.push_str("        const long long base = ob * k_in * inner + ib;\n");
-    let init = match op {
-        ReduceOp::Prod => "1.0",
-        _ => "0.0",
-    };
-    s.push_str(&format!("        double acc = {init};\n"));
+    // `unsigned_c` exists only for integer dtypes: a float window never asks for it.
+    let t = fp.c();
+    let u = if fp.is_int() { fp.unsigned_c() } else { "" };
+    let by_compare = matches!(op, ReduceOp::Max | ReduceOp::Min);
+    if fp.is_int() && !by_compare {
+        let init = if matches!(op, ReduceOp::Prod) {
+            "1"
+        } else {
+            "0"
+        };
+        s.push_str(&format!("        {u} acc = ({u}){init};\n"));
+    } else if fp.is_int() {
+        s.push_str(&format!("        {t} acc = 0;\n"));
+    } else {
+        let init = if matches!(op, ReduceOp::Prod) {
+            "1.0"
+        } else {
+            "0.0"
+        };
+        s.push_str(&format!("        double acc = {init};\n"));
+    }
     s.push_str("        long long cnt = 0;\n        bool have = false;\n");
     s.push_str(&format!(
         "        for (int kk = 0; kk < {size}; ++kk) {{\n            \
@@ -1166,17 +1188,36 @@ fn emit_window(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerEr
     for decl in &prelude {
         s.push_str(&format!("            {decl}\n"));
     }
-    s.push_str(&format!("            double v = (double)({root});\n"));
-    match op {
-        ReduceOp::Sum | ReduceOp::Mean => s.push_str("            acc = acc + v;\n"),
-        ReduceOp::Prod => s.push_str("            acc = acc * v;\n"),
-        ReduceOp::Max => s.push_str("            if (!have || v != v || v > acc) { acc = v; }\n"),
-        ReduceOp::Min => s.push_str("            if (!have || v != v || v < acc) { acc = v; }\n"),
-        _ => unreachable!("checked above"),
+    if fp.is_int() {
+        // The oracle folds integers exactly and wraps: Sum/Prod in the unsigned type of the same
+        // width (C++ signed overflow is undefined), Max/Min compare in the dtype itself. A window
+        // with no in-bounds tap is refused by the reader, so no empty-window value is spelled.
+        s.push_str(&format!("            {t} v = ({t})({root});\n"));
+        match op {
+            ReduceOp::Sum => s.push_str(&format!("            acc = acc + ({u})v;\n")),
+            ReduceOp::Prod => s.push_str(&format!("            acc = acc * ({u})v;\n")),
+            ReduceOp::Max => s.push_str("            if (!have || v > acc) { acc = v; }\n"),
+            ReduceOp::Min => s.push_str("            if (!have || v < acc) { acc = v; }\n"),
+            _ => unreachable!("checked above"),
+        }
+    } else {
+        s.push_str(&format!("            double v = (double)({root});\n"));
+        match op {
+            ReduceOp::Sum | ReduceOp::Mean => s.push_str("            acc = acc + v;\n"),
+            ReduceOp::Prod => s.push_str("            acc = acc * v;\n"),
+            ReduceOp::Max => {
+                s.push_str("            if (!have || v != v || v > acc) { acc = v; }\n");
+            }
+            ReduceOp::Min => {
+                s.push_str("            if (!have || v != v || v < acc) { acc = v; }\n");
+            }
+            _ => unreachable!("checked above"),
+        }
     }
     s.push_str("            cnt += 1;\n            have = true;\n        }\n");
     s.push_str("        (void)cnt;\n        (void)have;\n");
     let fin = match op {
+        _ if fp.is_int() => "acc".to_string(),
         ReduceOp::Mean if count_include_pad => format!("acc / (double){size}"),
         ReduceOp::Mean => "(cnt > 0) ? (acc / (double)cnt) : 0.0".to_string(),
         ReduceOp::Max => "have ? acc : -__builtin_inf()".to_string(),

@@ -96,7 +96,7 @@ Two more schedules, same `f32` / `rocm:` / one-output scope, same refusal rule. 
 - **Launch ABI** is `(in0.., out, rows, k)` over contiguous rows, one thread per row, grid-stride. The plan carries no extents, so this is a stated contract, not a checked one.
 - **Measured (one-off, not in CI):** the 5 reduction and 16 scan kernels were compiled with the Visual Studio `clang++` against a shim for the HIP built-ins and run on the host over 3 rows of 4 (one with a NaN) and `k = 0`; the outputs matched a Python transcription of the oracle's loops. **That reference shares the author and the algorithm with the emitter**, so it checks the C++ spelling, not the semantics; it says nothing about a HIP compiler, `double` on a gfx part, or the `fp contract` pragma.
 - **Not round-trippable:** the HIP frontend lifts `acc += in0[i]` loops; the emitted `double acc ... acc = acc + v` form is not claimed to lift, and no test says it does.
-- **Not done:** block-parallel reduce and scan (needs the width), `RowReduce`, `Window`, `Contraction`, `RowSort`, multi-axis reductions, integer and half dtypes.
+- **Not done:** block-parallel reduce and scan (needs the width), `RowReduce`, `Contraction`, `RowSort`, multi-axis reductions, integer and half dtypes.
 
 ## 6. Tests and negative controls
 

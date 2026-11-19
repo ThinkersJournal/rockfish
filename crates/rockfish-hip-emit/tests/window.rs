@@ -155,11 +155,9 @@ fn a_non_innermost_axis_lowers_to_the_same_kernel() {
 fn refusals_are_typed_and_each_has_a_control_that_lowers() {
     // Control.
     assert!(lower(ElementKind::F32, ReduceOp::Max, 2, false).is_ok());
-    // An integer window is not spelled.
-    assert!(matches!(
-        lower(ElementKind::I32, ReduceOp::Sum, 2, false),
-        Err(LowerError::UnsupportedSchedule { .. } | LowerError::UnsupportedDtype { .. })
-    ));
+    // An integer window is spelled (below); an integer average pool is refused by Unpopped's plan
+    // gate before it reaches this emitter, so there is nothing to lower.
+    assert!(lower(ElementKind::I32, ReduceOp::Sum, 2, false).is_ok());
     // A fused post-expression is not spelled.
     let post = reduced(0) + reduced(0);
     assert!(matches!(
@@ -181,4 +179,85 @@ fn a_pre_map_is_lowered_over_each_tap() {
     )
     .unwrap();
     assert!(got.contains("fabsf(in0[base + p * inner])"), "{got}");
+}
+
+const INTS: [(ElementKind, &str, &str, &str); 4] = [
+    (ElementKind::I32, "i32", "int", "unsigned int"),
+    (ElementKind::I64, "i64", "long long", "unsigned long long"),
+    (ElementKind::U32, "u32", "unsigned int", "unsigned int"),
+    (
+        ElementKind::U64,
+        "u64",
+        "unsigned long long",
+        "unsigned long long",
+    ),
+];
+
+/// An integer window folds in the dtype itself: no `double`, so no rounding above 2^53 and no
+/// float NaN test; Sum/Prod wrap in the unsigned type of the same width (signed overflow is
+/// undefined in C++), Max/Min compare in the dtype.
+#[test]
+fn integer_windows_fold_exactly_at_every_integer_dtype() {
+    for (dt, tag, t, u) in INTS {
+        let kernel = |op| {
+            let src = lower(dt, op, 2, false).unwrap_or_else(|e| panic!("{tag} {op:?}: {e:?}"));
+            src.split("extern \"C\"").nth(1).unwrap().to_string()
+        };
+        let sum = kernel(ReduceOp::Sum);
+        assert!(sum.contains(&format!("{u} acc = ({u})0;")), "{tag}: {sum}");
+        assert!(
+            sum.contains(&format!("acc = acc + ({u})v;")),
+            "{tag}: {sum}"
+        );
+        assert!(
+            sum.contains(&format!("{t} v = ({t})(in0[base + p * inner]);")),
+            "{tag}: {sum}"
+        );
+        assert!(
+            sum.contains(&format!("out[t] = ({t})(acc);")),
+            "{tag}: {sum}"
+        );
+        let prod = kernel(ReduceOp::Prod);
+        assert!(
+            prod.contains(&format!("{u} acc = ({u})1;")),
+            "{tag}: {prod}"
+        );
+        assert!(
+            prod.contains(&format!("acc = acc * ({u})v;")),
+            "{tag}: {prod}"
+        );
+        let max = kernel(ReduceOp::Max);
+        assert!(max.contains(&format!("{t} acc = 0;")), "{tag}: {max}");
+        assert!(
+            max.contains("if (!have || v > acc) { acc = v; }"),
+            "{tag}: {max}"
+        );
+        let min = kernel(ReduceOp::Min);
+        assert!(
+            min.contains("if (!have || v < acc) { acc = v; }"),
+            "{tag}: {min}"
+        );
+        for (op, src) in [("Sum", &sum), ("Prod", &prod), ("Max", &max), ("Min", &min)] {
+            assert!(
+                !src.contains("double"),
+                "{tag} {op}: a double leaked in: {src}"
+            );
+            assert!(
+                !src.contains("v != v"),
+                "{tag} {op}: a NaN test leaked in: {src}"
+            );
+            assert!(
+                !src.contains("__builtin_inf"),
+                "{tag} {op}: an inf leaked in: {src}"
+            );
+        }
+    }
+}
+
+/// Control for the test above: the float cell is unchanged (it still folds in `double`), so the
+/// integer assertions fail if the integer branch stops being taken.
+#[test]
+fn the_float_window_still_folds_in_double() {
+    let f = lower(ElementKind::F32, ReduceOp::Sum, 2, false).unwrap();
+    assert!(f.contains("double acc = 0.0;") && f.contains("(double)(in0[base + p * inner])"));
 }
