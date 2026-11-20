@@ -7,7 +7,7 @@
 
 use rockfish_hip_emit::Hip;
 use unpopped::backend::{Backend, LowerError};
-use unpopped::ir::{Expr, OpDef, ReduceOp, UnaryOp, input, reduced};
+use unpopped::ir::{Expr, OpDef, ReduceOp, UnaryOp, input, konst, param, reduced};
 use unpopped::plan::{Schedule, try_build_plan};
 use unpopped_vocab::{ElementKind, OpCategory, OperandDesc, TargetId, structure_key};
 
@@ -158,12 +158,109 @@ fn refusals_are_typed_and_each_has_a_control_that_lowers() {
     // An integer window is spelled (below); an integer average pool is refused by Unpopped's plan
     // gate before it reaches this emitter, so there is nothing to lower.
     assert!(lower(ElementKind::I32, ReduceOp::Sum, 2, false).is_ok());
-    // A fused post-expression is not spelled.
-    let post = reduced(0) + reduced(0);
+    // A post-expression that reads an input operand (not only the folded value) is not spelled;
+    // control: one over the folded value alone lowers.
+    assert!(
+        lower_with(
+            ElementKind::F32,
+            ReduceOp::Sum,
+            2,
+            true,
+            input(0),
+            reduced(0) + reduced(0)
+        )
+        .is_ok()
+    );
     assert!(matches!(
-        lower_with(ElementKind::F32, ReduceOp::Sum, 2, true, input(0), post),
+        lower_with(
+            ElementKind::F32,
+            ReduceOp::Sum,
+            2,
+            true,
+            input(0),
+            reduced(0) + input(0)
+        ),
         Err(LowerError::UnsupportedPlanShape { .. })
     ));
+}
+
+#[test]
+fn a_post_expression_reads_the_folded_value_at_the_compute_type() {
+    let f32k = lower_with(
+        ElementKind::F32,
+        ReduceOp::Mean,
+        2,
+        false,
+        input(0),
+        reduced(0) * konst(0.5),
+    )
+    .unwrap();
+    assert!(
+        f32k.contains("const float res = (float)((cnt > 0) ? (acc / (double)cnt) : 0.0);"),
+        "{f32k}"
+    );
+    assert!(f32k.contains("out[t] = (float)("), "{f32k}");
+    assert!(f32k.contains("(res *"), "{f32k}");
+    // An integer window folds in the unsigned type and hands the epilogue the dtype.
+    let i32k = lower_with(
+        ElementKind::I32,
+        ReduceOp::Sum,
+        2,
+        false,
+        input(0),
+        reduced(0) + reduced(0),
+    )
+    .unwrap();
+    assert!(i32k.contains("const int res = (int)(acc);"), "{i32k}");
+    // A halves window: the epilogue runs at float, then one rounding on store.
+    let f16k = lower_with(
+        ElementKind::F16,
+        ReduceOp::Max,
+        2,
+        true,
+        input(0),
+        reduced(0) + reduced(0),
+    )
+    .unwrap();
+    assert!(
+        f16k.contains("const float res = (float)(have ? acc : -__builtin_inf());"),
+        "{f16k}"
+    );
+    assert!(
+        f16k.contains("out[t] = unpopped_f16_store((float)("),
+        "{f16k}"
+    );
+}
+
+#[test]
+fn a_post_parameter_is_a_trailing_argument_except_at_a_half() {
+    let k = lower_with(
+        ElementKind::F32,
+        ReduceOp::Sum,
+        2,
+        false,
+        input(0),
+        reduced(0) * param(0),
+    )
+    .unwrap();
+    assert!(
+        k.contains(
+            "long long inner,
+    float p0)"
+        ),
+        "{k}"
+    );
+    assert!(
+        lower_with(
+            ElementKind::F16,
+            ReduceOp::Sum,
+            2,
+            false,
+            input(0),
+            reduced(0) * param(0)
+        )
+        .is_err()
+    );
 }
 
 /// The pre-map is lowered over the loaded tap, so a body the elementwise cell spells works here.

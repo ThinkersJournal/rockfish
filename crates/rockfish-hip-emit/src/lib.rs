@@ -670,13 +670,19 @@ fn lower_expr(
 /// vector). The ABI is a stated contract: parameters follow the last fixed argument, in index
 /// order.
 fn param_args(expr: &ScalarExpr, fp: Fp) -> String {
-    let dag = ExprDag::from_expr(expr);
-    let mut used: Vec<u8> = (0..dag.len() as u32)
-        .filter_map(|i| match dag.node(i) {
+    param_args_of(&[expr], fp)
+}
+
+/// [`param_args`] over several expressions: the distinct `Param`s of all of them, ascending.
+fn param_args_of(exprs: &[&ScalarExpr], fp: Fp) -> String {
+    let mut used: Vec<u8> = Vec::new();
+    for expr in exprs {
+        let dag = ExprDag::from_expr(expr);
+        used.extend((0..dag.len() as u32).filter_map(|i| match dag.node(i) {
             DagNode::Param(p) => Some(*p),
             _ => None,
-        })
-        .collect();
+        }));
+    }
     used.sort_unstable();
     used.dedup();
     used.iter()
@@ -703,6 +709,19 @@ fn lower_expr_coords(
     expr: &unpopped::ir::ScalarExpr,
     leaf_text: &dyn Fn(u8) -> String,
     coord_rank: usize,
+) -> Result<(Vec<String>, String), LowerError> {
+    lower_expr_full(plan, fp, expr, leaf_text, coord_rank, None)
+}
+
+/// As [`lower_expr_coords`], with `reduced_text` the spelling of `Reduced(0)` (the window
+/// epilogue's folded value); `None` keeps every `Reduced` leaf a typed decline.
+fn lower_expr_full(
+    plan: &KernelPlan<'_>,
+    fp: Fp,
+    expr: &unpopped::ir::ScalarExpr,
+    leaf_text: &dyn Fn(u8) -> String,
+    coord_rank: usize,
+    reduced_text: Option<&str>,
 ) -> Result<(Vec<String>, String), LowerError> {
     let dag = ExprDag::from_expr(expr);
     let n_inputs = plan.n_inputs;
@@ -775,6 +794,9 @@ fn lower_expr_coords(
         )))
     };
     let no_reduced = |i: u8| {
+        if let (0, Some(text)) = (i, reduced_text) {
+            return Ok(Spelling::Spelled(text.to_string()));
+        }
         Ok(Spelling::Declined(Decline::UnsupportedOp {
             op: DeclinedOp::Reduced(i),
             why: "a reduced-scalar leaf has no place in an elementwise kernel".to_string(),
@@ -1175,7 +1197,10 @@ fn emit_int_scan(
 /// wrap in the unsigned type of the same width, `Max`/`Min` compare in the dtype. At `f16`/`bf16`
 /// (`half` is `Some`) each tap is widened by the codec, folded in `double` (as the oracle does) and
 /// rounded once on store; no runtime parameter is spelled there. A
-/// fused post-expression and a non-dense operand are typed refusals.
+/// post-expression over the folded value (`Reduced(0)`, constants, parameters; `res` is the fold narrowed
+/// to the compute type, as the oracle's prefix) is spelled; one that reads an input operand, and a
+/// non-dense operand, are typed refusals. UNVERIFIED: the oracle hands the epilogue the unrounded
+/// `f64` fold, this kernel the compute-type value, so a float epilogue may differ in the last bit.
 /// Text only: UNVERIFIED against a HIP compiler (rig row).
 fn emit_window(
     plan: &KernelPlan<'_>,
@@ -1228,7 +1253,20 @@ fn emit_window(
             plan.op_name, plan.key.rank
         )));
     }
-    require_identity_post(plan, post)?;
+    let post_identity = matches!(post, ScalarExpr::Reduced(0));
+    let (post_prelude, post_root) = if post_identity {
+        (Vec::new(), String::new())
+    } else {
+        let post_dag = ExprDag::from_expr(post);
+        if (0..post_dag.len() as u32).any(|i| matches!(post_dag.node(i), DagNode::Input(_))) {
+            return Err(shape(format!(
+                "hip backend: op '{}': a window post-expression that reads an input operand is \
+                 not spelled (only the folded value, constants and parameters)",
+                plan.op_name
+            )));
+        }
+        lower_expr_full(plan, fp, post, &|_| String::new(), 0, Some("res"))?
+    };
     for i in 0..usize::from(plan.n_inputs) {
         let o = plan.key.operands[i];
         if o.contig != Contiguity::Contig || o.flipped || o.dequant.is_some() {
@@ -1238,7 +1276,7 @@ fn emit_window(
             )));
         }
     }
-    if half.is_some() && !param_args(pre, fp).is_empty() {
+    if half.is_some() && !param_args_of(&[pre, post], fp).is_empty() {
         return Err(shape(format!(
             "hip backend: op '{}': a runtime parameter at {:?} is not spelled (its dtype is \
              not settled)",
@@ -1253,7 +1291,11 @@ fn emit_window(
     };
     let helpers = match &half {
         Some(_) => half_codec(plan.dtype),
-        None => fp.helpers(&format!("{}\n{root}", prelude.join("\n"))),
+        None => fp.helpers(&format!(
+            "{}\n{root}\n{}\n{post_root}",
+            prelude.join("\n"),
+            post_prelude.join("\n")
+        )),
     };
     let name = match &half {
         Some(h) => format!("rockfish_hip_{}_{}", plan.op_name, h.tag),
@@ -1279,7 +1321,7 @@ fn emit_window(
     s.push_str(&format!(
         "    {in_ty}* out,\n    long long outer,\n    long long k_in,\n    long long k_out,\n    long long inner"
     ));
-    s.push_str(&param_args(pre, fp));
+    s.push_str(&param_args_of(&[pre, post], fp));
     s.push_str(")\n{\n");
     s.push_str("    #pragma clang fp contract(off)\n");
     s.push_str("    const long long total = outer * k_out * inner;\n");
@@ -1358,13 +1400,23 @@ fn emit_window(
         ReduceOp::Min => "have ? acc : __builtin_inf()".to_string(),
         _ => "acc".to_string(),
     };
+    // The epilogue reads the folded value `res` at the compute type, as the oracle's `Reduced(0)`.
+    let value = if post_identity {
+        fin
+    } else {
+        s.push_str(&format!("        const {t} res = ({t})({fin});\n"));
+        for decl in &post_prelude {
+            s.push_str(&format!("        {decl}\n"));
+        }
+        post_root
+    };
     match &half {
         Some(h) => s.push_str(&format!(
-            "        out[t] = {}((float)({fin}));\n    }}\n}}\n",
+            "        out[t] = {}((float)({value}));\n    }}\n}}\n",
             h.store
         )),
         None => s.push_str(&format!(
-            "        out[t] = ({})({fin});\n    }}\n}}\n",
+            "        out[t] = ({})({value});\n    }}\n}}\n",
             fp.c()
         )),
     }
