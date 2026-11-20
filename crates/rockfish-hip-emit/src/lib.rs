@@ -343,8 +343,8 @@ fn emit_scalar(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerEr
 }
 
 /// Only a `rocm:` target and the scalar and 2/4-wide vectorized elementwise cells (`ushort2` /
-/// `ushort4` loads, each lane through the codec) spell `f16`/`bf16`, and only for a body with no
-/// runtime parameter. The halves are **stored** as `unsigned short` and **computed** at `float`,
+/// `ushort4` loads, each lane through the codec), the strided elementwise cell and the sliding-window
+/// pool spell `f16`/`bf16`, and only for a body with no runtime parameter. The halves are **stored** as `unsigned short` and **computed** at `float`,
 /// the rule of `unpopped::optimize::Compute` and of Unpopped's own C-family emitter: an element is
 /// widened by the dtype's codec on load and narrowed (round to nearest even) on store, so each
 /// intermediate is an `f32` and only the result is rounded to the half. The codec is
@@ -1398,7 +1398,7 @@ fn strided_offset(o: unpopped_vocab::OperandKey, stride: &str, rank: usize) -> S
 /// Launch ABI (a stated contract, not a checked one; element strides, not bytes):
 /// `(in0.., out, shape0..shape{rank-1}, s{i}_{d} for each input i and axis d, so_0..so_{rank-1},
 /// n, params..)`. Views, gather, scatter and base offsets are refused by `check_plan_shape`;
-/// halves are refused here. Text only: UNVERIFIED against a HIP compiler.
+/// halves go to `emit_narrow_strided`. Text only: UNVERIFIED against a HIP compiler.
 fn emit_strided(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerError> {
     require_elementwise(plan)?;
     let rank = usize::from(plan.key.rank);
