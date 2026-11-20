@@ -261,3 +261,46 @@ fn the_float_window_still_folds_in_double() {
     let f = lower(ElementKind::F32, ReduceOp::Sum, 2, false).unwrap();
     assert!(f.contains("double acc = 0.0;") && f.contains("(double)(in0[base + p * inner])"));
 }
+
+#[test]
+fn a_half_window_widens_on_load_folds_in_double_and_rounds_on_store() {
+    for (dt, tag, ld, st) in [
+        (
+            ElementKind::F16,
+            "f16",
+            "unpopped_f16_load",
+            "unpopped_f16_store",
+        ),
+        (
+            ElementKind::Bf16,
+            "bf16",
+            "unpopped_bf16_load",
+            "unpopped_bf16_store",
+        ),
+    ] {
+        let mean = lower(dt, ReduceOp::Mean, 1, false).unwrap();
+        assert!(mean.contains(&format!("rockfish_hip_win_{tag}(")), "{mean}");
+        assert!(mean.contains("const unsigned short* in0,"), "{mean}");
+        assert!(mean.contains("    unsigned short* out,"), "{mean}");
+        assert!(
+            mean.contains(&format!(
+                "double v = (double)({ld}(in0[base + p * inner]));"
+            )),
+            "{mean}"
+        );
+        assert!(mean.contains("double acc = 0.0;"), "{mean}");
+        assert!(
+            mean.contains(&format!(
+                "out[t] = {st}((float)((cnt > 0) ? (acc / (double)cnt) : 0.0));"
+            )),
+            "{mean}"
+        );
+        let max = lower(dt, ReduceOp::Max, 2, true).unwrap();
+        assert!(
+            max.contains(&format!(
+                "out[t] = {st}((float)(have ? acc : -__builtin_inf()));"
+            )),
+            "{max}"
+        );
+    }
+}

@@ -8,7 +8,7 @@
 
 use rockfish_hip_emit::Hip;
 use unpopped::backend::{Backend, LowerError};
-use unpopped::ir::{Expr, OpDef, coord, input};
+use unpopped::ir::{Expr, OpDef, coord, input, param};
 use unpopped::plan::{Schedule, try_build_plan};
 use unpopped_vocab::{ElementKind, OpCategory, OperandDesc, TargetId, structure_key};
 
@@ -112,8 +112,36 @@ fn a_coord_leaf_reads_the_unravelled_axis_at_the_compute_type() {
 fn refusals_are_typed_and_each_has_a_control_that_lowers() {
     // Control.
     assert!(lower(ElementKind::F32, input(0) + coord(1), &[TRANSPOSED]).is_ok());
-    // A half strided cell is not spelled.
-    assert!(lower(ElementKind::F16, input(0), &[TRANSPOSED]).is_err());
+    // A half strided cell with a runtime parameter is not spelled (control: without one it is).
+    assert!(lower(ElementKind::F16, input(0), &[TRANSPOSED]).is_ok());
+    assert!(lower(ElementKind::F16, input(0) + param(0), &[TRANSPOSED]).is_err());
+}
+
+#[test]
+fn a_half_strided_cell_widens_on_load_and_rounds_on_store() {
+    for (dt, tag, ld, st) in [
+        (
+            ElementKind::F16,
+            "f16",
+            "unpopped_f16_load",
+            "unpopped_f16_store",
+        ),
+        (
+            ElementKind::Bf16,
+            "bf16",
+            "unpopped_bf16_load",
+            "unpopped_bf16_store",
+        ),
+    ] {
+        let got = lower(dt, input(0) + input(1), &[TRANSPOSED, ALL_BCAST]).unwrap();
+        assert!(got.contains(&format!("rockfish_hip_st_{tag}(")), "{got}");
+        assert!(got.contains("const unsigned short* in0,"), "{got}");
+        assert!(got.contains("const unsigned short h1 = in1[0];"), "{got}");
+        assert!(
+            got.contains(&format!("out[oo] = {st}(({ld}(in0[o0]) + {ld}(h1)));")),
+            "{got}"
+        );
+    }
 }
 
 #[test]
