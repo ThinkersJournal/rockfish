@@ -1,6 +1,6 @@
 # rockfish
 
-Rust interface to AMD ROCm/HIP. The crate names `rockfish` and `rockfish-sys` are reserved on crates.io at 0.0.0 (no release yet). The workspace has a HIP runtime loader and safe layer, hipRTC, rocBLAS/hipBLASLt/MIOpen bindings, and a HIP C++ parser and emitter on Unpopped's contract. What was measured, on one Windows laptop, and what is UNVERIFIED (kernel launch, hipRTC compile, Linux, GPU GEMM) is in `ROADMAP.md`.
+Rust interface to AMD ROCm/HIP. The crate names `rockfish` and `rockfish-sys` are reserved on crates.io at 0.0.0 (no release yet). The workspace has a HIP runtime loader and safe layer, hipRTC, rocBLAS/hipBLASLt/MIOpen/rocFFT bindings, and a HIP C++ parser and emitter on Unpopped's contract. What was measured, on one Windows laptop, and what is UNVERIFIED (kernel launch, hipRTC compile, Linux, GPU GEMM) is in `ROADMAP.md`.
 
 ## Declined by name
 

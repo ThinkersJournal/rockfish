@@ -266,6 +266,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "rockfish-rocfft-sys"
+version = "0.0.47"
+dependencies = [
+ "rockfish-core",
+]
+
+[[package]]
 name = "rockfish-sys"
 version = "0.0.48"
 
