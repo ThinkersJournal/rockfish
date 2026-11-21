@@ -3,6 +3,8 @@
 ## Unreleased (rides the next gate; PM allocates the number)
 
 - New `rockfish-rocsolver-sys`: 36 rocSOLVER functions (single and double precision `potrf`, `potrs`, `potri`, `getrf`, `getrs`, `getri`, `geqrf`, `gelqf`, `orgqr`, `ormqr`, `gesv`, `posv`, `gels`, `gesvd`, `syev`, `syevd`, `sygv`, `trtri`) bound at runtime through `rockfish-core`'s `Library`; the rocBLAS handle, status and enum types are reused from `rockfish-rocblas-sys`. Headers vendored from rocm-libraries 3a2a9bc (rocm-7.2.4), MIT, byte-identical to upstream (`tools/verify-vendor.sh --online`); `rocsolver-export.h` and `rocsolver-version.h` are Rockfish-written stubs. `gen-bindings` gains a `rocsolver` target and an `extra_includes` field. **UNVERIFIED:** no rocSOLVER library on the laptop (Ollama's bundle has none), so library names and symbols are unchecked and no factorisation ran. Complex, batched and strided-batched variants are not bound yet.
+- `rockfish-hip-emit` spells **runtime base offsets** on the strided elementwise cell (f32/f64, the integer dtypes, f16/bf16): `long long off{i}` per `BaseOffset::Runtime` input (ascending) then `offo`, between `so_*` and `n`; the pointers are bumped at kernel entry (before a fully broadcast operand's hoisted load); the kernel name gains `_off1`/`_off1o`/`_offo` so the ABIs never share a symbol. Same names and order as `baracuda-cuda-emit`. Views, gather and scatter stay typed refusals; an offset on any other schedule is refused. New `tests/offsets.rs` (4 text tests). **UNVERIFIED:** text only, no HIP compiler has seen it.
+
 
 ## 0.0.49
 
