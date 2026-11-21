@@ -1,6 +1,6 @@
-# Patent sweep: rockfish 0.0.48 (self-serve; not legal advice; no attorney)
+# Patent sweep: rockfish 0.0.49 (self-serve; not legal advice; no attorney)
 
-Version line covered: 0.0 (workspace `Cargo.toml` version 0.0.48 at the repin branch on origin/main fadf17f; before 1.0 the second number is the major). Method: reading the patents CireSnave's rulings name, and grepping `crates/*/src` and `crates/*/tests` for the statements and instructions below. **No independent web search for patents was run for rockfish**; nothing here says the project is clear of any patent.
+Version line covered: 0.0 (workspace `Cargo.toml` version 0.0.49 at the repin branch on origin/main fadf17f; before 1.0 the second number is the major). Method: reading the patents CireSnave's rulings name, and grepping `crates/*/src` and `crates/*/tests` for the statements and instructions below. **No independent web search for patents was run for rockfish**; nothing here says the project is clear of any patent.
 
 ## Ideas swept
 

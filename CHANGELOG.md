@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.49
+
+- New `rockfish-rocfft-sys`: the rocFFT public C API (29 functions: plans, plan descriptions, bricks/fields, execution info, callbacks, cache serialisation) bound at runtime through `rockfish-core`'s `Library`. Header vendored from rocm-libraries 3a2a9bc (rocm-7.2.4), MIT, byte-identical to upstream (`tools/verify-vendor.sh --online`). Three exported names are not bound: `rocfft_execution_info_set_mode` and `rocfft_execution_info_get_events` sit under `#if 0` in the header, and the offline tuner needs a build macro. **UNVERIFIED: no rocFFT library on the laptop (Ollama's ROCm bundle has none), so library names and symbols are header-derived; no GPU call.** Workspace 0.0.49 (proposed; pm-assist allocates).
+
 ## 0.0.48
 
 - **Breaking (Unpopped 0.56.5).** Repin `unpopped`, `unpopped-vocab` and `unpopped-convert` 0.56.2 -> 0.56.5 (atanh oracle fix; scan operand-layout checks are now typed `PlanError::InadmissibleOpInCell` declines instead of panics); `rockfish-hip-emit` and `rockfish-hip-parse` track 0.56.5. Every existing test passes unchanged. New test `tests/scan_decline.rs`: a scan over a transposed input is `Err(InadmissibleOpInCell)` at plan time (control: the dense layout plans and lowers), so rockfish has no strided scan to emit.
