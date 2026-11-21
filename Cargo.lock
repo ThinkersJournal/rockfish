@@ -273,6 +273,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rockfish-rocsolver-sys"
+version = "0.0.49"
+dependencies = [
+ "rockfish-core",
+ "rockfish-rocblas-sys",
+]
+
+[[package]]
 name = "rockfish-sys"
 version = "0.0.49"
 

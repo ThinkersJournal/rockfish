@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased (rides the next gate; PM allocates the number)
+
+- New `rockfish-rocsolver-sys`: 36 rocSOLVER functions (single and double precision `potrf`, `potrs`, `potri`, `getrf`, `getrs`, `getri`, `geqrf`, `gelqf`, `orgqr`, `ormqr`, `gesv`, `posv`, `gels`, `gesvd`, `syev`, `syevd`, `sygv`, `trtri`) bound at runtime through `rockfish-core`'s `Library`; the rocBLAS handle, status and enum types are reused from `rockfish-rocblas-sys`. Headers vendored from rocm-libraries 3a2a9bc (rocm-7.2.4), MIT, byte-identical to upstream (`tools/verify-vendor.sh --online`); `rocsolver-export.h` and `rocsolver-version.h` are Rockfish-written stubs. `gen-bindings` gains a `rocsolver` target and an `extra_includes` field. **UNVERIFIED:** no rocSOLVER library on the laptop (Ollama's bundle has none), so library names and symbols are unchecked and no factorisation ran. Complex, batched and strided-batched variants are not bound yet.
+
 ## 0.0.49
 
 - New `rockfish-rocfft-sys`: the rocFFT public C API (29 functions: plans, plan descriptions, bricks/fields, execution info, callbacks, cache serialisation) bound at runtime through `rockfish-core`'s `Library`. Header vendored from rocm-libraries 3a2a9bc (rocm-7.2.4), MIT, byte-identical to upstream (`tools/verify-vendor.sh --online`). Three exported names are not bound: `rocfft_execution_info_set_mode` and `rocfft_execution_info_get_events` sit under `#if 0` in the header, and the offline tuner needs a build macro. **UNVERIFIED: no rocFFT library on the laptop (Ollama's ROCm bundle has none), so library names and symbols are header-derived; no GPU call.** Workspace 0.0.49 (proposed; pm-assist allocates).
