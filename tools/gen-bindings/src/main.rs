@@ -1,4 +1,4 @@
-//! Generates `generated.rs` for the `-sys` crates (HIP, hipRTC, rocBLAS, hipBLASLt, MIOpen) from the
+//! Generates `generated.rs` for the `-sys` crates (HIP, hipRTC, rocBLAS, hipBLASLt, MIOpen, rocFFT) from the
 //! vendored headers.
 //!
 //! bindgen produces the types and a plain `extern "C"` block; this tool removes
@@ -153,6 +153,52 @@ const HIPBLASLT: Target = Target {
         "hipblasLtMatrixTransformDescSetAttribute",
         "hipblasLtMatrixTransformDescGetAttribute",
         "hipblasLtMatrixTransform",
+    ],
+};
+
+const ROCFFT: Target = Target {
+    krate: "rockfish-rocfft-sys",
+    include: "vendor/rocfft/include",
+    header: "rocfft/rocfft.h",
+    stubs: &["."],
+    preinclude: None,
+    reused: &[],
+    cxx: true,
+    origin: "vendor/rocfft (ROCm/rocm-libraries rocm-7.2.4",
+    table: "RocfftApi",
+    spec: "ROCFFT",
+    library: "ROCFFT",
+    extra_types: "^rocfft_.*$",
+    functions: &[
+        "rocfft_setup",
+        "rocfft_cleanup",
+        "rocfft_get_version_string",
+        "rocfft_plan_create",
+        "rocfft_plan_destroy",
+        "rocfft_plan_get_work_buffer_size",
+        "rocfft_plan_get_print",
+        "rocfft_execute",
+        "rocfft_plan_description_create",
+        "rocfft_plan_description_destroy",
+        "rocfft_plan_description_set_data_layout",
+        "rocfft_plan_description_set_scale_factor",
+        "rocfft_plan_description_set_comm",
+        "rocfft_plan_description_add_infield",
+        "rocfft_plan_description_add_outfield",
+        "rocfft_field_create",
+        "rocfft_field_destroy",
+        "rocfft_field_add_brick",
+        "rocfft_brick_create",
+        "rocfft_brick_destroy",
+        "rocfft_execution_info_create",
+        "rocfft_execution_info_destroy",
+        "rocfft_execution_info_set_work_buffer",
+        "rocfft_execution_info_set_stream",
+        "rocfft_execution_info_set_load_callback",
+        "rocfft_execution_info_set_store_callback",
+        "rocfft_cache_serialize",
+        "rocfft_cache_buffer_free",
+        "rocfft_cache_deserialize",
     ],
 };
 
@@ -328,7 +374,8 @@ fn main() {
         "rocblas" => &ROCBLAS,
         "hipblaslt" => &HIPBLASLT,
         "miopen" => &MIOPEN,
-        other => panic!("usage: gen-bindings (hip|hiprtc|rocblas|hipblaslt|miopen); got `{other}`"),
+        "rocfft" => &ROCFFT,
+        other => panic!("usage: gen-bindings (hip|hiprtc|rocblas|hipblaslt|miopen|rocfft); got `{other}`"),
     };
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let out = root

@@ -1,0 +1,2 @@
+# local path (under vendor/rocfft/include)	upstream path in ROCm/rocm-libraries@3a2a9bc877edcf5decd36eeaf897a8c9b6017030 (tag rocm-7.2.4)	git blob sha
+rocfft/rocfft.h	projects/rocfft/library/include/rocfft/rocfft.h	e272da7934d4a14fb47cacaa1ce42c0b31259837
