@@ -52,5 +52,8 @@ verify_set vendor/rocfft vendor/rocfft/include ROCm/rocm-libraries 3a2a9bc877edc
 # rocSOLVER: its LICENSE.md is a fourth blob (f989ac4...)
 verify_set vendor/rocsolver vendor/rocsolver/include ROCm/rocm-libraries 3a2a9bc877edcf5decd36eeaf897a8c9b6017030 \
   projects/rocsolver/LICENSE.md f989ac435d8829895379fe08b354e1b0030a8d76
+# rocSPARSE: its LICENSE.md is the same blob as HIP's (4d43ac8...); 113 headers, internal/ included
+verify_set vendor/rocsparse vendor/rocsparse/include ROCm/rocm-libraries 3a2a9bc877edcf5decd36eeaf897a8c9b6017030 \
+  projects/rocsparse/LICENSE.md 4d43ac8700191c7a688e99ca2a25685963a61bb2
 echo "fail=$fail"
 exit $fail
