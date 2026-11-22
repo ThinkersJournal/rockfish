@@ -47,8 +47,8 @@ use unpopped::backend::{
     lower_dag,
 };
 use unpopped::ir::{
-    Access, ArithOp, BaseOffset, BinaryOp, DagNode, ExprDag, ReduceOp, ScalarExpr, UnaryOp,
-    WriteIndex,
+    Access, ArithOp, BaseOffset, BinaryOp, DagNode, ExprDag, OobPolicy, ReduceOp, ScalarExpr,
+    UnaryOp, WriteIndex,
 };
 use unpopped::kernel::{Block, KernelFn, Stmt};
 use unpopped::plan::{KernelPlan, ReduceAxisClass, Schedule};
@@ -269,12 +269,22 @@ fn check_plan_shape(plan: &KernelPlan<'_>) -> Result<(), LowerError> {
             plan.op_name, plan.n_outputs
         )));
     }
-    if !plan.views.is_empty()
-        || !plan.read_index.is_empty()
-        || !matches!(plan.write_index, WriteIndex::Direct)
+    if !plan.views.is_empty() || !matches!(plan.write_index, WriteIndex::Direct) {
+        return Err(shape(format!(
+            "hip backend: op '{}' has a view or a scatter, which no emitter here addresses",
+            plan.op_name
+        )));
+    }
+    // A gather (`ReadIndex::Indexed`) is spelled by the strided elementwise cell only, at f32/f64
+    // and the integer dtypes (`emit_strided`); every other schedule would read the wrong address.
+    if unpopped::plan::gather_of(plan.read_index).is_some()
+        && !(matches!(plan.schedule, Schedule::Strided)
+            && matches!(plan.access, Access::Elementwise)
+            && !matches!(plan.dtype, ElementKind::F16 | ElementKind::Bf16))
     {
         return Err(shape(format!(
-            "hip backend: op '{}' has a view, gather or scatter, which no emitter here addresses",
+            "hip backend: op '{}' has a gather, which only the strided elementwise cell spells \
+             (not at f16/bf16)",
             plan.op_name
         )));
     }
@@ -1529,7 +1539,11 @@ fn strided_offset(o: unpopped_vocab::OperandKey, stride: &str, rank: usize) -> S
 ///
 /// Launch ABI (a stated contract, not a checked one; element strides, not bytes):
 /// `(in0.., out, shape0..shape{rank-1}, s{i}_{d} for each input i and axis d, so_0..so_{rank-1},
-/// n, params..)`. Views, gather and scatter are refused by `check_plan_shape`. A runtime base offset adds
+/// n, params..)`. Views and scatter are refused by `check_plan_shape`. A gather (`ReadIndex::Indexed`, one
+/// gathered input; f32/f64 and the integer dtypes) takes the index operand as an `int`/`long long` pointer, adds
+/// `long long gext` (the data extent on the gathered axis) between `so_*` and the offsets, suffixes the name
+/// with the index dtype (`_i32`/`_i64`), clamps the load address, and applies the out-of-range policy to the
+/// store (Skip leaves the cell, ZeroFill stores 0, Clamp stores the clamped read). A runtime base offset adds
 /// `long long off{i}` (runtime inputs, ascending) then `offo` between `so_*` and `n`, bumps the
 /// pointers at entry, and suffixes the kernel name (`_off1o`), as `baracuda-cuda-emit` does;
 /// halves go to `emit_narrow_strided`. Text only: UNVERIFIED against a HIP compiler.
@@ -1538,14 +1552,41 @@ fn emit_strided(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerE
     let rank = usize::from(plan.key.rank);
     let n_in = usize::from(plan.n_inputs);
     let offs = runtime_offsets(plan);
+    // The single gathered input: `(g, index operand, axis, oob, index dtype)`. The index dtype
+    // rides the kernel name (`_i32`/`_i64`), as in `baracuda-cuda-emit`.
+    let gather = unpopped::plan::gather_of(plan.read_index);
+    let index_ctype = |dt: ElementKind| match dt {
+        ElementKind::I32 => Ok("int"),
+        ElementKind::I64 => Ok("long long"),
+        other => Err(shape(format!(
+            "hip backend: gather index dtype {other:?}; only i32 and i64 are spelled"
+        ))),
+    };
+    let idx_infix = match gather {
+        Some((_, _, _, _, idt)) => {
+            index_ctype(idt)?;
+            format!("_{}", format!("{idt:?}").to_lowercase())
+        }
+        None => String::new(),
+    };
     let name = format!(
-        "rockfish_hip_{}_{}{}",
+        "rockfish_hip_{}_{}{}{}",
         plan.op_name,
         fp.tag(),
+        idx_infix,
         offs.name_suffix()
     );
     let full_bcast =
         |k: usize| rank > 0 && (0..rank).all(|d| plan.key.operands[k].bcast.is_set(d as u8));
+    if let Some((g, idx_op, axis, _, _)) = gather
+        && (usize::from(axis) >= rank || full_bcast(g) || usize::from(idx_op) >= n_in)
+    {
+        return Err(shape(format!(
+            "hip backend: op '{}' has a gather whose axis, operand or index slot the plan gate \
+             should have refused",
+            plan.op_name
+        )));
+    }
     let (prelude, root) = lower_expr_coords(
         plan,
         fp,
@@ -1570,7 +1611,12 @@ fn emit_strided(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerE
     s.push_str(&fp.helpers(&format!("{}\n{root}", prelude.join("\n"))));
     s.push_str(&format!("extern \"C\" __global__ void {name}(\n"));
     for i in 0..n_in {
-        s.push_str(&format!("    const {}* in{i},\n", fp.c()));
+        // The index operand is an integer tensor: its pointer takes the index type.
+        let ptype = match gather {
+            Some((_, idx_op, _, _, idt)) if usize::from(idx_op) == i => index_ctype(idt)?,
+            _ => fp.c(),
+        };
+        s.push_str(&format!("    const {ptype}* in{i},\n"));
     }
     s.push_str(&format!("    {}* out,\n", fp.c()));
     for d in 0..rank {
@@ -1584,6 +1630,11 @@ fn emit_strided(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerE
     for d in 0..rank {
         s.push_str(&format!("    long long so_{d},\n"));
     }
+    // The gathered operand's extent along the gathered axis (the out-of-range bound), between
+    // `so_*` and the offsets, as in `baracuda-cuda-emit`.
+    if gather.is_some() {
+        s.push_str("    long long gext,\n");
+    }
     s.push_str(&offs.args());
     s.push_str("    long long n");
     s.push_str(&param_args(plan.body, fp));
@@ -1591,7 +1642,8 @@ fn emit_strided(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerE
     s.push_str("    #pragma clang fp contract(off)\n");
     s.push_str(&offs.bumps());
     for k in 0..n_in {
-        if full_bcast(k) {
+        let is_index = matches!(gather, Some((_, idx_op, _, _, _)) if usize::from(idx_op) == k);
+        if full_bcast(k) && !is_index {
             s.push_str(&format!("    const {} h{k} = in{k}[0];\n", fp.c()));
         }
     }
@@ -1605,8 +1657,44 @@ fn emit_strided(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerE
             "        long long c{d} = lin % shape{d};\n        lin /= shape{d};\n"
         ));
     }
+    // GATHER pre-pass: load the index through its own strides, clamp it into `[0, gext - 1]` for
+    // the data load (always in bounds for a non-empty axis), and keep `goob` for the store. A
+    // negative index is out of range (no from-end wrap).
+    if let Some((g, idx_op, axis, oob, _)) = gather {
+        let idx_op = usize::from(idx_op);
+        let ioff = strided_offset(plan.key.operands[idx_op], &format!("s{idx_op}"), rank);
+        s.push_str(&format!("        long long gidx_off = {ioff};\n"));
+        s.push_str(&format!(
+            "        long long gidx_raw = (long long)in{idx_op}[gidx_off];\n"
+        ));
+        s.push_str(
+            "        long long gidx_clamped = gidx_raw < 0 ? 0 : (gidx_raw >= gext ? gext - 1 : gidx_raw);\n",
+        );
+        if matches!(oob, OobPolicy::Skip | OobPolicy::ZeroFill) {
+            s.push_str("        bool goob = (gidx_raw < 0) || (gidx_raw >= gext);\n");
+        }
+        // The gathered operand's offset: `gidx_clamped` replaces `c{axis}` in the axis term.
+        let o = plan.key.operands[g];
+        let terms: Vec<String> = (0..rank)
+            .filter_map(|d| {
+                if d == usize::from(axis) {
+                    Some(format!("(gidx_clamped)*s{g}_{d}"))
+                } else if o.bcast.is_set(d as u8) {
+                    None
+                } else {
+                    Some(format!("c{d}*s{g}_{d}"))
+                }
+            })
+            .collect();
+        s.push_str(&format!(
+            "        long long o{g} = {};\n",
+            terms.join(" + ")
+        ));
+    }
     for (k, operand) in plan.key.operands.iter().enumerate().take(n_in) {
-        if !full_bcast(k) {
+        let handled =
+            matches!(gather, Some((g, idx_op, _, _, _)) if k == g || usize::from(idx_op) == k);
+        if !full_bcast(k) && !handled {
             let off = strided_offset(*operand, &format!("s{k}"), rank);
             s.push_str(&format!("        long long o{k} = {off};\n"));
         }
@@ -1616,7 +1704,28 @@ fn emit_strided(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerE
     for decl in &prelude {
         s.push_str(&format!("        {decl}\n"));
     }
-    s.push_str(&format!("        out[oo] = {root};\n    }}\n}}\n"));
+    // The out-of-range policy shapes only the store: Skip leaves the cell, ZeroFill stores 0,
+    // Clamp always stores the clamped-index value.
+    match gather {
+        Some((_, _, _, OobPolicy::Skip, _)) => {
+            s.push_str(&format!(
+                "        if (!goob) out[oo] = {root};\n    }}\n}}\n"
+            ));
+        }
+        Some((_, _, _, OobPolicy::ZeroFill, _)) => {
+            let zero = if fp.is_int() {
+                "0"
+            } else if matches!(fp, Fp::F32) {
+                "0.0f"
+            } else {
+                "0.0"
+            };
+            s.push_str(&format!(
+                "        out[oo] = goob ? ({zero}) : ({root});\n    }}\n}}\n"
+            ));
+        }
+        _ => s.push_str(&format!("        out[oo] = {root};\n    }}\n}}\n")),
+    }
     Ok(GeneratedKernel::new(name, s))
 }
 
