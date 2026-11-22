@@ -7,6 +7,7 @@
 #define __global__
 #define __device__
 #define __host__
+#define __forceinline__ inline
 struct hip_dim3_shim { unsigned x, y, z; };
 static hip_dim3_shim blockIdx, blockDim, threadIdx, gridDim;
 struct float2 { float x, y; };
