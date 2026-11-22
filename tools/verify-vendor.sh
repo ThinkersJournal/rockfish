@@ -55,5 +55,8 @@ verify_set vendor/rocsolver vendor/rocsolver/include ROCm/rocm-libraries 3a2a9bc
 # rocSPARSE: its LICENSE.md is the same blob as HIP's (4d43ac8...); 113 headers, internal/ included
 verify_set vendor/rocsparse vendor/rocsparse/include ROCm/rocm-libraries 3a2a9bc877edcf5decd36eeaf897a8c9b6017030 \
   projects/rocsparse/LICENSE.md 4d43ac8700191c7a688e99ca2a25685963a61bb2
+# rocRAND: the host API only (rocrand.h and the two headers it includes, plus the version template); LICENSE.md is HIP's blob 4d43ac8...
+verify_set vendor/rocrand vendor/rocrand/include ROCm/rocm-libraries 3a2a9bc877edcf5decd36eeaf897a8c9b6017030 \
+  projects/rocrand/LICENSE.md 4d43ac8700191c7a688e99ca2a25685963a61bb2
 echo "fail=$fail"
 exit $fail

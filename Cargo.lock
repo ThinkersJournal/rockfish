@@ -273,6 +273,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rockfish-rocrand-sys"
+version = "0.1.2"
+dependencies = [
+ "rockfish-core",
+ "rockfish-hip-sys",
+]
+
+[[package]]
 name = "rockfish-rocsolver-sys"
 version = "0.1.2"
 dependencies = [
