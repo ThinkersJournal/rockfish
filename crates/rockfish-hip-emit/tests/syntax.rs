@@ -57,6 +57,9 @@ fn check(label: &str, plan: &KernelPlan<'_>, cc: &PathBuf, n: usize) {
             "c++",
             "-Wall",
             "-Wno-unused-variable",
+            // A runner's clang can be older than the MSVC STL it finds; this check parses the
+            // kernels, it does not link against the STL.
+            "-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH",
         ])
         .arg(format!("-I{}", shim.display()))
         .arg(&file)
