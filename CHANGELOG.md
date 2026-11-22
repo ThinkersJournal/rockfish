@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased (rides the next gate; PM allocates the number)
+
+- New `rockfish-rocsparse-sys`: 84 rocSPARSE functions bound at runtime through `rockfish-core`'s `Library`: handle, stream and pointer-mode calls; matrix descriptors; format conversion (`csr2csc`, `csr2coo`, `coo2csr`, csr/dense); sparse level-1; `csrmv`, `csrmm`, `csrsv`, `csrilu0`, `csric0`, `csrgeam` at single and double precision; and the generic `spmv`, `spmm`, `spgemm`, `sddmm` API with its descriptors. 113 headers vendored from rocm-libraries 3a2a9bc (rocm-7.2.4), MIT, byte-identical to upstream (`tools/verify-vendor.sh --online`, fail=0); `rocsparse-export.h` and `rocsparse-version.h` are Rockfish-written stubs. `gen-bindings` gains a `rocsparse` target. **UNVERIFIED:** no rocSPARSE library on the laptop (Ollama's bundle has none), so library names and symbols are header-derived and no sparse kernel ran. Complex, BSR/ELL/HYB, `spsv`/`spsm` and debugging entry points are not bound.
+
 ## 0.1.2 (allocated by pm-assist 2026-11-22; rocsolver-sys, HIP emit offsets, syntax test)
 
 - New `rockfish-rocsolver-sys`: 36 rocSOLVER functions (single and double precision `potrf`, `potrs`, `potri`, `getrf`, `getrs`, `getri`, `geqrf`, `gelqf`, `orgqr`, `ormqr`, `gesv`, `posv`, `gels`, `gesvd`, `syev`, `syevd`, `sygv`, `trtri`) bound at runtime through `rockfish-core`'s `Library`; the rocBLAS handle, status and enum types are reused from `rockfish-rocblas-sys`. Headers vendored from rocm-libraries 3a2a9bc (rocm-7.2.4), MIT, byte-identical to upstream (`tools/verify-vendor.sh --online`); `rocsolver-export.h` and `rocsolver-version.h` are Rockfish-written stubs. `gen-bindings` gains a `rocsolver` target and an `extra_includes` field. **UNVERIFIED:** no rocSOLVER library on the laptop (Ollama's bundle has none), so library names and symbols are unchecked and no factorisation ran. Complex, batched and strided-batched variants are not bound yet.

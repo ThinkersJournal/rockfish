@@ -281,6 +281,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rockfish-rocsparse-sys"
+version = "0.1.2"
+dependencies = [
+ "rockfish-core",
+ "rockfish-hip-sys",
+]
+
+[[package]]
 name = "rockfish-sys"
 version = "0.1.2"
 
