@@ -49,5 +49,8 @@ verify_set vendor/miopen vendor/miopen/include ROCm/rocm-libraries 3a2a9bc877edc
   projects/miopen/LICENSE.md 812b72b98a095b465362b26a3fb41569c4b629c3
 # rocFFT: its LICENSE.md is a third blob (d631884...)
 verify_set vendor/rocfft vendor/rocfft/include ROCm/rocm-libraries 3a2a9bc877edcf5decd36eeaf897a8c9b6017030   projects/rocfft/LICENSE.md d6318847773ebbef0b67752625c48257c533f510
+# rocSOLVER: its LICENSE.md is a fourth blob (f989ac4...)
+verify_set vendor/rocsolver vendor/rocsolver/include ROCm/rocm-libraries 3a2a9bc877edcf5decd36eeaf897a8c9b6017030 \
+  projects/rocsolver/LICENSE.md f989ac435d8829895379fe08b354e1b0030a8d76
 echo "fail=$fail"
 exit $fail

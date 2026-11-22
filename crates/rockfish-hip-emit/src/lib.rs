@@ -272,16 +272,93 @@ fn check_plan_shape(plan: &KernelPlan<'_>) -> Result<(), LowerError> {
     if !plan.views.is_empty()
         || !plan.read_index.is_empty()
         || !matches!(plan.write_index, WriteIndex::Direct)
-        || !plan.base_offsets.is_empty()
-        || !matches!(plan.out_base_offset, BaseOffset::Zero)
     {
         return Err(shape(format!(
-            "hip backend: op '{}' has a view, gather, scatter or base offset, which the scalar \
-             contiguous emitter does not address",
+            "hip backend: op '{}' has a view, gather or scatter, which no emitter here addresses",
+            plan.op_name
+        )));
+    }
+    // A runtime base offset is spelled only by the strided elementwise cell (it bumps the operand
+    // pointers at kernel entry); every other schedule would silently ignore it.
+    if runtime_offsets(plan).any()
+        && !(matches!(plan.schedule, Schedule::Strided)
+            && matches!(plan.access, Access::Elementwise))
+    {
+        return Err(shape(format!(
+            "hip backend: op '{}' has a runtime base offset, which only the strided elementwise \
+             cell spells",
             plan.op_name
         )));
     }
     Ok(())
+}
+
+/// Which operands carry a [`BaseOffset::Runtime`]: inputs by index, and the output.
+struct RuntimeOffsets {
+    inputs: Vec<usize>,
+    output: bool,
+}
+
+impl RuntimeOffsets {
+    fn any(&self) -> bool {
+        !self.inputs.is_empty() || self.output
+    }
+
+    /// Name suffix (`_off1`, `_off1o`, `_offo`; empty for none), so a kernel with offset
+    /// arguments never shares a symbol with one without: the launch ABI differs. Same scheme as
+    /// `baracuda-cuda-emit`.
+    fn name_suffix(&self) -> String {
+        if !self.any() {
+            return String::new();
+        }
+        let mut t = String::from("_off");
+        for i in &self.inputs {
+            t.push_str(&i.to_string());
+        }
+        if self.output {
+            t.push('o');
+        }
+        t
+    }
+
+    /// Launch arguments: `long long off{i}` per runtime input (ascending), then `offo`; they sit
+    /// after the output strides and before `n` (the order `baracuda-cuda-emit` freezes).
+    fn args(&self) -> String {
+        let mut a = String::new();
+        for i in &self.inputs {
+            a.push_str(&format!("    long long off{i},\n"));
+        }
+        if self.output {
+            a.push_str("    long long offo,\n");
+        }
+        a
+    }
+
+    /// Pointer bumps at kernel entry, before any load through the pointer (a fully broadcast
+    /// operand's `h{k} = in{k}[0]` reads element `off{k}`, not element 0).
+    fn bumps(&self) -> String {
+        let mut b = String::new();
+        for i in &self.inputs {
+            b.push_str(&format!("    in{i} += off{i};\n"));
+        }
+        if self.output {
+            b.push_str("    out += offo;\n");
+        }
+        b
+    }
+}
+
+fn runtime_offsets(plan: &KernelPlan<'_>) -> RuntimeOffsets {
+    RuntimeOffsets {
+        inputs: plan
+            .base_offsets
+            .iter()
+            .enumerate()
+            .filter(|(_, o)| matches!(o, BaseOffset::Runtime))
+            .map(|(i, _)| i)
+            .collect(),
+        output: !matches!(plan.out_base_offset, BaseOffset::Zero),
+    }
 }
 
 fn require_elementwise(plan: &KernelPlan<'_>) -> Result<(), LowerError> {
@@ -488,7 +565,8 @@ fn emit_narrow_strided(
     }
     let rank = usize::from(plan.key.rank);
     let n_in = usize::from(plan.n_inputs);
-    let name = format!("rockfish_hip_{}_{tag}", plan.op_name);
+    let offs = runtime_offsets(plan);
+    let name = format!("rockfish_hip_{}_{tag}{}", plan.op_name, offs.name_suffix());
     let full_bcast =
         |k: usize| rank > 0 && (0..rank).all(|d| plan.key.operands[k].bcast.is_set(d as u8));
     let (prelude, root) = lower_expr_coords(
@@ -529,8 +607,10 @@ fn emit_narrow_strided(
     for d in 0..rank {
         s.push_str(&format!("    long long so_{d},\n"));
     }
+    s.push_str(&offs.args());
     s.push_str("    long long n)\n{\n");
     s.push_str("    #pragma clang fp contract(off)\n");
+    s.push_str(&offs.bumps());
     for k in 0..n_in {
         if full_bcast(k) {
             s.push_str(&format!("    const unsigned short h{k} = in{k}[0];\n"));
@@ -1449,13 +1529,21 @@ fn strided_offset(o: unpopped_vocab::OperandKey, stride: &str, rank: usize) -> S
 ///
 /// Launch ABI (a stated contract, not a checked one; element strides, not bytes):
 /// `(in0.., out, shape0..shape{rank-1}, s{i}_{d} for each input i and axis d, so_0..so_{rank-1},
-/// n, params..)`. Views, gather, scatter and base offsets are refused by `check_plan_shape`;
+/// n, params..)`. Views, gather and scatter are refused by `check_plan_shape`. A runtime base offset adds
+/// `long long off{i}` (runtime inputs, ascending) then `offo` between `so_*` and `n`, bumps the
+/// pointers at entry, and suffixes the kernel name (`_off1o`), as `baracuda-cuda-emit` does;
 /// halves go to `emit_narrow_strided`. Text only: UNVERIFIED against a HIP compiler.
 fn emit_strided(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerError> {
     require_elementwise(plan)?;
     let rank = usize::from(plan.key.rank);
     let n_in = usize::from(plan.n_inputs);
-    let name = format!("rockfish_hip_{}_{}", plan.op_name, fp.tag());
+    let offs = runtime_offsets(plan);
+    let name = format!(
+        "rockfish_hip_{}_{}{}",
+        plan.op_name,
+        fp.tag(),
+        offs.name_suffix()
+    );
     let full_bcast =
         |k: usize| rank > 0 && (0..rank).all(|d| plan.key.operands[k].bcast.is_set(d as u8));
     let (prelude, root) = lower_expr_coords(
@@ -1496,10 +1584,12 @@ fn emit_strided(plan: &KernelPlan<'_>, fp: Fp) -> Result<GeneratedKernel, LowerE
     for d in 0..rank {
         s.push_str(&format!("    long long so_{d},\n"));
     }
+    s.push_str(&offs.args());
     s.push_str("    long long n");
     s.push_str(&param_args(plan.body, fp));
     s.push_str(")\n{\n");
     s.push_str("    #pragma clang fp contract(off)\n");
+    s.push_str(&offs.bumps());
     for k in 0..n_in {
         if full_bcast(k) {
             s.push_str(&format!("    const {} h{k} = in{k}[0];\n", fp.c()));

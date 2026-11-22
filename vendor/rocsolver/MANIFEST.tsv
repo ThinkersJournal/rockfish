@@ -1,0 +1,5 @@
+# local path (under vendor/rocsolver/include)	upstream path in ROCm/rocm-libraries@3a2a9bc877edcf5decd36eeaf897a8c9b6017030 (tag rocm-7.2.4)	git blob sha
+rocsolver/rocsolver.h	projects/rocsolver/library/include/rocsolver/rocsolver.h	d78cca69383939a7ff55d4e172ce9819af6926da
+rocsolver/rocsolver-extra-types.h	projects/rocsolver/library/include/rocsolver/rocsolver-extra-types.h	f11078f1064ad26b119d1457fa11157dca461e26
+rocsolver/rocsolver-functions.h	projects/rocsolver/library/include/rocsolver/rocsolver-functions.h	ca0ba6273df1d8dd7266778b5fc1d55c90310a6a
+rocsolver/rocsolver-aliases.h	projects/rocsolver/library/include/rocsolver/rocsolver-aliases.h	de938bf22b838a24d25b3e62ce2060523848c6a2

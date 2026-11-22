@@ -1,4 +1,4 @@
-//! Generates `generated.rs` for the `-sys` crates (HIP, hipRTC, rocBLAS, hipBLASLt, MIOpen, rocFFT) from the
+//! Generates `generated.rs` for the `-sys` crates (HIP, hipRTC, rocBLAS, hipBLASLt, MIOpen, rocFFT, rocSOLVER) from the
 //! vendored headers.
 //!
 //! bindgen produces the types and a plain `extern "C"` block; this tool removes
@@ -20,6 +20,8 @@ struct Target {
     header: &'static str,
     /// Stub directories (relative to `tools/gen-bindings/stub`) added with `-I`.
     stubs: &'static [&'static str],
+    /// Further vendored include roots (relative to the repo root) added with `-I`, for headers that include another library's headers.
+    extra_includes: &'static [&'static str],
     /// Header force-included before `header`, for headers that assume another was included first.
     preinclude: Option<&'static str>,
     /// Types provided by another `-sys` crate: (type, `use` path). Kept out of the output.
@@ -47,6 +49,7 @@ const ROCBLAS: Target = Target {
     include: "vendor/rocblas/include/rocblas",
     header: "rocblas.h",
     stubs: &[".", "rocblas", "rocblas/internal"],
+    extra_includes: &[],
     preinclude: Some("hip/hip_runtime_api.h"),
     reused: &[("hipStream_t", "rockfish_hip_sys::hipStream_t")],
     cxx: false,
@@ -120,6 +123,7 @@ const HIPBLASLT: Target = Target {
     include: "vendor/hipblaslt/include",
     header: "hipblaslt/hipblaslt.h",
     stubs: &[".", "hipblaslt"],
+    extra_includes: &[],
     preinclude: None,
     reused: &[("hipStream_t", "rockfish_hip_sys::hipStream_t")],
     cxx: true,
@@ -161,6 +165,7 @@ const ROCFFT: Target = Target {
     include: "vendor/rocfft/include",
     header: "rocfft/rocfft.h",
     stubs: &["."],
+    extra_includes: &[],
     preinclude: None,
     reused: &[],
     cxx: true,
@@ -202,11 +207,74 @@ const ROCFFT: Target = Target {
     ],
 };
 
+const ROCSOLVER: Target = Target {
+    krate: "rockfish-rocsolver-sys",
+    include: "vendor/rocsolver/include",
+    header: "rocsolver/rocsolver.h",
+    stubs: &[".", "rocsolver", "rocblas", "rocblas/internal"],
+    extra_includes: &["vendor/rocblas/include", "vendor/rocblas/include/rocblas"],
+    preinclude: Some("hip/hip_runtime_api.h"),
+    reused: &[
+        ("rocblas_handle", "rockfish_rocblas_sys::rocblas_handle"),
+        ("rocblas_status", "rockfish_rocblas_sys::rocblas_status"),
+        ("rocblas_fill", "rockfish_rocblas_sys::rocblas_fill"),
+        ("rocblas_operation", "rockfish_rocblas_sys::rocblas_operation"),
+        ("rocblas_side", "rockfish_rocblas_sys::rocblas_side"),
+        ("rocblas_diagonal", "rockfish_rocblas_sys::rocblas_diagonal"),
+        ("rocblas_int", "rockfish_rocblas_sys::rocblas_int"),
+    ],
+    cxx: false,
+    origin: "vendor/rocsolver (ROCm/rocm-libraries rocm-7.2.4",
+    table: "RocsolverApi",
+    spec: "ROCSOLVER",
+    library: "ROCSOLVER",
+    extra_types: "^(rocblas_(layer_mode_ex|layer_mode_flags|direct|storev|svect|workmode|evect|eform|erange|eorder|esort|srange|pivot)_?)$",
+    functions: &[
+        "rocsolver_spotrf",
+        "rocsolver_spotrs",
+        "rocsolver_spotri",
+        "rocsolver_sgetrf",
+        "rocsolver_sgetrs",
+        "rocsolver_sgetri",
+        "rocsolver_sgeqrf",
+        "rocsolver_sgelqf",
+        "rocsolver_sorgqr",
+        "rocsolver_sormqr",
+        "rocsolver_sgesv",
+        "rocsolver_sposv",
+        "rocsolver_sgels",
+        "rocsolver_sgesvd",
+        "rocsolver_ssyev",
+        "rocsolver_ssyevd",
+        "rocsolver_ssygv",
+        "rocsolver_strtri",
+        "rocsolver_dpotrf",
+        "rocsolver_dpotrs",
+        "rocsolver_dpotri",
+        "rocsolver_dgetrf",
+        "rocsolver_dgetrs",
+        "rocsolver_dgetri",
+        "rocsolver_dgeqrf",
+        "rocsolver_dgelqf",
+        "rocsolver_dorgqr",
+        "rocsolver_dormqr",
+        "rocsolver_dgesv",
+        "rocsolver_dposv",
+        "rocsolver_dgels",
+        "rocsolver_dgesvd",
+        "rocsolver_dsyev",
+        "rocsolver_dsyevd",
+        "rocsolver_dsygv",
+        "rocsolver_dtrtri",
+    ],
+};
+
 const MIOPEN: Target = Target {
     krate: "rockfish-miopen-sys",
     include: "vendor/miopen/include",
     header: "miopen/miopen.h",
     stubs: &[".", "miopen"],
+    extra_includes: &[],
     preinclude: None,
     reused: &[("hipStream_t", "rockfish_hip_sys::hipStream_t")],
     cxx: true,
@@ -266,6 +334,7 @@ const HIP: Target = Target {
     include: "vendor/hip/include",
     header: "hip/hip_runtime_api.h",
     stubs: &["."],
+    extra_includes: &[],
     preinclude: None,
     reused: &[],
     cxx: false,
@@ -343,6 +412,7 @@ const HIPRTC: Target = Target {
     include: "vendor/hip/include",
     header: "hip/hiprtc.h",
     stubs: &["."],
+    extra_includes: &[],
     preinclude: None,
     reused: &[],
     cxx: false,
@@ -375,7 +445,8 @@ fn main() {
         "hipblaslt" => &HIPBLASLT,
         "miopen" => &MIOPEN,
         "rocfft" => &ROCFFT,
-        other => panic!("usage: gen-bindings (hip|hiprtc|rocblas|hipblaslt|miopen|rocfft); got `{other}`"),
+        "rocsolver" => &ROCSOLVER,
+        other => panic!("usage: gen-bindings (hip|hiprtc|rocblas|hipblaslt|miopen|rocfft|rocsolver); got `{other}`"),
     };
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let out = root
@@ -398,6 +469,9 @@ fn generate(root: &Path, t: &Target) -> String {
         .layout_tests(true)
         .allowlist_type(t.extra_types)
         .allowlist_var(t.extra_types);
+    for extra in t.extra_includes {
+        builder = builder.clang_arg(format!("-I{}", root.join(extra).display()));
+    }
     for s in t.stubs {
         builder = builder.clang_arg(format!("-I{}", stub.join(s).display()));
     }
