@@ -8,9 +8,11 @@
 //! **What the run shows:** the emitted text, under a host C++ compiler, reads the rows the indices
 //! name, leaves (Skip), zeroes (ZeroFill) or clamps (Clamp) out-of-range and negative ones, and never
 //! reads outside the data. **What it does not:** hipcc, a device, or any GPU codegen. Skips with a
-//! printed message when no `clang++` is found (`ROCKFISH_CLANG` names one).
+//! printed message when no `clang++` is found (`ROCKFISH_CLANG` names one). With `REQUIRE_CLANG=1` it fails instead.
 
 use std::path::PathBuf;
+mod common;
+
 use std::process::Command;
 
 use rockfish_hip_emit::Hip;
@@ -140,7 +142,9 @@ int main() {{
 #[test]
 fn out_of_range_indices_follow_the_policy_on_a_host_run() {
     let Some(cc) = clang() else {
-        eprintln!("no clang++ found: the host gather run did not run (set ROCKFISH_CLANG)");
+        common::skip_or_fail(
+            "no clang++ found: the host gather run did not run (set ROCKFISH_CLANG)",
+        );
         return;
     };
     let cases = [

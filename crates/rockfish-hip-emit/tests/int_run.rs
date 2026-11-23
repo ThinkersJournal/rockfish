@@ -16,9 +16,11 @@
 //!
 //! **What this shows:** the emitted guards give the ruled results under a host C++ compiler. **What
 //! it does not:** hipcc, the device, or GPU codegen of the same text (rig rows stand). Skips with a
-//! printed message when no `clang++` is found (`ROCKFISH_CLANG` names one).
+//! printed message when no `clang++` is found (`ROCKFISH_CLANG` names one). With `REQUIRE_CLANG=1` it fails instead.
 
 use std::path::PathBuf;
+mod common;
+
 use std::process::Command;
 
 use rockfish_hip_emit::Hip;
@@ -189,7 +191,9 @@ macro_rules! check_type {
 #[test]
 fn emitted_integer_div_and_shifts_give_the_ruled_results() {
     let Some(cc) = clang() else {
-        eprintln!("no clang++ found: the host value-level run did not run (set ROCKFISH_CLANG)");
+        common::skip_or_fail(
+            "no clang++ found: the host value-level run did not run (set ROCKFISH_CLANG)",
+        );
         return;
     };
     check_type!(&cc, ElementKind::I32, i32, u32, "int", "%lld", true, "i32");
