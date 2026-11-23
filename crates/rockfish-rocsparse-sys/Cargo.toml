@@ -1,0 +1,14 @@
+[package]
+name = "rockfish-rocsparse-sys"
+description = "Raw, runtime-loaded bindings to the AMD rocSPARSE library, generated from the vendored rocSPARSE headers."
+publish = false
+readme = "../../README.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+rockfish-core = { path = "../rockfish-core", version = "=0.1.3" }
+rockfish-hip-sys = { path = "../rockfish-hip-sys", version = "=0.1.3" }

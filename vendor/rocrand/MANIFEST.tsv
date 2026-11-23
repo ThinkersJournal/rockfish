@@ -1,0 +1,5 @@
+# local path (under vendor/rocrand/include)	upstream path in ROCm/rocm-libraries@3a2a9bc877edcf5decd36eeaf897a8c9b6017030 (tag rocm-7.2.4)	git blob sha
+rocrand/rocrand.h	projects/rocrand/library/include/rocrand/rocrand.h	fb9651b50566e804e007232d70001aa2cc91425f
+rocrand/rocrand_discrete_types.h	projects/rocrand/library/include/rocrand/rocrand_discrete_types.h	5cb66a7430461a5d04ee78938b11ed8398d0b47e
+rocrand/rocrandapi.h	projects/rocrand/library/include/rocrand/rocrandapi.h	e43d463825850e9c8caa863322966b1f934ad681
+rocrand/rocrand_version.h.in	projects/rocrand/library/include/rocrand/rocrand_version.h.in	b20ab2ac0748e99174263973f6f2765ec1a06e92
