@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (rides the next gate; PM allocates the number)
+## 0.1.3 (allocated by pm-assist 2026-11-23; rocsparse-sys, rocrand-sys, hip-emit gather, int host run, canonical LICENSE-APACHE)
 
 - `rockfish-hip-emit` spells the **gather** (`ReadIndex::Indexed`) on the strided elementwise cell at f32/f64 and i32/i64/u32/u64, with an i32 or i64 index: the index operand's pointer takes the index type, `long long gext` (the data extent on the gathered axis) sits between `so_*` and the offsets, the name gains `_i32`/`_i64`, the load index is clamped into `[0, gext - 1]`, and Skip / ZeroFill / Clamp shape the store only. Same argument names and order as `baracuda-cuda-emit`. Scatter, views, and a gather at f16/bf16 stay typed refusals. New `tests/gather.rs`: ABI text checks and a **host run** (clang++ against the shim) of six dtype/policy cases with negative and past-the-end indices, all matching; a hand mutant (unclamped load index) is caught. **UNVERIFIED:** host C++ only, no hipcc, no device.
 - `LICENSE-APACHE` replaced with the canonical Apache-2.0 text (byte-identical to sageant's; sha256 `cfc7749b`, 11358 bytes; ours was `eb6cb356`, 11282 bytes).
