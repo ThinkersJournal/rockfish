@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.4 (proposed; pm-assist allocates; R7-CI)
+## 0.1.4 (allocated by pm-assist 2026-11-24; R7-CI)
 
 - CI honesty: the `rockfish-hip-emit` host-run tests (`gather`, `int_run`, `syntax`) printed a skip and passed when no `clang++` was found. `REQUIRE_CLANG=1` now makes that a failure (`tests/common`); `ci.yml` sets it on every OS and installs clang on ubuntu. Red-first shown on one machine (clang hidden, `REQUIRE_CLANG=1`: FAILED; unset: ok; real clang: ok). **UNVERIFIED until the first CI run:** that windows-latest and macos-latest find `clang++` on PATH.
 
