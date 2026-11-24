@@ -47,7 +47,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
         with:
           toolchain: stable
-      - run: cargo test --all-features --no-fail-fast
+      - name: "Install clang++ (ubuntu; windows and macos runners ship one)"
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y clang
+      - name: "Test (REQUIRE_CLANG: a missing clang++ fails the host-run tests, never skips them)"
+        env:
+          REQUIRE_CLANG: "1"
+        run: cargo test --all-features --no-fail-fast
 
   doc:
     name: doc

@@ -6,9 +6,11 @@
 //! anything a HIP compiler adds (address spaces, device builtins, `__half` types), launch
 //! behaviour or numerics: the shim is Rockfish-written and permissive. The rig rows in
 //! `docs/DESIGN-R7.md` section 6 still stand. A machine without clang skips with a printed
-//! message (set `ROCKFISH_CLANG` to name one); it does not fail.
+//! message (set `ROCKFISH_CLANG` to name one); with `REQUIRE_CLANG=1` it fails instead.
 
 use std::path::PathBuf;
+mod common;
+
 use std::process::Command;
 
 use rockfish_hip_emit::Hip;
@@ -23,7 +25,12 @@ fn gfx906() -> TargetId {
 
 fn clang() -> Option<PathBuf> {
     if let Ok(p) = std::env::var("ROCKFISH_CLANG") {
-        return Some(PathBuf::from(p));
+        // An empty value means "no clang": it lets a run prove the REQUIRE_CLANG failure on a box that has one.
+        return if p.is_empty() {
+            None
+        } else {
+            Some(PathBuf::from(p))
+        };
     }
     let candidates = [
         PathBuf::from("clang++"),
@@ -108,7 +115,9 @@ fn ew_key(
 #[test]
 fn every_emitted_cell_parses_as_cpp() {
     let Some(cc) = clang() else {
-        eprintln!("no clang++ found: the host syntax check did not run (set ROCKFISH_CLANG)");
+        common::skip_or_fail(
+            "no clang++ found: the host syntax check did not run (set ROCKFISH_CLANG)",
+        );
         return;
     };
     let mut n = 0;
