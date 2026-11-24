@@ -25,7 +25,12 @@ fn gfx906() -> TargetId {
 
 fn clang() -> Option<PathBuf> {
     if let Ok(p) = std::env::var("ROCKFISH_CLANG") {
-        return Some(PathBuf::from(p));
+        // An empty value means "no clang": it lets a run prove the REQUIRE_CLANG failure on a box that has one.
+        return if p.is_empty() {
+            None
+        } else {
+            Some(PathBuf::from(p))
+        };
     }
     let candidates = [
         PathBuf::from("clang++"),

@@ -22,7 +22,12 @@ use unpopped_vocab::{ElementKind, OpCategory, OperandDesc, TargetId, structure_k
 
 fn clang() -> Option<PathBuf> {
     if let Ok(p) = std::env::var("ROCKFISH_CLANG") {
-        return Some(PathBuf::from(p));
+        // An empty value means "no clang": it lets a run prove the REQUIRE_CLANG failure on a box that has one.
+        return if p.is_empty() {
+            None
+        } else {
+            Some(PathBuf::from(p))
+        };
     }
     [
         PathBuf::from("clang++"),
