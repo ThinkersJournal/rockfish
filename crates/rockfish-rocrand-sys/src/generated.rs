@@ -21,7 +21,7 @@ pub struct rocrand_discrete_distribution_st {
     /// Cumulative distribution function
     pub cdf: *mut f64,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of rocrand_discrete_distribution_st",
@@ -54,7 +54,7 @@ pub struct uint4 {
     pub z: ::std::os::raw::c_uint,
     pub w: ::std::os::raw::c_uint,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     ["Size of uint4"][::std::mem::size_of::<uint4>() - 16usize];
     ["Alignment of uint4"][::std::mem::align_of::<uint4>() - 4usize];

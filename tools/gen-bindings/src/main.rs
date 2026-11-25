@@ -843,6 +843,19 @@ fn generate(root: &Path, t: &Target) -> String {
         t.licence,
         t.copyright,
         t.origin,
-        prettyplease::unparse(&parsed)
+        with_allow_reasons(&prettyplease::unparse(&parsed))
+    )
+}
+
+/// Give every `#[allow(..)]` that bindgen emits a `reason =`, so the generated files pass CodeRipper GOV-010
+/// without a hand edit (the output is regenerated, never edited).
+fn with_allow_reasons(src: &str) -> String {
+    src.replace(
+        "#[allow(unnecessary_transmutes)]",
+        "#[allow(unnecessary_transmutes, reason = \"bindgen's bitfield accessors transmute; the output is not ours to restyle\")]",
+    )
+    .replace(
+        "#[allow(clippy::unnecessary_operation, clippy::identity_op)]",
+        "#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = \"bindgen's layout assertions index with a subtraction; the output is not ours to restyle\")]",
     )
 }

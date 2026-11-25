@@ -14,7 +14,7 @@ pub type miopenAcceleratorQueue_t = hipStream_t;
 pub struct miopenHandle {
     pub _address: u8,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     ["Size of miopenHandle"][::std::mem::size_of::<miopenHandle>() - 1usize];
     ["Alignment of miopenHandle"][::std::mem::align_of::<miopenHandle>() - 1usize];
@@ -58,7 +58,7 @@ pub type miopenStatus_t = ::std::os::raw::c_int;
 pub struct miopenTensorDescriptor {
     pub _address: u8,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of miopenTensorDescriptor",
@@ -85,7 +85,7 @@ pub type miopenTensorDescriptor_t = *mut miopenTensorDescriptor;
 pub struct miopenConvolutionDescriptor {
     pub _address: u8,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of miopenConvolutionDescriptor",
@@ -111,7 +111,7 @@ pub type miopenConvolutionDescriptor_t = *mut miopenConvolutionDescriptor;
 pub struct miopenActivationDescriptor {
     pub _address: u8,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of miopenActivationDescriptor",
@@ -290,7 +290,7 @@ convolution algorithm enum selection*/
     ///< Back propagation on data convolution algorithm enum selection
     pub bwd_data_algo: miopenConvBwdDataAlgorithm_t,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of miopenConvAlgoPerf_t__bindgen_ty_1",
@@ -310,7 +310,7 @@ const _: () = {
     ][::std::mem::offset_of!(miopenConvAlgoPerf_t__bindgen_ty_1, bwd_data_algo)
         - 0usize];
 };
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of miopenConvAlgoPerf_t",

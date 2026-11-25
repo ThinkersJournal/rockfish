@@ -15,7 +15,7 @@ pub struct rocsparse_float_complex {
     ///< imaginary part.
     pub y: f32,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of rocsparse_float_complex",
@@ -39,7 +39,7 @@ pub struct rocsparse_double_complex {
     ///< imaginary part.
     pub y: f64,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of rocsparse_double_complex",
@@ -61,7 +61,7 @@ pub struct rocsparse_bfloat16 {
     ///< brain float storage.
     pub data: u16,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     ["Size of rocsparse_bfloat16"][::std::mem::size_of::<rocsparse_bfloat16>() - 2usize];
     [

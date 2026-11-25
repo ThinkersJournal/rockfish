@@ -619,21 +619,21 @@ pub struct hipDeviceArch_t {
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 3usize]>,
     pub __bindgen_padding_0: u8,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     ["Size of hipDeviceArch_t"][::std::mem::size_of::<hipDeviceArch_t>() - 4usize];
     ["Alignment of hipDeviceArch_t"][::std::mem::align_of::<hipDeviceArch_t>() - 4usize];
 };
 impl hipDeviceArch_t {
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasGlobalInt32Atomics(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<0usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasGlobalInt32Atomics(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -641,7 +641,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasGlobalInt32Atomics_raw(
         this: *const Self,
     ) -> ::std::os::raw::c_uint {
@@ -657,7 +657,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasGlobalInt32Atomics_raw(
         this: *mut Self,
         val: ::std::os::raw::c_uint,
@@ -673,14 +673,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasGlobalFloatAtomicExch(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<1usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasGlobalFloatAtomicExch(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -688,7 +688,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasGlobalFloatAtomicExch_raw(
         this: *const Self,
     ) -> ::std::os::raw::c_uint {
@@ -704,7 +704,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasGlobalFloatAtomicExch_raw(
         this: *mut Self,
         val: ::std::os::raw::c_uint,
@@ -720,14 +720,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasSharedInt32Atomics(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<2usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasSharedInt32Atomics(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -735,7 +735,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasSharedInt32Atomics_raw(
         this: *const Self,
     ) -> ::std::os::raw::c_uint {
@@ -751,7 +751,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasSharedInt32Atomics_raw(
         this: *mut Self,
         val: ::std::os::raw::c_uint,
@@ -767,14 +767,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasSharedFloatAtomicExch(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<3usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasSharedFloatAtomicExch(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -782,7 +782,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasSharedFloatAtomicExch_raw(
         this: *const Self,
     ) -> ::std::os::raw::c_uint {
@@ -798,7 +798,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasSharedFloatAtomicExch_raw(
         this: *mut Self,
         val: ::std::os::raw::c_uint,
@@ -814,14 +814,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasFloatAtomicAdd(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<4usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasFloatAtomicAdd(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -829,7 +829,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasFloatAtomicAdd_raw(this: *const Self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(
@@ -843,7 +843,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasFloatAtomicAdd_raw(
         this: *mut Self,
         val: ::std::os::raw::c_uint,
@@ -859,14 +859,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasGlobalInt64Atomics(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<5usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasGlobalInt64Atomics(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -874,7 +874,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasGlobalInt64Atomics_raw(
         this: *const Self,
     ) -> ::std::os::raw::c_uint {
@@ -890,7 +890,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasGlobalInt64Atomics_raw(
         this: *mut Self,
         val: ::std::os::raw::c_uint,
@@ -906,14 +906,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasSharedInt64Atomics(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<6usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasSharedInt64Atomics(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -921,7 +921,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasSharedInt64Atomics_raw(
         this: *const Self,
     ) -> ::std::os::raw::c_uint {
@@ -937,7 +937,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasSharedInt64Atomics_raw(
         this: *mut Self,
         val: ::std::os::raw::c_uint,
@@ -953,14 +953,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasDoubles(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<7usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasDoubles(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -968,7 +968,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasDoubles_raw(this: *const Self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(
@@ -982,7 +982,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasDoubles_raw(this: *mut Self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -995,14 +995,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasWarpVote(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<8usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasWarpVote(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1010,7 +1010,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasWarpVote_raw(this: *const Self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(
@@ -1024,7 +1024,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasWarpVote_raw(this: *mut Self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1037,14 +1037,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasWarpBallot(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<9usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasWarpBallot(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1052,7 +1052,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasWarpBallot_raw(this: *const Self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(
@@ -1066,7 +1066,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasWarpBallot_raw(this: *mut Self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1079,14 +1079,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasWarpShuffle(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<10usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasWarpShuffle(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1094,7 +1094,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasWarpShuffle_raw(this: *const Self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(
@@ -1108,7 +1108,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasWarpShuffle_raw(this: *mut Self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1121,14 +1121,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasFunnelShift(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<11usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasFunnelShift(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1136,7 +1136,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasFunnelShift_raw(this: *const Self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(
@@ -1150,7 +1150,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasFunnelShift_raw(this: *mut Self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1163,14 +1163,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasThreadFenceSystem(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<12usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasThreadFenceSystem(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1178,7 +1178,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasThreadFenceSystem_raw(this: *const Self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(
@@ -1192,7 +1192,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasThreadFenceSystem_raw(
         this: *mut Self,
         val: ::std::os::raw::c_uint,
@@ -1208,14 +1208,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasSyncThreadsExt(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<13usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasSyncThreadsExt(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1223,7 +1223,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasSyncThreadsExt_raw(this: *const Self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(
@@ -1237,7 +1237,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasSyncThreadsExt_raw(
         this: *mut Self,
         val: ::std::os::raw::c_uint,
@@ -1253,14 +1253,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasSurfaceFuncs(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<14usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasSurfaceFuncs(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1268,7 +1268,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasSurfaceFuncs_raw(this: *const Self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(
@@ -1282,7 +1282,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasSurfaceFuncs_raw(this: *mut Self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1295,14 +1295,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn has3dGrid(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<15usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_has3dGrid(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1310,7 +1310,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn has3dGrid_raw(this: *const Self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(
@@ -1324,7 +1324,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_has3dGrid_raw(this: *mut Self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1337,14 +1337,14 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn hasDynamicParallelism(&self) -> ::std::os::raw::c_uint {
         unsafe {
             ::std::mem::transmute(self._bitfield_1.get_const::<16usize, 1u8>() as u32)
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn set_hasDynamicParallelism(&mut self, val: ::std::os::raw::c_uint) {
         unsafe {
             let val: u32 = ::std::mem::transmute(val);
@@ -1352,7 +1352,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn hasDynamicParallelism_raw(
         this: *const Self,
     ) -> ::std::os::raw::c_uint {
@@ -1368,7 +1368,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub unsafe fn set_hasDynamicParallelism_raw(
         this: *mut Self,
         val: ::std::os::raw::c_uint,
@@ -1384,7 +1384,7 @@ impl hipDeviceArch_t {
         }
     }
     #[inline]
-    #[allow(unnecessary_transmutes)]
+    #[allow(unnecessary_transmutes, reason = "bindgen's bitfield accessors transmute; the output is not ours to restyle")]
     pub fn new_bitfield_1(
         hasGlobalInt32Atomics: ::std::os::raw::c_uint,
         hasGlobalFloatAtomicExch: ::std::os::raw::c_uint,
@@ -1575,7 +1575,7 @@ impl hipDeviceArch_t {
 pub struct hipUUID_t {
     pub bytes: [::std::os::raw::c_char; 16usize],
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     ["Size of hipUUID_t"][::std::mem::size_of::<hipUUID_t>() - 16usize];
     ["Alignment of hipUUID_t"][::std::mem::align_of::<hipUUID_t>() - 1usize];
@@ -1831,7 +1831,7 @@ pub struct hipDeviceProp_tR0600 {
     ///< Revision of the GPU in this device
     pub asicRevision: ::std::os::raw::c_int,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of hipDeviceProp_tR0600",
@@ -2784,7 +2784,7 @@ pub union hipStreamBatchMemOpParams_union_hipStreamMemOpWaitValueParams_t__bindg
     pub value: u32,
     pub value64: u64,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of hipStreamBatchMemOpParams_union_hipStreamMemOpWaitValueParams_t__bindgen_ty_1",
@@ -2809,7 +2809,7 @@ const _: () = {
         value64
     ) - 0usize];
 };
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of hipStreamBatchMemOpParams_union_hipStreamMemOpWaitValueParams_t",
@@ -2858,7 +2858,7 @@ pub union hipStreamBatchMemOpParams_union_hipStreamMemOpWriteValueParams_t__bind
     pub value: u32,
     pub value64: u64,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of hipStreamBatchMemOpParams_union_hipStreamMemOpWriteValueParams_t__bindgen_ty_1",
@@ -2883,7 +2883,7 @@ const _: () = {
         value64
     ) - 0usize];
 };
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of hipStreamBatchMemOpParams_union_hipStreamMemOpWriteValueParams_t",
@@ -2922,7 +2922,7 @@ pub struct hipStreamBatchMemOpParams_union_hipStreamMemOpFlushRemoteWritesParams
     pub operation: hipStreamBatchMemOpType,
     pub flags: ::std::os::raw::c_uint,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of hipStreamBatchMemOpParams_union_hipStreamMemOpFlushRemoteWritesParams_t",
@@ -2952,7 +2952,7 @@ pub struct hipStreamBatchMemOpParams_union_hipStreamMemOpMemoryBarrierParams_t {
     pub operation: hipStreamBatchMemOpType,
     pub flags: ::std::os::raw::c_uint,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of hipStreamBatchMemOpParams_union_hipStreamMemOpMemoryBarrierParams_t",
@@ -2975,7 +2975,7 @@ const _: () = {
         hipStreamBatchMemOpParams_union_hipStreamMemOpMemoryBarrierParams_t, flags
     ) - 4usize];
 };
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of hipStreamBatchMemOpParams_union",
@@ -3061,7 +3061,7 @@ pub struct hipEventWaitNodeParams {
     ///< Event to wait on
     pub event: hipEvent_t,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of hipEventWaitNodeParams",
@@ -3080,7 +3080,7 @@ pub struct hipEventRecordNodeParams {
     ///< The event to be recorded when node executes
     pub event: hipEvent_t,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of hipEventRecordNodeParams",

@@ -332,7 +332,7 @@ pub type hipblasLtMatrixTransformDescAttributes_t = ::std::os::raw::c_int;
 pub struct hipblasLtMatmulDescOpaque_t {
     pub data: [u64; 4usize],
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of hipblasLtMatmulDescOpaque_t",
@@ -349,7 +349,7 @@ const _: () = {
 pub struct hipblasLtMatrixLayoutOpaque_t {
     pub data: [u64; 4usize],
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of hipblasLtMatrixLayoutOpaque_t",
@@ -366,7 +366,7 @@ const _: () = {
 pub struct hipblasLtMatmulPreferenceOpaque_t {
     pub data: [u64; 5usize],
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of hipblasLtMatmulPreferenceOpaque_t",
@@ -384,7 +384,7 @@ const _: () = {
 pub struct hipblasLtMatrixTransformDescOpaque_t {
     pub data: [u64; 8usize],
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of hipblasLtMatrixTransformDescOpaque_t",
@@ -457,7 +457,7 @@ pub struct _hipblasLtMatmulAlgo_t {
     pub data: [u8; 16usize],
     pub max_workspace_bytes: usize,
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of _hipblasLtMatmulAlgo_t",
@@ -504,7 +504,7 @@ pub struct _hipblasLtMatmulHeuristicResult_t {
     ///<Reserved.
     pub reserved: [::std::os::raw::c_int; 4usize],
 }
-#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+#[allow(clippy::unnecessary_operation, clippy::identity_op, reason = "bindgen's layout assertions index with a subtraction; the output is not ours to restyle")]
 const _: () = {
     [
         "Size of _hipblasLtMatmulHeuristicResult_t",
