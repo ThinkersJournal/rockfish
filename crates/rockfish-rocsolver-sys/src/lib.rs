@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Raw, runtime-loaded bindings to the AMD rocSOLVER library.
 //!
 //! Like `rockfish-hip-sys`, nothing links against ROCm at build time, and a
