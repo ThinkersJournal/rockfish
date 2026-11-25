@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5 (proposed; to be allocated by pm-assist)
+
+- CI: move the shared CodeRipper portfolio workflow to `467fd259d6d062cba4c5683d310f1a6f2b66e763` (CodeRipper 0.48.1, CODERIPPER_VERSION; pm-kernels TASK 2026-11-25). One separate commit; no config change.
+- **Breaking (Unpopped 0.56.12).** Repin `unpopped`, `unpopped-vocab` and `unpopped-convert` 0.56.5 -> 0.56.12; `rockfish-hip-emit` and `rockfish-hip-parse` track 0.56.12. Every existing test passes unchanged (`cargo test --workspace` on one Windows machine, no failure), including the `scan_decline` decline test. Unpopped's notice (#386) that `IntOp` gained six non-exhaustive variants: no test fails, but no new spelling was added, so any new IntOp reaching hip-emit is whatever 0.56.12 plans; not separately audited by name.
+
 ## 0.1.4 (allocated by pm-assist 2026-11-24; R7-CI)
 
 - CI honesty: the `rockfish-hip-emit` host-run tests (`gather`, `int_run`, `syntax`) printed a skip and passed when no `clang++` was found. `REQUIRE_CLANG=1` now makes that a failure (`tests/common`); `ci.yml` sets it on every OS and installs clang on ubuntu. Red-first shown on one machine (clang hidden, `REQUIRE_CLANG=1`: FAILED; unset: ok; real clang: ok). **UNVERIFIED until the first CI run:** that windows-latest and macos-latest find `clang++` on PATH.
