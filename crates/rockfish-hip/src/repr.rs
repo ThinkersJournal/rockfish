@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Types that can live in device memory.
 
 /// Marks a plain-data type whose bytes may be copied to and from the device.

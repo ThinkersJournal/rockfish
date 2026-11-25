@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Lists the HIP devices on this machine, or says why it cannot.
 
 use rockfish_hip::{Device, DeviceBuffer, Error, Event, Stream, device_count, runtime_version};

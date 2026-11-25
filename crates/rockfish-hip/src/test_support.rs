@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! A loaded library that is not HIP, standing in for "a runtime missing every entry point".
 
 use rockfish_core::{Library, LibrarySpec};

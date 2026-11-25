@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Pinned (page-locked) host memory and the guard for asynchronous copies.
 
 use std::ffi::c_void;
