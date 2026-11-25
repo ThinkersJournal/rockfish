@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Refusal of kernel-layer kernels in `rockfish-hip-emit`, and by name of the declined list.
 //!
 //! **What this shows:** `Hip` lowers no kernel-layer (`KernelFn`) kernel; it answers the typed

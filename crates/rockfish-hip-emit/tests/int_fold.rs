@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Sequential integer reductions in `rockfish-hip-emit` (`Sum`/`Prod`/`Max`/`Min` at
 //! `i32`/`i64`/`u32`/`u64`).
 //!

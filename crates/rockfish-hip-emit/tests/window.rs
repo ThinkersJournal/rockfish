@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Tests for the sliding-window pool schedule of [`rockfish_hip_emit::Hip`].
 //!
 //! **What these show.** The emitted text is what is reviewed here: the tap arithmetic, the fold

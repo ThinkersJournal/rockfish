@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `f16` and `bf16` in `rockfish-hip-emit`: stored as `unsigned short`, computed at `float`
 //! through Unpopped's software codec (`unpopped::cfamily::half_helpers`) in HIP's spelling.
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Unpopped's typed decline of a scan over a non-dense operand (unpopped 0.56.5): the plan gate
 //! answers `PlanError::InadmissibleOpInCell` instead of panicking, so a caller's
 //! `(OpDef, structure_key)` pair is refused before it reaches this emitter, and there is no strided

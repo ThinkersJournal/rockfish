@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The HIP C++ [`unpopped::backend::Backend`]: the emit side (IR -> HIP source text) of
 //! Rockfish's HIP C++ ownership (see `docs/DESIGN-R7.md`).
 //!

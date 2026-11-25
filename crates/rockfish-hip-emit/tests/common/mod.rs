@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Shared by the tests that need a host `clang++`.
 
 /// A host-clang test found no `clang++`: skip loudly, or FAIL when `REQUIRE_CLANG` is set.

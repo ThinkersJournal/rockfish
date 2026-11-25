@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The hipRTC [`Compiler`]: HIP C++ source -> an AMD GPU code object (R7d).
 //!
 //! **UNVERIFIED against a real hipRTC.** The only machine measured has no `hiprtc.dll`, so the

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Tests for the strided elementwise schedule of [`rockfish_hip_emit::Hip`].
 //!
 //! **What these show.** The emitted text is what is reviewed here: the unravel, the per-operand

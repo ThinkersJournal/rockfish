@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Host syntax check of the emitted kernels: each is run through `clang++ -fsyntax-only` against
 //! the shim `tests/shim/hip/hip_runtime.h`.
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The gather (`ReadIndex::Indexed`) on the strided elementwise cell: text checks of the stated ABI
 //! and a host run (clang++ against the shim) of the three out-of-range policies.
 //!
