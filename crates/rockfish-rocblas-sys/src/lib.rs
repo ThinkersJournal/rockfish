@@ -30,7 +30,8 @@ pub const ROCBLAS: LibrarySpec = LibrarySpec {
     unnecessary_transmutes,
     unsafe_op_in_unsafe_fn,
     deref_nullptr,
-    rustdoc::all
+    rustdoc::all,
+    reason = "bindgen output is not ours to restyle; the generated bindings trip these lints by construction (regenerate with `gen-bindings`)"
 )]
 #[rustfmt::skip]
 mod generated;

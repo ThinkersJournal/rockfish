@@ -4,7 +4,10 @@
 ///
 /// CI sets `REQUIRE_CLANG=1` (and installs clang), so a runner without `clang++` cannot pass
 /// these tests while testing nothing. A developer machine without clang still skips.
-#[allow(dead_code)]
+#[allow(
+    dead_code,
+    reason = "each integration test binary compiles this module and uses a different subset"
+)]
 pub fn skip_or_fail(msg: &str) {
     if std::env::var("REQUIRE_CLANG").is_ok_and(|v| !v.is_empty() && v != "0") {
         panic!("REQUIRE_CLANG is set but {msg}");

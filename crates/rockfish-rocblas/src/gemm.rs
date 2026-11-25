@@ -129,7 +129,10 @@ fn span(rows: usize, cols: usize, ld: usize, what: &'static str) -> Result<usize
 }
 
 /// Check the shape arguments of one GEMM and work out the buffer lengths.
-#[allow(clippy::too_many_arguments)]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "mirrors the GEMM C API argument list"
+)]
 pub(crate) fn plan(
     op_a: Op,
     op_b: Op,
@@ -207,7 +210,10 @@ impl Handle<'_> {
     /// Returns before the work finishes; see [`Handle::synchronize`].
     ///
     /// UNVERIFIED on a GPU: no GEMM has run on any machine measured.
-    #[allow(clippy::too_many_arguments)]
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "mirrors the GEMM C API argument list"
+    )]
     pub fn gemm<T: GemmElement>(
         &self,
         op_a: Op,
@@ -278,7 +284,10 @@ impl Handle<'_> {
     /// overlap. Otherwise as [`Handle::gemm`].
     ///
     /// UNVERIFIED on a GPU: no GEMM has run on any machine measured.
-    #[allow(clippy::too_many_arguments)]
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "mirrors the GEMM C API argument list"
+    )]
     pub fn gemm_strided_batched<T: GemmElement>(
         &self,
         op_a: Op,

@@ -34,7 +34,7 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Name of a status code, from the constants in the vendored `rocblas-types.h`.
-#[allow(non_upper_case_globals)] // the bindgen constants are named `rocblas_status__...`
+#[allow(non_upper_case_globals, reason = "bindgen constant names")] // the bindgen constants are named `rocblas_status__...`
 pub fn builtin_name(code: i32) -> Option<&'static str> {
     Some(match code {
         rocblas_status__rocblas_status_success => "rocblas_status_success",
