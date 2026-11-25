@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Raw, runtime-loaded bindings to the AMD HIP runtime.
 //!
 //! Nothing links against ROCm at build time. [`HipApi::load`] searches for the
