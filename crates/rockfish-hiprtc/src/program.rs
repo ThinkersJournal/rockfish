@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Programs: source in, device code object out.
 
 use std::ffi::{CStr, CString, c_char, c_int};
