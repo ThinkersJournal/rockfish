@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.5 (proposed; to be allocated by pm-assist)
+## 0.1.5 (allocated by pm-assist 2026-11-25; the Unpopped 0.56.12 repin is breaking only for rockfish-hip-emit and -hip-parse, whose numbers follow Unpopped; the project line takes a patch)
 
 - CI: move the shared CodeRipper portfolio workflow to `467fd259d6d062cba4c5683d310f1a6f2b66e763` (CodeRipper 0.48.1, CODERIPPER_VERSION; pm-kernels TASK 2026-11-25). One separate commit; no config change.
 - **Breaking (Unpopped 0.56.12).** Repin `unpopped`, `unpopped-vocab` and `unpopped-convert` 0.56.5 -> 0.56.12; `rockfish-hip-emit` and `rockfish-hip-parse` track 0.56.12. Every existing test passes unchanged (`cargo test --workspace` on one Windows machine, no failure), including the `scan_decline` decline test. Unpopped's notice (#386) that `IntOp` gained six non-exhaustive variants: no test fails, but no new spelling was added, so any new IntOp reaching hip-emit is whatever 0.56.12 plans; not separately audited by name.
