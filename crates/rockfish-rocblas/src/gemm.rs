@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Typed GEMM over `rocblas_gemm_ex` and `rocblas_gemm_strided_batched_ex`.
 //!
 //! Matrices are column-major, as in BLAS: element `(i, j)` of a matrix with

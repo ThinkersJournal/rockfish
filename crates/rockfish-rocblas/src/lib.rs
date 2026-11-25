@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust layer over AMD rocBLAS.
 //!
 //! A [`Handle`] binds rocBLAS to a `rockfish-hip` device and, optionally, a

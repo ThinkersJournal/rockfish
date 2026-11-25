@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Handle and GEMM against a real rocBLAS and device when both exist.
 //!
 //! With no rocBLAS (the usual state of the Windows laptop: Ollama's bundle is
