@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Generates `generated.rs` for the `-sys` crates (HIP, hipRTC, rocBLAS, hipBLASLt, MIOpen, rocFFT, rocSOLVER) from the
 //! vendored headers.
 //!

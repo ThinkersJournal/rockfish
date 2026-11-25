@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // Written by Rockfish, not copied from AMD. AMD's CMake build generates
 // hipblaslt-version.h from hipblaslt-version.h.in; the values are the
 // HIPBLASLT_PROJECT_VERSION "1.2.2" of projects/hipblaslt/CMakeLists.txt at tag

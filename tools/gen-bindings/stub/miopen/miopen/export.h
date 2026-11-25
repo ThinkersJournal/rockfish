@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // Written by Rockfish, not copied from AMD. AMD's CMake build generates
 // miopen/export.h; it is not in the repository. The macros resolve to nothing.
 #pragma once

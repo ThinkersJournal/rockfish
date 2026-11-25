@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // Written by Rockfish, not copied from AMD. AMD's CMake build generates
 // rocsparse-version.h from rocsparse-version.h.in (vendored as a template only).
 // The generator allowlists no version macro, so none of these reach the output;
