@@ -14,12 +14,12 @@ repository.workspace = true
 
 [dependencies]
 # `Frontend` and the shared CST walkers (`lift_elementwise`, `lift_reduction`, `lift_scan`, `lift`).
-unpopped-convert = "0.59.3"
+unpopped-convert = "0.60.1"
 # `unpopped` itself (IR types); the walkers moved to `unpopped-convert` in 0.47.0.
-unpopped = "0.59.3"
+unpopped = "0.60.1"
 # The same major as `unpopped`'s own `convert` feature, so `Tree` is the same type `Frontend::parse` expects.
 tree-sitter = "0.27"
 tree-sitter-cuda = "0.21"
 
 [dev-dependencies]
-unpopped-vocab = "0.59.3"
+unpopped-vocab = "0.60.1"
