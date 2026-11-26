@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Prints what the HIP runtime on this machine reports. Run:
 //! `cargo run -p rockfish-hip-sys --example probe`
 

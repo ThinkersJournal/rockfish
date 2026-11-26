@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // Written by Rockfish, not copied from AMD. rocrand.h includes the full HIP runtime
 // headers; bindgen only needs the host types, which hip_runtime_api.h provides.
 #pragma once

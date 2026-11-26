@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Serial integer prefix scans in `rockfish-hip-emit` (`Sum`/`Prod`/`Max`/`Min` at
 //! `i32`/`i64`/`u32`/`u64`).
 //!

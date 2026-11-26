@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // Written by Rockfish, not copied from AMD. AMD's build generates hip/hip_version.h;
 // it is not in the repository. bindgen needs the include to resolve, and the
 // generator allowlists no version macro, so these values never reach the output.

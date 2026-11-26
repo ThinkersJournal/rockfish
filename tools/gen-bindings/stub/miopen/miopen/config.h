@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // Written by Rockfish, not copied from AMD. AMD's CMake build generates
 // miopen/config.h from config.h.in; only the backend selection matters to
 // miopen.h. This selects the HIP backend, which is the one Rockfish binds.

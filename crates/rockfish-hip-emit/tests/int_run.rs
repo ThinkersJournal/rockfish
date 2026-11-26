@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Value-level run of the emitted integer `Div`, `Shl` and `Shr` kernels on the host.
 //!
 //! Each kernel is emitted for the integer dtypes, compiled with `clang++` against the shim

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Devices and the runtime version.
 
 use rockfish_hip_sys::HipApi;

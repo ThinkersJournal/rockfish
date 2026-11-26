@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6 (allocated by pm-assist 2026-11-26; CI and lint attributes only, not breaking)
+
+- CI: `cargo clippy`, `cargo test` and `cargo doc` run with `--locked` (CodeRipper SUP-001). The 16 hand-written `#[allow]` attributes now carry a `reason =` (GOV-010; the 103 in generated bindings stay for a generator pass). SUP-016 licence gate and R-PUBLISH-NOTICES added. No code change.
+
 ## 0.1.5 (allocated by pm-assist 2026-11-25; the Unpopped 0.56.12 repin is breaking only for rockfish-hip-emit and -hip-parse, whose numbers follow Unpopped; the project line takes a patch)
 
 - CI: move the shared CodeRipper portfolio workflow to `467fd259d6d062cba4c5683d310f1a6f2b66e763` (CodeRipper 0.48.1, CODERIPPER_VERSION; pm-kernels TASK 2026-11-25). One separate commit; no config change.

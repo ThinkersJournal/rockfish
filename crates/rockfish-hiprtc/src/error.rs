@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The error type of the safe layer.
 
 use std::ffi::CStr;
@@ -37,7 +38,7 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Name of a status code, from the constants in the vendored `hiprtc.h`.
-#[allow(non_upper_case_globals)] // the bindgen constants are named `hiprtcResult_...`
+#[allow(non_upper_case_globals, reason = "bindgen constant names")] // the bindgen constants are named `hiprtcResult_...`
 pub fn builtin_name(code: i32) -> Option<&'static str> {
     Some(match code {
         hiprtcResult_HIPRTC_SUCCESS => "HIPRTC_SUCCESS",

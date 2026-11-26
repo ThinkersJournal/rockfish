@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime loading for the Rockfish crates.
 //!
 //! Nothing here links against ROCm at build time. A [`LibrarySpec`] names a

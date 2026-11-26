@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Loads rocBLAS, reports unresolved bound symbols and the library's own version string.
 //! Pure query: creates no handle and touches no GPU.
 fn main() {

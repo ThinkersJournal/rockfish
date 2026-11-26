@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Golden vectors and grammar corpus for [`rockfish_hip_parse::HIP`].
 //!
 //! Every kernel here is hand-written for this repository (none copied from AMD or third-party

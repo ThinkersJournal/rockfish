@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Tests for the reduction and scan schedules of [`rockfish_hip_emit::Hip`] (R7c).
 //!
 //! **What these show.** The emitted text is what is reviewed here, and everything outside the

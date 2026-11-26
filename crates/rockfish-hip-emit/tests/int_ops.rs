@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integer `Div`, `Shl`, `Shr` and `ConstInt` in `rockfish-hip-emit` (the total rule of
 //! Unpopped's `docs/int-div-shift-semantics.md`).
 //!

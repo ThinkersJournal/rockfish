@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Loader behaviour of the generated table. None of these need ROCm, except that
 //! the last test checks every bound symbol when a MIOpen library can be found.
 

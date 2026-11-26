@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust layer over the AMD hipRTC runtime compiler.
 //!
 //! Compiles HIP C++ source to a device code object at run time, ready for

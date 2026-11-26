@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Raw, runtime-loaded bindings to the AMD rocBLAS library.
 //!
 //! Like `rockfish-hip-sys`, nothing links against ROCm at build time, and a
@@ -30,7 +31,8 @@ pub const ROCBLAS: LibrarySpec = LibrarySpec {
     unnecessary_transmutes,
     unsafe_op_in_unsafe_fn,
     deref_nullptr,
-    rustdoc::all
+    rustdoc::all,
+    reason = "bindgen output is not ours to restyle; the generated bindings trip these lints by construction (regenerate with `gen-bindings`)"
 )]
 #[rustfmt::skip]
 mod generated;

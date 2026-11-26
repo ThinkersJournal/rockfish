@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The HIP C++ [`unpopped_convert::Frontend`]: the parse side (HIP source -> IR) of Rockfish's
 //! HIP C++ ownership (see `docs/DESIGN-R7.md`).
 //!

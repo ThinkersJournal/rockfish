@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Loader behaviour of the generated table. None of these need ROCm.
 
 use rockfish_core::LoadError;

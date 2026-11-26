@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The HIP C++ [`unpopped::backend::Backend`]: the emit side (IR -> HIP source text) of
 //! Rockfish's HIP C++ ownership (see `docs/DESIGN-R7.md`).
 //!
@@ -1199,7 +1200,10 @@ fn emit_scan(
 /// element, as the oracle's `scan_identity` does. `Mean`, `And`, `Or`, `Xor` are typed refusals
 /// (the oracle rejects the bitwise ops in a scan and has no integer `Mean`). Text only:
 /// UNVERIFIED against a HIP compiler (rig row).
-#[allow(clippy::too_many_arguments)]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "one parameter per piece of the scan cell; a struct would only rename them"
+)]
 fn emit_int_scan(
     plan: &KernelPlan<'_>,
     op: ReduceOp,

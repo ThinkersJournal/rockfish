@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Tests for [`rockfish_hip_emit::Hip`].
 //!
 //! **What these show.** The emitted text is what the golden says, parses back through

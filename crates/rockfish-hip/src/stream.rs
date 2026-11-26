@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Streams and events.
 
 use rockfish_hip_sys::{hipEvent_t, hipStream_t};

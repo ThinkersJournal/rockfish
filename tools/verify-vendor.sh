@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Verify every vendored header against its upstream git blob.
 #   tools/verify-vendor.sh            offline: hash our copy, compare with MANIFEST.tsv
 #   tools/verify-vendor.sh --online   also ask GitHub for the blob sha at the pinned commit

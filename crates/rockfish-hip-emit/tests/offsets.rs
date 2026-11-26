@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime base offsets on the strided elementwise cell of [`rockfish_hip_emit::Hip`].
 //!
 //! **What these show.** The emitted text: the `off{i}`/`offo` launch arguments and where they sit

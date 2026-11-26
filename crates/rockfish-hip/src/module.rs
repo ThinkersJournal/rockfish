@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Code objects, kernels and launches.
 
 use std::ffi::{CStr, c_void};

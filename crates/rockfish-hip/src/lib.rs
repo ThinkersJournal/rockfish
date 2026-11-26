@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust layer over the AMD HIP runtime.
 //!
 //! Nothing links against ROCm at build time. The runtime is loaded on first

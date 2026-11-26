@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // Written by Rockfish, not copied from AMD. AMD's CMake build generates
 // rocsolver-export.h; it is not in the repository. bindgen only needs the macro
 // to resolve (to nothing), and no symbol visibility reaches the output.

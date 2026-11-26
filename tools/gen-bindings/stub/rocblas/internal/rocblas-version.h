@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // Written by Rockfish, not copied from AMD. AMD's CMake build generates
 // rocblas-version.h from rocblas-version.h.in; the values below are the
 // `VERSION_STRING "5.2.0"` of projects/rocblas/CMakeLists.txt at tag rocm-7.2.4.
