@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The seven `ElementKind` rows added in Unpopped 0.60.0 (KISS 0.24.0) are declined by name.
 //!
-//! **What this shows:** `Hip::supports_dtype` answers `Unsupported` for each of `F128`, `I128`,
-//! `U128`, `I256`, `U256`, `F8E3M4` and `F8UE4M3` on a `rocm:` target, and generating an
-//! elementwise kernel at that dtype is refused (typed error, no source), while the control dtype
-//! `f32` on the same path succeeds. **What it does not show:** what HIP offers for these types.
+//! **What this shows:** (a) `Hip::supports_dtype`, Hip's own answer, is `Unsupported` for each of
+//! `F128`, `I128`, `U128`, `I256`, `U256`, `F8E3M4` and `F8UE4M3` on a `rocm:` target; (b) generating
+//! an elementwise kernel at that dtype is refused by Unpopped's planner before Hip is reached
+//! (proves the planner, not Hip); the control dtype `f32` on the same path succeeds. **What it does not show:** what HIP offers for these types.
 //! UNVERIFIED and unread: no HIP header was consulted. This emitter spells only the eight dtypes
 //! in `Hip::supports_dtype`; a 128-bit integer is not spelled by any lowering here (clang's
 //! `__int128` is a host-side extension, not claimed for device code), and no 8-bit float type
@@ -40,7 +40,9 @@ fn generate(dt: ElementKind) -> Result<String, String> {
 }
 
 #[test]
-fn each_wide_dtype_is_unsupported_and_refused() {
+fn hip_own_answer_is_unsupported_for_each_wide_dtype() {
+    // (a) Hip's OWN answer, from its allow-list. Mutant (run 2026-11-26): adding `F128` to the
+    // `Supported` arm of `Hip::supports_dtype` makes this test fail.
     let rocm = TargetId::parse("rocm:gfx906").unwrap();
     for dt in WIDE {
         assert_eq!(
@@ -48,8 +50,15 @@ fn each_wide_dtype_is_unsupported_and_refused() {
             DtypeSupport::Unsupported,
             "{dt:?}"
         );
-        let e = generate(dt).expect_err(&format!("{dt:?} must be refused"));
-        eprintln!("{dt:?}: {e}");
+    }
+}
+
+#[test]
+fn generation_is_refused_planner_refusal_unpopped_not_a_hip_decline() {
+    // (b) PLANNER refusal (Unpopped, `InadmissibleOpInCell`), before Hip is reached: it proves
+    // the planner, not Hip.
+    for dt in WIDE {
+        generate(dt).expect_err(&format!("{dt:?} must be refused"));
     }
 }
 
