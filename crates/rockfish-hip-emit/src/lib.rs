@@ -239,6 +239,7 @@ fn first_declined(block: &Block) -> Option<(&'static str, &'static str)> {
             Stmt::Tcgen05Commit { .. } => {
                 Some(("Tcgen05Commit", "US11803380B2, the PM's extension"))
             }
+            Stmt::CopyUnpack { .. } => Some(("CopyUnpack", "US11803380B2")),
             Stmt::AsyncWait { .. } => Some(("AsyncWait", ASYNC)),
             Stmt::CopyAsync { .. } => Some(("CopyAsync", ASYNC)),
             Stmt::AsyncCommit => Some(("AsyncCommit", ASYNC)),
@@ -296,6 +297,18 @@ fn first_unlowered(block: &Block) -> Option<(&'static str, &'static str)> {
             Stmt::Tcgen05Mma { .. } => Some((
                 "Tcgen05Mma",
                 "an NVIDIA tensor-memory MMA, its a_layout/b_layout operand layouts included; no lowering decided",
+            )),
+            Stmt::Tcgen05Alloc { .. } => Some((
+                "Tcgen05Alloc",
+                "an NVIDIA tensor-memory allocation; no lowering decided",
+            )),
+            Stmt::Tcgen05Dealloc { .. } => Some((
+                "Tcgen05Dealloc",
+                "an NVIDIA tensor-memory release; no lowering decided",
+            )),
+            Stmt::Tcgen05RelinquishPermit => Some((
+                "Tcgen05RelinquishPermit",
+                "an NVIDIA tensor-memory allocation-permit relinquish; no lowering decided",
             )),
             Stmt::Tcgen05Ld { .. } => Some((
                 "Tcgen05Ld",
