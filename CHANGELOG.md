@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased (number allocated by pm-assist; breaking only for rockfish-hip-emit and -hip-parse, whose numbers follow Unpopped)
+
+- **Breaking (Unpopped 0.57.0).** Repin `unpopped`, `unpopped-vocab` and `unpopped-convert` 0.56.12 -> 0.57.0 (pm-kernels TASK take-0.57). `cargo check` found no break; `cargo test --workspace` passes on one Windows machine. New by-name refusals in `Hip::lower_kernel`, with no patent claim (text says "no lowering"): `Stmt::ProxyFence`, `Stmt::Wgmma` and `Stmt::Tcgen05Mma` (their `a_layout`/`b_layout` fields included), `Stmt::WgmmaCommit`, `Stmt::Tcgen05Ld`, and `Place::Raw` / `Place::AllocRaw` in a load or store, at any nesting depth (`tests/kernel_refusal.rs`). `Stmt`, `Place` and `IntOp` are `non_exhaustive`, so the wildcards were checked by hand and stay.
+- Closes the Unpopped #386 audit: the six `IntOp` variants (`Div`, `Shl`, `Shr`, `BitAnd`, `BitOr`, `BitXor`) are now named in `tests/int_op_audit.rs`, each pinned to the source it reaches at i32/i64/u32/u64. hip-emit never receives an `IntOp` (the `int_op` seam is unset; integers go through the `BinaryOp`/`ArithOp` seams). Text only; no HIP compiler ran.
+
 ## 0.1.6 (allocated by pm-assist 2026-11-26; CI and lint attributes only, not breaking)
 
 - CI: `cargo clippy`, `cargo test` and `cargo doc` run with `--locked` (CodeRipper SUP-001). The 16 hand-written `#[allow]` attributes now carry a `reason =` (GOV-010; the 103 in generated bindings stay for a generator pass). SUP-016 licence gate and R-PUBLISH-NOTICES added. No code change.

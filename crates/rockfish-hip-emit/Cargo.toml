@@ -17,11 +17,11 @@ repository.workspace = true
 hiprtc = ["dep:rockfish-hiprtc"]
 
 [dependencies]
-unpopped = "0.56.12"
+unpopped = "0.57.0"
 rockfish-hiprtc = { path = "../rockfish-hiprtc", version = "=0.1.6", optional = true }
-unpopped-vocab = "0.56.12"
+unpopped-vocab = "0.57.0"
 
 [dev-dependencies]
 # The parse side of the same ownership: the round-trip tests lift what `Hip` emits.
 rockfish-hip-parse = { path = "../rockfish-hip-parse", version = "0.56.12" }
-unpopped-convert = "0.56.12"
+unpopped-convert = "0.57.0"

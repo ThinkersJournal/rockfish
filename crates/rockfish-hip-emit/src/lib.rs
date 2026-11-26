@@ -51,7 +51,7 @@ use unpopped::ir::{
     Access, ArithOp, BaseOffset, BinaryOp, DagNode, ExprDag, OobPolicy, ReduceOp, ScalarExpr,
     UnaryOp, WriteIndex,
 };
-use unpopped::kernel::{Block, KernelFn, Stmt};
+use unpopped::kernel::{Block, KernelFn, Place, Stmt};
 use unpopped::plan::{KernelPlan, ReduceAxisClass, Schedule};
 use unpopped_vocab::{Contiguity, ElementKind, TargetId};
 
@@ -122,6 +122,14 @@ impl Backend for Hip {
                 detail: format!(
                     "hip backend: kernel `{}` contains `{name}`, an NVIDIA-only statement declined \
                      on AMD hardware ({patent}); see docs/PATENT-SWEEP.md",
+                    kernel.name
+                ),
+            });
+        }
+        if let Some((name, why)) = first_unlowered(&kernel.body) {
+            return Err(LowerError::UnsupportedKernel {
+                detail: format!(
+                    "hip backend: kernel `{}` contains `{name}`, which this emitter has no lowering for ({why}); it lowers no kernel-layer kernel at all",
                     kernel.name
                 ),
             });
@@ -238,6 +246,67 @@ fn first_declined(block: &Block) -> Option<(&'static str, &'static str)> {
             Stmt::CollectiveTuple { .. } => Some(("CollectiveTuple", BARRIER_AGG)),
             Stmt::If { then, els, .. } => first_declined(then).or_else(|| first_declined(els)),
             Stmt::For { body, .. } | Stmt::While { body, .. } => first_declined(body),
+            _ => None,
+        };
+        if hit.is_some() {
+            return hit;
+        }
+    }
+    None
+}
+
+/// The byte-addressed places Unpopped 0.57.0 added (U9c): `Place::Raw` and `Place::AllocRaw`.
+/// `Place` is `non_exhaustive`, so the wildcard is unavoidable; it only chooses the refusal's
+/// wording, as `lower_kernel` refuses every kernel regardless. Any other variant is re-checked by
+/// hand on each Unpopped bump.
+fn unlowered_place(p: &Place) -> Option<(&'static str, &'static str)> {
+    match p {
+        Place::Raw { .. } => Some((
+            "Place::Raw",
+            "a byte-addressed buffer place; no HIP spelling decided",
+        )),
+        Place::AllocRaw { .. } => Some((
+            "Place::AllocRaw",
+            "a byte-addressed allocation place; no HIP spelling decided",
+        )),
+        _ => None,
+    }
+}
+
+/// Kernel-layer statements added in Unpopped 0.57.0 (and the byte places above) that this emitter
+/// has no lowering for, by name, at any nesting depth. Unlike [`first_declined`] these carry no
+/// patent ruling: the reason is only that nothing here lowers them (`Wgmma` and `Tcgen05Mma` with
+/// their `a_layout`/`b_layout` fields included). The wildcard is deliberate and safe for the same
+/// reason as there.
+fn first_unlowered(block: &Block) -> Option<(&'static str, &'static str)> {
+    for stmt in &block.0 {
+        let hit = match stmt {
+            Stmt::ProxyFence { .. } => Some((
+                "ProxyFence",
+                "an NVIDIA async-proxy fence; no AMD counterpart decided",
+            )),
+            Stmt::Wgmma { .. } => Some((
+                "Wgmma",
+                "an NVIDIA warpgroup MMA, its a_layout/b_layout operand layouts included; no lowering decided",
+            )),
+            Stmt::WgmmaCommit => Some((
+                "WgmmaCommit",
+                "an NVIDIA wgmma group commit; no lowering decided",
+            )),
+            Stmt::Tcgen05Mma { .. } => Some((
+                "Tcgen05Mma",
+                "an NVIDIA tensor-memory MMA, its a_layout/b_layout operand layouts included; no lowering decided",
+            )),
+            Stmt::Tcgen05Ld { .. } => Some((
+                "Tcgen05Ld",
+                "an NVIDIA tensor-memory load; no lowering decided",
+            )),
+            Stmt::Load { place, .. }
+            | Stmt::Store { place, .. }
+            | Stmt::MaskedLoad { place, .. }
+            | Stmt::MaskedStore { place, .. } => unlowered_place(place),
+            Stmt::If { then, els, .. } => first_unlowered(then).or_else(|| first_unlowered(els)),
+            Stmt::For { body, .. } | Stmt::While { body, .. } => first_unlowered(body),
             _ => None,
         };
         if hit.is_some() {

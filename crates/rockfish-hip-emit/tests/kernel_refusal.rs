@@ -13,9 +13,11 @@
 
 use rockfish_hip_emit::Hip;
 use unpopped::backend::{Backend, LowerError};
-use unpopped::exec::Scope;
+use unpopped::exec::{MemorySpace, Scope};
 use unpopped::ir::{ReduceOp, ScalarExpr};
-use unpopped::kernel::{Block, CacheHint, CollectiveKind, KernelFn, Place, Stmt, Unroll};
+use unpopped::kernel::{
+    Block, CacheHint, CollectiveKind, KernelFn, OperandLayout, Place, Stmt, Unroll,
+};
 use unpopped_vocab::ElementKind;
 
 fn kernel(body: Vec<Stmt>) -> KernelFn {
@@ -175,5 +177,123 @@ fn a_declined_statement_is_found_inside_if_for_and_while() {
             let detail = refusal(vec![outer]);
             assert!(detail.contains(&format!("`{name}`")), "{name}: {detail}");
         }
+    }
+}
+
+/// Unpopped 0.57.0 additions this emitter has no lowering for, refused by name with a reason
+/// (no patent ruling: the text says "no lowering", never "declined").
+fn unlowered() -> Vec<(&'static str, Stmt)> {
+    let raw = Place::Raw {
+        buffer: 0,
+        byte_offset: ScalarExpr::Const(0.0),
+        elem: ElementKind::F32,
+    };
+    let araw = Place::AllocRaw {
+        alloc: 0,
+        byte_offset: ScalarExpr::Const(0.0),
+        elem: ElementKind::F32,
+    };
+    let canonical = OperandLayout::Canonical {
+        major: unpopped::kernel::Major::MN,
+        swizzle: unpopped::kernel::Swizzle::B128,
+        lbo: Some(16),
+        sbo: 32,
+    };
+    vec![
+        (
+            "ProxyFence",
+            Stmt::ProxyFence {
+                space: MemorySpace::Shared,
+            },
+        ),
+        (
+            "Wgmma",
+            Stmt::Wgmma {
+                n: 8,
+                ab: ElementKind::F16,
+                acc: ElementKind::F32,
+                a: place(),
+                b: place(),
+                d: 0,
+                scale_d: ScalarExpr::Const(0.0),
+                a_layout: canonical,
+                b_layout: canonical,
+            },
+        ),
+        ("WgmmaCommit", Stmt::WgmmaCommit),
+        (
+            "Tcgen05Mma",
+            Stmt::Tcgen05Mma {
+                n: 8,
+                ab: ElementKind::F16,
+                acc: ElementKind::F32,
+                a: place(),
+                b: place(),
+                d: 0,
+                d_col: ScalarExpr::Const(0.0),
+                scale_d: ScalarExpr::Const(0.0),
+                a_layout: canonical,
+                b_layout: canonical,
+            },
+        ),
+        (
+            "Tcgen05Ld",
+            Stmt::Tcgen05Ld {
+                src: 0,
+                col: ScalarExpr::Const(0.0),
+                count: 1,
+                dst: 1,
+            },
+        ),
+        (
+            "Place::Raw",
+            Stmt::Load {
+                local: 0,
+                place: raw.clone(),
+            },
+        ),
+        (
+            "Place::Raw",
+            Stmt::Store {
+                place: raw,
+                value: ScalarExpr::Const(0.0),
+            },
+        ),
+        (
+            "Place::AllocRaw",
+            Stmt::Load {
+                local: 0,
+                place: araw.clone(),
+            },
+        ),
+        (
+            "Place::AllocRaw",
+            Stmt::Store {
+                place: araw,
+                value: ScalarExpr::Const(0.0),
+            },
+        ),
+    ]
+}
+
+#[test]
+fn the_0_57_additions_are_refused_by_name_with_a_reason_at_any_depth() {
+    for (name, stmt) in unlowered() {
+        let direct = refusal(vec![stmt.clone()]);
+        assert!(direct.contains(&format!("`{name}`")), "{name}: {direct}");
+        assert!(direct.contains("no lowering"), "{name}: {direct}");
+        assert!(
+            !direct.contains("declined"),
+            "{name}: no patent ruling is claimed: {direct}"
+        );
+        let nested = refusal(vec![Stmt::If {
+            cond: ScalarExpr::Const(1.0),
+            then: Block(vec![stmt]),
+            els: Block(Vec::new()),
+        }]);
+        assert!(
+            nested.contains(&format!("`{name}`")),
+            "nested {name}: {nested}"
+        );
     }
 }
