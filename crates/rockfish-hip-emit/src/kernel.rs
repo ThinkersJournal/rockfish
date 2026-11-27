@@ -120,6 +120,14 @@ impl Cx<'_> {
             | ScalarExpr::Sub(a, _)
             | ScalarExpr::Mul(a, _)
             | ScalarExpr::Div(a, _) => self.ty_of(a),
+            ScalarExpr::Unary(op @ (UnaryOp::Popc | UnaryOp::Clz | UnaryOp::Brev), _) => {
+                Err(decline(
+                    self.k,
+                    format!(
+                        "unary op `{op:?}` (no lowering decided; not lowered to `__popc`/`__clz`/`__brev`)"
+                    ),
+                ))
+            }
             other => Err(decline(self.k, format!("expression `{}`", variant(other)))),
         }
     }
@@ -273,6 +281,14 @@ impl Cx<'_> {
                 }
                 self.spelled(ek, "a `Div`")?;
                 Ok(format!("({} / {})", self.expr(a)?, self.expr(b)?))
+            }
+            ScalarExpr::Unary(op @ (UnaryOp::Popc | UnaryOp::Clz | UnaryOp::Brev), _) => {
+                Err(decline(
+                    self.k,
+                    format!(
+                        "unary op `{op:?}` (no lowering decided; not lowered to `__popc`/`__clz`/`__brev`)"
+                    ),
+                ))
             }
             other => Err(decline(self.k, format!("expression `{}`", variant(other)))),
         }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0 - 2026-11-27 (PM-allocated; **Breaking** for rockfish-hip-emit and rockfish-hip-parse: Unpopped 0.61.0 take)
+
+- **Breaking (Unpopped 0.61.0).** Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.60.23 -> 0.61.0 (`UnaryOp` gains `Popc`, `Clz`, `Brev`). Both lowerers already ended their `UnaryOp` matches in a wildcard, so nothing stopped compiling; the three ops are declined by name: `Hip` (expression layer) as `UnsupportedOp`, the kernel layer as ``unary op `Popc` ``/`Clz`/`Brev`. Not lowered to `__popc`/`__clz`/`__brev`: the integer-width and `clz(0)` rules against the IR's oracle are undecided, and nothing is measured on a device. Patent: `Popc`/`Brev` outside as read, `Clz` "no patent found: not a clearance; no packed/vector clz".
+
 ## 0.3.1 - 2026-11-27 (allocated by pm-assist; unpopped 0.60.23 take, not breaking; tree-sitter held at 0.27.1 for the MSRV)
 
 - Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.60.10 -> 0.60.23 (Unpopped notice 2026-11-27). `cargo test --workspace --locked` passes on one Windows machine with `REQUIRE_CLANG=1`; no source change needed. Version number is pm-assist's.
