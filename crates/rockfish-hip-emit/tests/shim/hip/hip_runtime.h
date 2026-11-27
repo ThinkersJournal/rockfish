@@ -26,3 +26,7 @@ template <class T> T __shfl_xor(T var, int laneMask, int width = 64) { (void)lan
 inline int __all(int predicate) { return predicate; }
 inline int __any(int predicate) { return predicate; }
 inline unsigned long long __ballot(int predicate) { return (unsigned long long)predicate; }
+
+// Shared memory and the block barrier: names only (typing); no semantics.
+#define __shared__
+inline void __syncthreads() {}

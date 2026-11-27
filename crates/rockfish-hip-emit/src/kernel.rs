@@ -25,8 +25,9 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
 use unpopped::backend::{GeneratedKernel, LowerError};
-use unpopped::exec::{ExecId, Scope};
+use unpopped::exec::{ExecId, Extent, MemorySpace, Scope};
 use unpopped::ir::{BinaryOp, ReduceOp, ScalarExpr, UnaryOp};
+use unpopped::kernel::BarrierKind;
 use unpopped::kernel::{
     BufferRole, CollectiveKind, KernelFn, ParamKind, Place, ShuffleMode, Stmt, VoteKind,
 };
@@ -331,6 +332,20 @@ impl Cx<'_> {
                     ));
                 }
                 Ok((format!("p{buffer}[{}]", terms.join(" + ")), *elem))
+            }
+            Place::Alloc { alloc, index } => {
+                let a =
+                    self.k.allocs.get(*alloc as usize).ok_or_else(|| {
+                        decline(self.k, format!("allocation {alloc} does not exist"))
+                    })?;
+                let ek = self.ty_of(index)?;
+                if is_float(ek) {
+                    return Err(decline(self.k, "a float allocation index"));
+                }
+                Ok((
+                    format!("s{alloc}[(long long)({})]", self.expr(index)?),
+                    a.elem,
+                ))
             }
             other => Err(decline(self.k, format!("place `{}`", variant(other)))),
         }
@@ -668,6 +683,20 @@ impl Cx<'_> {
                 self.block(body, d + 1)?;
                 self.line(d, "}");
             }
+            Stmt::Barrier { scope, kind } => match (scope, kind) {
+                // A plain block barrier: HIP's `__syncthreads()`. Named, split and every other
+                // scope are not lowered (named, cluster and device barriers are held).
+                (Scope::Block, BarrierKind::Full) => self.line(d, "__syncthreads();"),
+                (sc, kd) => {
+                    return Err(decline(
+                        self.k,
+                        format!(
+                            "a `Barrier` of scope {sc:?} and kind `{}` (only Block/Full is lowered)",
+                            variant(kd)
+                        ),
+                    ));
+                }
+            },
             Stmt::Break => self.line(d, "break;"),
             Stmt::Continue => self.line(d, "continue;"),
             Stmt::Return => self.line(d, "return;"),
@@ -695,11 +724,29 @@ pub(crate) fn lower(kernel: &KernelFn, wave: Option<u32>) -> Result<GeneratedKer
             kernel.name
         ),
     })?;
-    if !kernel.allocs.is_empty() {
-        return Err(decline(
-            kernel,
-            "allocations (shared/private/constant arrays) are not lowered",
-        ));
+    // Static `Shared` arrays only: `__shared__ T s<i>[n];`. Dynamic extents, private, constant,
+    // tensor and global allocations are refused by name.
+    let mut shared = String::new();
+    for (i, a) in kernel.allocs.iter().enumerate() {
+        let (MemorySpace::Shared, Extent::Static(n)) = (a.space, a.extent) else {
+            return Err(decline(
+                kernel,
+                format!(
+                    "allocation `{}` in {:?} with extent {:?} (only static Shared is lowered)",
+                    a.name, a.space, a.extent
+                ),
+            ));
+        };
+        let (t, _) = c_type(a.elem).ok_or_else(|| {
+            decline(
+                kernel,
+                format!(
+                    "dtype {:?} (allocation `{}`) is not spelled",
+                    a.elem, a.name
+                ),
+            )
+        })?;
+        let _ = writeln!(shared, "    __shared__ {t} s{i}[{n}];");
     }
     if kernel.result.is_some() || !kernel.results.is_empty() {
         return Err(decline(
@@ -759,6 +806,7 @@ pub(crate) fn lower(kernel: &KernelFn, wave: Option<u32>) -> Result<GeneratedKer
     let _ = writeln!(s, "extern \"C\" __global__ void {name}(");
     let _ = writeln!(s, "    {}", sig.join(",\n    "));
     s.push_str(") {\n");
+    s.push_str(&shared);
     s.push_str(&body);
     s.push_str("}\n");
     Ok(GeneratedKernel::new(name.clone(), s)

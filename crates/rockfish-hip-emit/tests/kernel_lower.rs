@@ -269,7 +269,10 @@ fn every_fixture_s1_lowers_parses() {
             }
         }
     }
-    assert_eq!(n, 12, "the S1-lowered fixture set changed: a decision");
+    assert_eq!(
+        n, 13,
+        "the S1-lowered fixture set changed: a decision (S1c added Barrier)"
+    );
 }
 
 /// A one-buffer-in, one-buffer-out F32 kernel whose body is `body` over locals `0..=2` (F32) and
@@ -432,4 +435,138 @@ fn integer_neg_wraps_and_integer_abs_and_select_are_refused() {
         }]),
     );
     assert!(detail(&abs).contains("integer `Abs`"), "{}", detail(&abs));
+}
+
+use unpopped::exec::{Extent, MemorySpace};
+use unpopped::kernel::{BarrierKind, BufferRole as Role};
+
+/// `tile[tid] = x[tid]; barrier; y[tid] = tile[63 - tid]` over one block of 64 threads: a
+/// static `Shared` array and a plain block barrier.
+fn reverse_in_shared(barrier: Stmt, alloc: unpopped::exec::AllocDecl) -> KernelFn {
+    let tile = |index| Place::Alloc { alloc: 0, index };
+    KernelFn::new(
+        "rev",
+        ElementKind::F32,
+        vec![
+            Param::buffer("x", ElementKind::F32, Role::Read, Some(1)),
+            Param::buffer("y", ElementKind::F32, Role::Write, Some(1)),
+        ],
+        vec![
+            LocalDecl::scalar(ElementKind::U32),
+            LocalDecl::scalar(ElementKind::F32),
+            LocalDecl::scalar(ElementKind::F32),
+        ],
+        Block(vec![
+            Stmt::Let {
+                local: 0,
+                init: ScalarExpr::Exec(ExecId::ThreadIdx(0)),
+            },
+            Stmt::Load {
+                local: 1,
+                place: Place::Logical {
+                    buffer: 0,
+                    coords: vec![local(0)],
+                },
+            },
+            Stmt::Store {
+                place: tile(local(0)),
+                value: local(1),
+            },
+            barrier,
+            Stmt::Load {
+                local: 2,
+                place: tile(ScalarExpr::Sub(
+                    Box::new(ScalarExpr::ConstInt(63, ElementKind::U32)),
+                    Box::new(local(0)),
+                )),
+            },
+            Stmt::Store {
+                place: Place::Logical {
+                    buffer: 1,
+                    coords: vec![local(0)],
+                },
+                value: local(1),
+            },
+        ]),
+    )
+    .with_allocs(vec![alloc])
+    .with_launch(LaunchShape::new([64, 1, 1], [1, 1, 1]))
+}
+
+fn shared64() -> unpopped::exec::AllocDecl {
+    unpopped::exec::AllocDecl::new(
+        "tile",
+        MemorySpace::Shared,
+        ElementKind::F32,
+        Extent::Static(64),
+    )
+}
+fn block_barrier() -> Stmt {
+    Stmt::Barrier {
+        scope: unpopped::exec::Scope::Block,
+        kind: BarrierKind::Full,
+    }
+}
+
+#[test]
+fn a_static_shared_array_and_a_block_barrier_lower() {
+    let s = Hip
+        .lower_kernel(&reverse_in_shared(block_barrier(), shared64()))
+        .expect("lowers")
+        .source;
+    assert!(s.contains("    __shared__ float s0[64];"), "{s}");
+    assert!(s.contains("s0[(long long)(l0)] = l1;"), "{s}");
+    assert!(s.contains("    __syncthreads();"), "{s}");
+    // The shared array is declared before the body; the barrier sits between store and load.
+    assert!(
+        s.find("__shared__").unwrap() < s.find("__syncthreads").unwrap(),
+        "{s}"
+    );
+    assert!(
+        s.find("s0[(long long)(l0)] = l1;").unwrap() < s.find("__syncthreads").unwrap(),
+        "{s}"
+    );
+    parses("shared_rev", &s);
+}
+
+#[test]
+fn other_barriers_and_other_allocations_are_refused_by_name() {
+    let named = Stmt::Barrier {
+        scope: unpopped::exec::Scope::Block,
+        kind: BarrierKind::Named { id: 1, count: 64 },
+    };
+    let d = detail(&reverse_in_shared(named, shared64()));
+    assert!(
+        d.contains("Barrier") && d.contains("only Block/Full"),
+        "{d}"
+    );
+    let sub = Stmt::Barrier {
+        scope: unpopped::exec::Scope::Subgroup,
+        kind: BarrierKind::Full,
+    };
+    assert!(detail(&reverse_in_shared(sub, shared64())).contains("Subgroup"));
+    let private = unpopped::exec::AllocDecl::new(
+        "t",
+        MemorySpace::Private,
+        ElementKind::F32,
+        Extent::Static(64),
+    );
+    let d = detail(&reverse_in_shared(block_barrier(), private));
+    assert!(d.contains("only static Shared"), "{d}");
+    let dynamic = unpopped::exec::AllocDecl::new(
+        "t",
+        MemorySpace::Shared,
+        ElementKind::F32,
+        Extent::Param(0),
+    );
+    // A dynamic extent needs a scalar parameter the checker can see; whichever gate fires, it is a refusal.
+    assert!(matches!(
+        Hip.lower_kernel(&reverse_in_shared(block_barrier(), dynamic)),
+        Err(LowerError::UnsupportedKernel { .. })
+    ));
+    // Control: the same kernel with the plain barrier and a static Shared array lowers.
+    assert!(
+        Hip.lower_kernel(&reverse_in_shared(block_barrier(), shared64()))
+            .is_ok()
+    );
 }
