@@ -10,5 +10,5 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-rockfish-core = { path = "../rockfish-core", version = "=0.3.1" }
-rockfish-rocblas-sys = { path = "../rockfish-rocblas-sys", version = "=0.3.1" }
+rockfish-core = { path = "../rockfish-core", version = "=0.4.0" }
+rockfish-rocblas-sys = { path = "../rockfish-rocblas-sys", version = "=0.4.0" }
