@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 - 2026-11-27 (allocated by pm-assist; unpopped 0.60.23 take, not breaking; tree-sitter held at 0.27.1 for the MSRV)
+
+- Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.60.10 -> 0.60.23 (Unpopped notice 2026-11-27). `cargo test --workspace --locked` passes on one Windows machine with `REQUIRE_CLANG=1`; no source change needed. Version number is pm-assist's.
+
 ## 0.3.0 - 2026-11-27 (allocated by pm-assist; **Breaking** for rockfish-hip-emit and rockfish-hip-parse: Unpopped 0.60.10 take)
 
 - **Breaking (Unpopped 0.60.10).** Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.58.0 -> 0.60.10. The seven KISS 0.24.0 `ElementKind` rows (`F128`, `I128`, `U128`, `I256`, `U256`, `F8E3M4`, `F8UE4M3`) are refused: `Hip::supports_dtype` says `Unsupported` (Hip's own answer, mutant-checked) and Unpopped's planner also refuses them. What HIP offers for them is unread.
