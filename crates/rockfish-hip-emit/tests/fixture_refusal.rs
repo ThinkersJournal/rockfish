@@ -13,19 +13,32 @@ use rockfish_hip_emit::Hip;
 use unpopped::backend::{Backend, LowerError};
 use unpopped::fixtures::{Fixture, fixtures};
 
-fn refusal(name: &str, fx: &Fixture) -> String {
+/// `Ok(source)` for a lowered fixture, `Err(detail)` for a typed `UnsupportedKernel`; any other
+/// error, or a panic, fails the test.
+fn outcome(name: &str, fx: &Fixture) -> Result<String, String> {
     let funcs = fx.functions();
     assert!(!funcs.is_empty(), "{name}: fixture has no function");
-    let mut first = None;
+    let mut first: Result<String, String> = Ok(String::new());
     for f in funcs {
         match Hip.lower_kernel(f) {
-            Err(LowerError::UnsupportedKernel { detail }) => {
-                first.get_or_insert(detail);
+            Ok(g) => {
+                if let Ok(src) = &mut first {
+                    src.push_str(&g.source);
+                }
             }
-            other => panic!("{name}: expected UnsupportedKernel, got {other:?}"),
+            Err(LowerError::UnsupportedKernel { detail }) => {
+                if first.is_ok() {
+                    first = Err(detail);
+                }
+            }
+            other => panic!("{name}: expected Ok or UnsupportedKernel, got {other:?}"),
         }
     }
-    first.expect("at least one refusal")
+    first
+}
+
+fn refusal(name: &str, fx: &Fixture) -> String {
+    outcome(name, fx).expect_err(&format!("{name}: expected a refusal"))
 }
 
 #[test]
@@ -43,10 +56,12 @@ fn every_fixture_is_checker_valid() {
 }
 
 #[test]
-fn every_fixture_is_refused_as_unsupported_kernel() {
+fn every_fixture_is_lowered_or_refused_as_unsupported_kernel() {
     for (name, fx) in fixtures() {
-        let detail = refusal(name, &fx);
-        assert!(detail.starts_with("hip backend"), "{name}: {detail}");
+        match outcome(name, &fx) {
+            Ok(src) => assert!(src.contains("__global__"), "{name}: {src}"),
+            Err(detail) => assert!(detail.starts_with("hip backend"), "{name}: {detail}"),
+        }
     }
 }
 
@@ -62,28 +77,26 @@ fn collective_is_declined_by_name_with_the_434c_marker() {
     assert!(detail.contains("US8539204B2"), "{detail}");
 }
 
-/// Prints, for the U62 answer, the arm each fixture reaches: declined-by-name, no-lowering, or the blanket no-kernel-layer refusal.
-/// Run with `--nocapture`; asserts only that the three arms partition the set.
+/// Prints, for the U62 answer, what each fixture reaches. Run with `--nocapture`; asserts only
+/// that the arms partition the set, and the lowered set is the S1 subset (a change to it is a
+/// decision, so this list is exact).
 #[test]
-fn arm_reached_per_fixture_is_by_name_for_every_variant() {
-    let mut declined = 0;
-    let mut unlowered = 0;
-    let mut blanket = 0;
+fn arm_reached_per_fixture() {
+    let (mut lowered, mut declined, mut unlowered, mut s1) = (vec![], 0, 0, vec![]);
     for (name, fx) in fixtures() {
-        let d = refusal(name, &fx);
-        if d.contains("declined on AMD hardware") {
-            declined += 1;
-            eprintln!("DECLINED  {name}");
-        } else if d.contains("no lowering for") {
-            unlowered += 1;
-            eprintln!("UNLOWERED {name}");
-        } else if d.contains("does not lower kernel-layer kernels") {
-            blanket += 1;
-            eprintln!("BLANKET   {name}");
-        } else {
-            panic!("{name}: no known arm: {d}");
+        match outcome(name, &fx) {
+            Ok(_) => lowered.push(name),
+            Err(d) if d.contains("declined on AMD hardware") => declined += 1,
+            Err(d) if d.contains("no lowering for") => unlowered += 1,
+            Err(d) if d.contains("the S1 kernel-layer lowerer spells only") => s1.push(name),
+            Err(d) => panic!("{name}: no known arm: {d}"),
         }
     }
-    eprintln!("declined={declined} unlowered={unlowered} blanket={blanket}");
-    assert_eq!(declined + unlowered + blanket, 46);
+    eprintln!(
+        "lowered={lowered:?}
+S1-declined={s1:?}"
+    );
+    assert_eq!(lowered.len() + declined + unlowered + s1.len(), 46);
+    assert_eq!(declined, 13);
+    assert_eq!(unlowered, 8);
 }

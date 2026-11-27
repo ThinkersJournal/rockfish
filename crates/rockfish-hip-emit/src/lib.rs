@@ -38,6 +38,7 @@
 //! shapes above use none (no cross-lane step). A block-parallel reduction or scan must take the
 //! width from the target or from the device-side `warpSize`, never assume 32.
 
+mod kernel;
 #[cfg(feature = "hiprtc")]
 mod rtc;
 #[cfg(feature = "hiprtc")]
@@ -112,7 +113,8 @@ impl Backend for Hip {
         true
     }
 
-    /// This backend lowers no kernel-layer kernels: every one is `UnsupportedKernel`. A kernel
+    /// Kernel-layer kernels: slice S1 lowers the skeleton subset (see `kernel.rs`), and every other
+    /// kernel is `UnsupportedKernel` by name. A kernel
     /// that contains an NVIDIA-only statement named in `docs/PATENT-SWEEP.md` is refused **by
     /// name**, so the reason is the declined list, not a missing feature. Those statements are
     /// never lowered to a hardware operation on AMD hardware (CireSnave's rulings of 2026-11-16).
@@ -129,17 +131,12 @@ impl Backend for Hip {
         if let Some((name, why)) = first_unlowered(&kernel.body) {
             return Err(LowerError::UnsupportedKernel {
                 detail: format!(
-                    "hip backend: kernel `{}` contains `{name}`, which this emitter has no lowering for ({why}); it lowers no kernel-layer kernel at all",
+                    "hip backend: kernel `{}` contains `{name}`, which this emitter has no lowering for ({why}); it is declined by name",
                     kernel.name
                 ),
             });
         }
-        Err(LowerError::UnsupportedKernel {
-            detail: format!(
-                "hip backend does not lower kernel-layer kernels (kernel `{}`)",
-                kernel.name
-            ),
-        })
+        kernel::lower(kernel)
     }
 
     fn lower(&self, plan: &KernelPlan<'_>) -> Result<GeneratedKernel, LowerError> {
