@@ -197,20 +197,17 @@ fn a_store_to_a_read_only_buffer_is_refused() {
 #[test]
 fn unspelled_things_are_refused_by_name() {
     let mut k = saxpy();
-    k.body.0.push(Stmt::MaskedStore {
-        place: Place::Logical {
-            buffer: 1,
-            coords: vec![local(3)],
-        },
-        value: ScalarExpr::Const(0.0),
-        mask: ScalarExpr::Const(1.0),
-    });
-    assert!(detail(&k).contains("statement `MaskedStore`"));
+    // `MaskedStore` was the control until S1b spelled it; `GridDepWait` is unspelled still.
+    k.body.0.push(Stmt::GridDepWait);
+    assert!(detail(&k).contains("statement `GridDepWait`"));
 
     let mut k = saxpy();
     k.body.0.push(Stmt::Let {
         local: 2,
-        init: ScalarExpr::Unary(unpopped::ir::UnaryOp::Neg, Box::new(ScalarExpr::Const(1.0))),
+        init: ScalarExpr::Unary(
+            unpopped::ir::UnaryOp::Sqrt,
+            Box::new(ScalarExpr::Const(1.0)),
+        ),
     });
     let d = detail(&k);
     assert!(d.contains("expression `Unary`"));
@@ -272,5 +269,167 @@ fn every_fixture_s1_lowers_parses() {
             }
         }
     }
-    assert_eq!(n, 10, "the S1-lowered fixture set changed: a decision");
+    assert_eq!(n, 12, "the S1-lowered fixture set changed: a decision");
+}
+
+/// A one-buffer-in, one-buffer-out F32 kernel whose body is `body` over locals `0..=2` (F32) and
+/// `3` (U32 thread index, `Let` first).
+fn simple(body: Vec<Stmt>) -> KernelFn {
+    let mut stmts = vec![Stmt::Let {
+        local: 3,
+        init: ScalarExpr::Exec(ExecId::ThreadIdx(0)),
+    }];
+    stmts.extend(body);
+    KernelFn::new(
+        "s1b",
+        ElementKind::F32,
+        vec![
+            Param::buffer("x", ElementKind::F32, BufferRole::Read, Some(1)),
+            Param::buffer("y", ElementKind::F32, BufferRole::ReadWrite, Some(1)),
+        ],
+        vec![
+            LocalDecl::scalar(ElementKind::F32),
+            LocalDecl::scalar(ElementKind::F32),
+            LocalDecl::scalar(ElementKind::F32),
+            LocalDecl::scalar(ElementKind::U32),
+        ],
+        Block(stmts),
+    )
+    .with_launch(LaunchShape::new([64, 1, 1], [1, 1, 1]))
+}
+
+fn at(buffer: u32) -> Place {
+    Place::Logical {
+        buffer,
+        coords: vec![local(3)],
+    }
+}
+
+#[test]
+fn masked_load_and_store_touch_no_memory_when_the_mask_is_false() {
+    let k = simple(vec![
+        Stmt::MaskedLoad {
+            local: 0,
+            place: at(0),
+            mask: bin(
+                BinaryOp::CmpLt,
+                local(3),
+                ScalarExpr::ConstInt(10, ElementKind::U32),
+            ),
+            fill: ScalarExpr::Const(-1.0),
+        },
+        Stmt::MaskedStore {
+            place: at(1),
+            value: local(0),
+            mask: bin(
+                BinaryOp::CmpLt,
+                local(3),
+                ScalarExpr::ConstInt(10, ElementKind::U32),
+            ),
+        },
+    ]);
+    let s = Hip.lower_kernel(&k).expect("lowers").source;
+    // The load is a ternary: the memory arm is not evaluated when the mask is false.
+    assert!(s.contains("float l0 = ((((unsigned int)((l3) < (((unsigned int)10LL)) ? 1 : 0))) != 0) ? p0[(long long)(l3) * p0_s0] : (-1.0f);"), "{s}");
+    assert!(s.contains("{ p1[(long long)(l3) * p1_s0] = l0; }"), "{s}");
+    parses("masked", &s);
+    // Mutant control: a masked store to the read-only buffer is refused.
+    let mut bad = k.clone();
+    bad.body.0[2] = Stmt::MaskedStore {
+        place: at(0),
+        value: local(0),
+        mask: ScalarExpr::Const(1.0),
+    };
+    assert!(detail(&bad).contains("WriteToReadOnly"), "{}", detail(&bad));
+}
+
+#[test]
+fn float_max_min_are_nan_propagating_neg_abs_select_are_spelled() {
+    let k = simple(vec![
+        Stmt::Load {
+            local: 0,
+            place: at(0),
+        },
+        Stmt::Let {
+            local: 1,
+            init: bin(BinaryOp::Max, local(0), ScalarExpr::Const(0.0)),
+        },
+        Stmt::Let {
+            local: 2,
+            init: bin(BinaryOp::Min, local(0), local(1)),
+        },
+        Stmt::Assign {
+            local: 2,
+            value: ScalarExpr::Unary(unpopped::ir::UnaryOp::Neg, Box::new(local(2))),
+        },
+        Stmt::Assign {
+            local: 1,
+            value: ScalarExpr::Select(
+                Box::new(local(0)),
+                Box::new(ScalarExpr::Unary(
+                    unpopped::ir::UnaryOp::Abs,
+                    Box::new(local(2)),
+                )),
+                Box::new(ScalarExpr::Const(0.0)),
+            ),
+        },
+        Stmt::Store {
+            place: at(1),
+            value: local(1),
+        },
+    ]);
+    let s = Hip.lower_kernel(&k).expect("lowers").source;
+    // NaN-propagating, the first operand on ties: `>=` for Max, `<=` for Min.
+    assert!(
+        s.contains("l0 != l0 ? l0 : (0.0f != 0.0f ? 0.0f : (l0 >= 0.0f ? l0 : 0.0f))"),
+        "{s}"
+    );
+    assert!(
+        s.contains("l0 != l0 ? l0 : (l1 != l1 ? l1 : (l0 <= l1 ? l0 : l1))"),
+        "{s}"
+    );
+    assert!(s.contains("(-l2)") && s.contains("fabsf(l2)"), "{s}");
+    assert!(s.contains("(l0) != 0 ? (fabsf(l2)) : (0.0f)"), "{s}");
+    parses("float_ops", &s);
+}
+
+#[test]
+fn integer_neg_wraps_and_integer_abs_and_select_are_refused() {
+    let neg = |ek| {
+        KernelFn::new(
+            "neg",
+            ek,
+            vec![],
+            vec![LocalDecl::scalar(ek)],
+            Block(vec![Stmt::Let {
+                local: 0,
+                init: ScalarExpr::Unary(
+                    unpopped::ir::UnaryOp::Neg,
+                    Box::new(ScalarExpr::ConstInt(5, ek)),
+                ),
+            }]),
+        )
+    };
+    let s = Hip
+        .lower_kernel(&neg(ElementKind::I32))
+        .expect("i32")
+        .source;
+    assert!(s.contains("(int)(0u - (unsigned int)(((int)5LL)))"), "{s}");
+    parses("neg_i32", &s);
+    assert!(Hip.lower_kernel(&neg(ElementKind::U64)).is_ok());
+
+    let abs = KernelFn::new(
+        "abs",
+        ElementKind::I32,
+        vec![],
+        vec![LocalDecl::scalar(ElementKind::I32)],
+        Block(vec![Stmt::Let {
+            local: 0,
+            init: ScalarExpr::Unary(
+                unpopped::ir::UnaryOp::Abs,
+                Box::new(ScalarExpr::ConstInt(5, ElementKind::I32)),
+            ),
+        }]),
+    );
+    assert!(detail(&abs).contains("integer `Abs`"), "{}", detail(&abs));
 }

@@ -26,7 +26,7 @@ use std::fmt::Write as _;
 
 use unpopped::backend::{GeneratedKernel, LowerError};
 use unpopped::exec::{ExecId, Scope};
-use unpopped::ir::{BinaryOp, ReduceOp, ScalarExpr};
+use unpopped::ir::{BinaryOp, ReduceOp, ScalarExpr, UnaryOp};
 use unpopped::kernel::{
     BufferRole, CollectiveKind, KernelFn, ParamKind, Place, ShuffleMode, Stmt, VoteKind,
 };
@@ -111,6 +111,9 @@ impl Cx<'_> {
                 Ok(d.elem)
             }
             ScalarExpr::Binary(op, a, _) if cmp_op(*op).is_some() => self.ty_of(a),
+            ScalarExpr::Binary(BinaryOp::Max | BinaryOp::Min, a, _)
+            | ScalarExpr::Unary(UnaryOp::Neg | UnaryOp::Abs, a)
+            | ScalarExpr::Select(_, a, _) => self.ty_of(a),
             ScalarExpr::Add(a, _)
             | ScalarExpr::Sub(a, _)
             | ScalarExpr::Mul(a, _)
@@ -190,6 +193,66 @@ impl Cx<'_> {
                 let c = cmp_op(*op).unwrap_or("==");
                 Ok(format!(
                     "(({t})(({}) {c} ({}) ? 1 : 0))",
+                    self.expr(a)?,
+                    self.expr(b)?
+                ))
+            }
+            ScalarExpr::Binary(op @ (BinaryOp::Max | BinaryOp::Min), a, b) => {
+                let ek = self.ty_of(e)?;
+                self.spelled(ek, "a `Max`/`Min`")?;
+                let (x, y) = (self.expr(a)?, self.expr(b)?);
+                let (cmp, name) = if *op == BinaryOp::Max {
+                    (">=", "Max")
+                } else {
+                    ("<=", "Min")
+                };
+                let _ = name;
+                // Operands appear several times: every expression this lowerer builds is pure.
+                Ok(if is_float(ek) {
+                    // NaN-propagating, the first operand on ties (the IR's `Max`/`Min`, not C `fmax`).
+                    format!("({x} != {x} ? {x} : ({y} != {y} ? {y} : ({x} {cmp} {y} ? {x} : {y})))")
+                } else {
+                    let c = if *op == BinaryOp::Max { ">" } else { "<" };
+                    format!("(({x}) {c} ({y}) ? ({x}) : ({y}))")
+                })
+            }
+            ScalarExpr::Unary(UnaryOp::Neg, a) => {
+                let ek = self.ty_of(e)?;
+                let (t, unsigned) = self.spelled(ek, "a `Neg`")?;
+                let x = self.expr(a)?;
+                Ok(match (is_float(ek), unsigned) {
+                    (true, _) => format!("(-{x})"),
+                    (false, Some(u)) => format!("(({t})(0u - ({u})({x})))"),
+                    (false, None) => format!("(({t})(({t})0 - ({x})))"),
+                })
+            }
+            ScalarExpr::Unary(UnaryOp::Abs, a) => {
+                let ek = self.ty_of(e)?;
+                if !is_float(ek) {
+                    return Err(decline(
+                        self.k,
+                        format!("integer `Abs` at {ek:?} (the MIN case is not decided in S1b)"),
+                    ));
+                }
+                let f = if ek == ElementKind::F32 {
+                    "fabsf"
+                } else {
+                    "fabs"
+                };
+                Ok(format!("{f}({})", self.expr(a)?))
+            }
+            ScalarExpr::Select(c, a, b) => {
+                let ek = self.ty_of(e)?;
+                if !is_float(ek) {
+                    return Err(decline(
+                        self.k,
+                        format!("`Select` at {ek:?} (float only, as the IR admits it)"),
+                    ));
+                }
+                self.spelled(ek, "a `Select`")?;
+                Ok(format!(
+                    "(({}) != 0 ? ({}) : ({}))",
+                    self.expr(c)?,
                     self.expr(a)?,
                     self.expr(b)?
                 ))
@@ -507,6 +570,35 @@ impl Cx<'_> {
                     ));
                 }
                 self.line(d, &format!("{t} l{local} = {addr};"));
+            }
+            Stmt::MaskedLoad {
+                local,
+                place,
+                mask,
+                fill,
+            } => {
+                let ek = self.ty_of(&ScalarExpr::Local(*local))?;
+                let (t, _) = self.spelled(ek, "a local")?;
+                let (addr, belem) = self.place(place)?;
+                if belem != ek {
+                    return Err(decline(
+                        self.k,
+                        format!("`MaskedLoad` of a {belem:?} element into a {ek:?} local"),
+                    ));
+                }
+                let (m, f) = (self.expr(mask)?, self.expr(fill)?);
+                // The untaken arm of a C ternary is not evaluated: a false mask touches no memory.
+                self.line(d, &format!("{t} l{local} = (({m}) != 0) ? {addr} : ({f});"));
+            }
+            Stmt::MaskedStore { place, value, mask } => {
+                let (addr, _) = self.place(place)?;
+                if let Place::Logical { buffer, .. } = place
+                    && matches!(&self.k.params[*buffer as usize].kind, ParamKind::Buffer { role, .. } if *role == BufferRole::Read)
+                {
+                    return Err(decline(self.k, "a `MaskedStore` to a read-only buffer"));
+                }
+                let (m, v) = (self.expr(mask)?, self.expr(value)?);
+                self.line(d, &format!("if (({m}) != 0) {{ {addr} = {v}; }}"));
             }
             Stmt::Assign { local, value } => {
                 self.ty_of(&ScalarExpr::Local(*local))?;
