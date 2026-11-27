@@ -222,6 +222,9 @@ fn unspelled_unary_ops_are_refused_not_approximated() {
         UnaryOp::Sinh,
         UnaryOp::Cbrt,
         UnaryOp::Lgamma,
+        UnaryOp::Popc,
+        UnaryOp::Clz,
+        UnaryOp::Brev,
     ] {
         let r = lower_op(&op("u", 1, input(0).unary(u)));
         assert!(is_unsupported_op(&r), "{u:?}: {r:?}");

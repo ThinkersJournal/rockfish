@@ -212,6 +212,21 @@ fn unspelled_things_are_refused_by_name() {
     let d = detail(&k);
     assert!(d.contains("expression `Unary`"));
 
+    // Unpopped 0.61 `Popc`/`Clz`/`Brev` are declined by name (control: `Neg` lowers, above).
+    for (op, name) in [
+        (unpopped::ir::UnaryOp::Popc, "Popc"),
+        (unpopped::ir::UnaryOp::Clz, "Clz"),
+        (unpopped::ir::UnaryOp::Brev, "Brev"),
+    ] {
+        let mut k = saxpy();
+        k.body.0.push(Stmt::Assign {
+            local: 3,
+            value: ScalarExpr::Unary(op, Box::new(ScalarExpr::ConstInt(1, ElementKind::U32))),
+        });
+        let d = detail(&k);
+        assert!(d.contains(&format!("unary op `{name}`")), "{d}");
+    }
+
     let mut k = saxpy();
     // An unused trailing F16 buffer: checker-valid, so the refusal is the lowerer's.
     k.params.push(Param::buffer(
