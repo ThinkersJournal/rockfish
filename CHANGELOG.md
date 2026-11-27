@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (version allocated by pm-assist at gate time; **Breaking** for rockfish-hip-emit and rockfish-hip-parse: Unpopped 0.60.10 take)
+## 0.3.0 - 2026-11-27 (allocated by pm-assist; **Breaking** for rockfish-hip-emit and rockfish-hip-parse: Unpopped 0.60.10 take)
 
 - **Breaking (Unpopped 0.60.10).** Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.58.0 -> 0.60.10. The seven KISS 0.24.0 `ElementKind` rows (`F128`, `I128`, `U128`, `I256`, `U256`, `F8E3M4`, `F8UE4M3`) are refused: `Hip::supports_dtype` says `Unsupported` (Hip's own answer, mutant-checked) and Unpopped's planner also refuses them. What HIP offers for them is unread.
 - `tests/fixture_refusal.rs`: all 46 of Unpopped's published per-`Stmt` fixtures are checker-valid and each is lowered or refused by name (13 lowered, 13 declined with a patent, 8 "no lowering", 9 unspelled, 3 module entries the checker sends to `check_module`; 13+13+8+9+3 = 46).
