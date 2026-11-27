@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.1 - 2026-11-27 (allocated by pm-assist; unpopped 0.60.23 take, not breaking; tree-sitter held at 0.27.1 for the MSRV)
 
 - Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.60.10 -> 0.60.23 (Unpopped notice 2026-11-27). `cargo test --workspace --locked` passes on one Windows machine with `REQUIRE_CLANG=1`; no source change needed. Version number is pm-assist's.
 
