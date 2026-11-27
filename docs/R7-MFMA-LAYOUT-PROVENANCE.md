@@ -18,7 +18,7 @@ Source for every row: `github.com/ROCm/amd_matrix_instruction_calculator` at com
 | MFMA f32 D output | `multirow_height=4`, `multirows_per_register=int(64/N)=4`, `blocks_per_register=1`; register `int(i/16)*4 + i%4 = i % 4`; lane `(int(i/4)%4)*N + j`: **D[i][j] in v[i % 4], lane 16*(i div 4) + j** | py:5516-5522, 5527-5533, 5539-5545 | NO |
 | MFMA f64 D output | `multirow_height=1`: **register pair `i div 4`, lane 16*(i % 4) + j** | same lines, data_size 64 branch py:5518 | NO |
 | `v_wmma_f32_16x16x16_f16` (rdna3 gfx11xx; rdna4 gfx12xx has its own row) | m=16, n=16, k=16, blocks=1, fp16 in, fp32 out | py:2302 (rdna3), py:2436 (rdna4) | NO |
-| RDNA wave | `wave_width` is an instruction setting; lanes `< wave_width` | py:6172+ (`check_valid_reg_lane`, `lane >= self.wave_width`) | NO |
+| RDNA wave | `wave_width` is an instruction setting; lanes `< wave_width` | py:6205 (`lane >= self.wave_width` is invalid, Gfx11) | NO |
 | WMMA A/B input | register named by `_get_reg_name(16, ..., k)`: **VGPR `k div 2`, half `k % 2`**; lanes `i` and `i + 16` at wave32 (four copies, `i`, `i+16`, `i+32`, `i+48`, at wave64) | py:6256, 6262-6267, name helper py:3692 (16-bit branch) | NO |
 | WMMA f32 D output (wave32) | `rows_per_reg_slot=2`, `skip_half=1`, `regno = int(i/2) + (opsel>>2)`; `rows_per_vgpr=32`; lane `(16*(i%32)+j) % 32`: **D[i][j] in v[i div 2], lane 16*(i % 2) + j** | py:6295-6297, 6303-6304 | NO |
 | WMMA f16 D example | README example for `v_wmma_f16_16x16x16_f16` D: row 0 in v0 lanes 0-15, row 1 in v0 lanes 16-31 (agrees with the formula shape) | README.md:1186 | NO |
