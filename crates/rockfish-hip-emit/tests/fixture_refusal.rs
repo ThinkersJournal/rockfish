@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! `Hip::lower_kernel` over Unpopped's published per-`Stmt`-variant fixtures (`fixtures` feature).
 //!
-//! **What this shows:** each of the 46 fixtures passes Unpopped's own checker (so the refusal is
+//! **What this shows:** each of the 50 fixtures passes Unpopped's own checker (so the refusal is
 //! the emitter's, not an invalid input), and `Hip` answers `UnsupportedKernel` for every one,
 //! never a panic and never text. A variant on the declined list (`docs/PATENT-SWEEP.md`, board
 //! 434 C / 506) is refused **by name**; `Collective`, which now includes the exclusive
@@ -46,7 +46,7 @@ fn every_fixture_is_checker_valid() {
     let all = fixtures();
     assert_eq!(
         all.len(),
-        46,
+        50,
         "the published fixture set is one per Stmt variant"
     );
     for (name, fx) in &all {
@@ -102,8 +102,30 @@ S1-declined={s1:?}"
     eprintln!("checker-refused={checker:?}");
     assert_eq!(
         lowered.len() + declined + unlowered + s1.len() + checker.len(),
-        46
+        50
     );
     assert_eq!(declined, 13);
     assert_eq!(unlowered, 8);
+}
+
+/// Unpopped 0.62 `Tile*` statements (board 519 B) are declined by name, and so is the `Tile`
+/// memory space (its allocation). Control: `Barrier` lowers from the same fixture set. No
+/// MFMA/WMMA mapping is made; that waits for a design. Any text on these carries: lifted by
+/// CireSnave 2026-11-26 (board 519 B) as his risk call; not a clearance; no attorney; the
+/// Intel/NVIDIA tile-instruction method and medium claims remain NEEDS MORE as read.
+#[test]
+fn tile_statements_and_space_are_declined_by_name() {
+    let all = fixtures();
+    let (_, fx) = all.iter().find(|(n, _)| *n == "Barrier").expect("Barrier");
+    outcome("Barrier", fx).expect("control: Barrier lowers");
+    for name in ["TileLoad", "TileMma", "TileFill", "TileStore"] {
+        let (_, fx) = all.iter().find(|(n, _)| *n == name).expect(name);
+        let d = refusal(name, fx);
+        // The fixture declares a `Tile` allocation first, so the allocation scan may answer
+        // before the statement does: either way the refusal names a Tile thing.
+        assert!(
+            d.contains(&format!("statement `{name}`")) || d.contains("Tile"),
+            "{name}: {d}"
+        );
+    }
 }
