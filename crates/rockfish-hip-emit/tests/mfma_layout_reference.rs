@@ -244,3 +244,61 @@ fn a_swapped_output_slot_is_caught() {
         "the swap must change D"
     );
 }
+
+// ---- Coordinates executed by the PM session ------------------------------------------------------------------------------
+// The PM ran AMD's calculator itself (`matrix_calculator.py`, pin 94b1f16bf3a2, sha256 53b02785...185d, the script unmodified,
+// a local `tabulate` stand-in) on 2026-11-27 and compared these points with the formulas above. Executing versus reading is a
+// different method on the same artifact; it is still the calculator, not silicon, so a match here is not a hardware fact.
+// The tool spells the names `v_mfma_f32_16x16x4_f32` and `v_mfma_f64_16x16x4_f64` (underscore before the type).
+
+/// f64 16x16x4: A and B lane as the f32 case (one register pair); D register pair `i div 4`, lane `16*(i % 4) + j`.
+fn f64_a_lane(i: usize, k: usize) -> usize {
+    16 * k + i
+}
+fn f64_d_slot(i: usize, j: usize) -> (usize, usize) {
+    (i / 4, 16 * (i % 4) + j)
+}
+/// RDNA3 wave32 `v_wmma_f32_16x16x16_f16`: D register `i div 2`, lane `16*(i % 2) + j`; A[i][k] in VGPR `k div 2`, half
+/// `k % 2`, lanes `i` and `i + 16`.
+fn wmma_d_slot(i: usize, j: usize) -> (usize, usize) {
+    (i / 2, 16 * (i % 2) + j)
+}
+fn wmma_a_slot(i: usize, k: usize) -> (usize, usize, [usize; 2]) {
+    (k / 2, k % 2, [i, i + 16])
+}
+
+fn pm_coordinates_hold(
+    a: &dyn Fn(usize, usize) -> usize,
+    b: &dyn Fn(usize, usize) -> usize,
+    d: &dyn Fn(usize, usize) -> (usize, usize),
+) -> bool {
+    a(3, 2) == 35 && b(1, 5) == 21 && d(6, 3) == (2, 19) && d(13, 7) == (1, 55)
+}
+
+#[test]
+fn the_pm_run_coordinates_match_the_f32_maps() {
+    assert!(pm_coordinates_hold(&a_lane, &b_lane, &d_slot));
+    // f64: D[6][3] in pair 1 (v[3:2]) lane 35; A[6][3] in lane 54 (pair v[1:0]).
+    assert_eq!(f64_d_slot(6, 3), (1, 35));
+    assert_eq!(f64_a_lane(6, 3), 54);
+    // RDNA3: D[5][3] in v2 lane 19; A[3][9] in v4, bits [31:16], lanes 3 and 19.
+    assert_eq!(wmma_d_slot(5, 3), (2, 19));
+    assert_eq!(wmma_a_slot(3, 9), (4, 1, [3, 19]));
+}
+
+#[test]
+fn a_wrong_lane_fails_the_pm_run_coordinates() {
+    // Red-first mutants: each wrong map must break at least one coordinate.
+    let bad_a = |i: usize, k: usize| if (i, k) == (3, 2) { 34 } else { a_lane(i, k) };
+    assert!(!pm_coordinates_hold(&bad_a, &b_lane, &d_slot));
+    let bad_d = |i: usize, j: usize| {
+        if (i, j) == (6, 3) {
+            (2, 18)
+        } else {
+            d_slot(i, j)
+        }
+    };
+    assert!(!pm_coordinates_hold(&a_lane, &b_lane, &bad_d));
+    let bad_b = |k: usize, j: usize| if (k, j) == (1, 5) { 22 } else { b_lane(k, j) };
+    assert!(!pm_coordinates_hold(&a_lane, &bad_b, &d_slot));
+}
