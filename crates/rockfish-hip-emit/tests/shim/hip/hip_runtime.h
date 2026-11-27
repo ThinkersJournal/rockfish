@@ -17,3 +17,16 @@ struct double2 { double x, y; };
 struct double4 { double x, y, z, w; };
 struct ushort2 { unsigned short x, y; };
 struct ushort4 { unsigned short x, y, z, w; };
+
+// Subgroup shuffles and votes: signatures as AMD's HIP docs state them (rocm.docs.amd.com, HIP
+// reference "Warp shuffle functions", "Warp vote and ballot functions"), identity bodies: typing
+// only, no semantics. __ballot returns 64 bits on both wave sizes, as documented.
+template <class T> T __shfl(T var, int srcLane, int width = 64) { (void)srcLane; (void)width; return var; }
+template <class T> T __shfl_xor(T var, int laneMask, int width = 64) { (void)laneMask; (void)width; return var; }
+inline int __all(int predicate) { return predicate; }
+inline int __any(int predicate) { return predicate; }
+inline unsigned long long __ballot(int predicate) { return (unsigned long long)predicate; }
+
+// Shared memory and the block barrier: names only (typing); no semantics.
+#define __shared__
+inline void __syncthreads() {}

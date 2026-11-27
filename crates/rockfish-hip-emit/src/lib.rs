@@ -38,6 +38,7 @@
 //! shapes above use none (no cross-lane step). A block-parallel reduction or scan must take the
 //! width from the target or from the device-side `warpSize`, never assume 32.
 
+mod kernel;
 #[cfg(feature = "hiprtc")]
 mod rtc;
 #[cfg(feature = "hiprtc")]
@@ -47,11 +48,12 @@ use unpopped::backend::{
     Backend, Decline, DeclinedOp, DtypeSupport, GeneratedKernel, LowerError, Lowering, Spelling,
     lower_dag,
 };
+use unpopped::exec::Scope;
 use unpopped::ir::{
     Access, ArithOp, BaseOffset, BinaryOp, DagNode, ExprDag, OobPolicy, ReduceOp, ScalarExpr,
     UnaryOp, WriteIndex,
 };
-use unpopped::kernel::{Block, KernelFn, Place, Stmt};
+use unpopped::kernel::{Block, CollectiveKind, KernelFn, Place, Stmt};
 use unpopped::plan::{KernelPlan, ReduceAxisClass, Schedule};
 use unpopped_vocab::{Contiguity, ElementKind, TargetId};
 
@@ -112,34 +114,13 @@ impl Backend for Hip {
         true
     }
 
-    /// This backend lowers no kernel-layer kernels: every one is `UnsupportedKernel`. A kernel
+    /// Kernel-layer kernels: slice S1 lowers the skeleton subset (see `kernel.rs`), and every other
+    /// kernel is `UnsupportedKernel` by name. A kernel
     /// that contains an NVIDIA-only statement named in `docs/PATENT-SWEEP.md` is refused **by
     /// name**, so the reason is the declined list, not a missing feature. Those statements are
     /// never lowered to a hardware operation on AMD hardware (CireSnave's rulings of 2026-11-16).
     fn lower_kernel(&self, kernel: &KernelFn) -> Result<GeneratedKernel, LowerError> {
-        if let Some((name, patent)) = first_declined(&kernel.body) {
-            return Err(LowerError::UnsupportedKernel {
-                detail: format!(
-                    "hip backend: kernel `{}` contains `{name}`, an NVIDIA-only statement declined \
-                     on AMD hardware ({patent}); see docs/PATENT-SWEEP.md",
-                    kernel.name
-                ),
-            });
-        }
-        if let Some((name, why)) = first_unlowered(&kernel.body) {
-            return Err(LowerError::UnsupportedKernel {
-                detail: format!(
-                    "hip backend: kernel `{}` contains `{name}`, which this emitter has no lowering for ({why}); it lowers no kernel-layer kernel at all",
-                    kernel.name
-                ),
-            });
-        }
-        Err(LowerError::UnsupportedKernel {
-            detail: format!(
-                "hip backend does not lower kernel-layer kernels (kernel `{}`)",
-                kernel.name
-            ),
-        })
+        lower_kernel_impl(kernel, None)
     }
 
     fn lower(&self, plan: &KernelPlan<'_>) -> Result<GeneratedKernel, LowerError> {
@@ -219,6 +200,92 @@ impl Backend for Hip {
     }
 }
 
+/// The shared body of `Backend::lower_kernel` (`wave: None`, no target) and
+/// [`Hip::lower_kernel_for`] (`wave: Some(n)`, a target whose wavefront is `n` lanes).
+fn lower_kernel_impl(kernel: &KernelFn, wave: Option<u32>) -> Result<GeneratedKernel, LowerError> {
+    if let Some((name, patent)) = first_declined(&kernel.body, wave.is_some()) {
+        return Err(LowerError::UnsupportedKernel {
+            detail: format!(
+                "hip backend: kernel `{}` contains `{name}`, an NVIDIA-only statement declined on AMD hardware ({patent}); see docs/PATENT-SWEEP.md",
+                kernel.name
+            ),
+        });
+    }
+    if let Some((name, why)) = first_unlowered(&kernel.body) {
+        return Err(LowerError::UnsupportedKernel {
+            detail: format!(
+                "hip backend: kernel `{}` contains `{name}`, which this emitter has no lowering for ({why}); the kernel is refused",
+                kernel.name
+            ),
+        });
+    }
+    kernel::lower(kernel, wave)
+}
+
+/// Targets whose wavefront size this emitter states, for the lifted subgroup collectives
+/// (CireSnave board 506 "A", 2026-11-26: RDNA1-4 and CDNA1-5 lifted; GCN3 and Vega unread).
+///
+/// **Facts from AMD's HIP docs** (rocm.docs.amd.com, HIP 7.17.0, `reference/cpp_language_extensions`,
+/// "warpSize"): "AMD devices return 64 for gfx9 and 32 for gfx10 and above. HIP doesn't support
+/// warpSize of 64 on gfx10 and above." **From the emitter's own list, UNVERIFIED against a page
+/// that maps ids to generations (that page was not read):** which `gfx9` ids are CDNA
+/// (gfx908 CDNA1, gfx90a CDNA2, gfx940/941/942 CDNA3, gfx950 CDNA4) and which `gfx10`+ ids are
+/// RDNA (gfx101x RDNA1, gfx103x RDNA2, gfx110x and gfx115x RDNA3/3.5, gfx120x RDNA4). Anything
+/// else, including Vega (gfx900, gfx902, gfx904, gfx906, gfx909, gfx90c) and GCN3 (gfx8xx), is
+/// refused by name.
+fn wavefront_of(target: &TargetId) -> Result<u32, LowerError> {
+    let refuse = |why: String| LowerError::UnsupportedKernel {
+        detail: format!("hip backend: target `{target}`: {why}"),
+    };
+    if target.namespace() != NAMESPACE {
+        return Err(refuse(format!("not a `{NAMESPACE}:` target")));
+    }
+    let text = target.to_string();
+    let arch = text.rsplit(':').next().unwrap_or("");
+    let arch = arch.split('+').next().unwrap_or(arch);
+    match arch {
+        "gfx908" | "gfx90a" | "gfx940" | "gfx941" | "gfx942" | "gfx950" => Ok(64),
+        a if a.starts_with("gfx8")
+            || matches!(
+                a,
+                "gfx900" | "gfx902" | "gfx904" | "gfx906" | "gfx909" | "gfx90c"
+            ) =>
+        {
+            Err(refuse(
+                "GCN3 and Vega are declined by name: unread targets (board 506 A)".to_string(),
+            ))
+        }
+        "gfx1010" | "gfx1011" | "gfx1012" | "gfx1013" | "gfx1030" | "gfx1031" | "gfx1032"
+        | "gfx1033" | "gfx1034" | "gfx1035" | "gfx1036" | "gfx1100" | "gfx1101" | "gfx1102"
+        | "gfx1103" | "gfx1150" | "gfx1151" | "gfx1152" | "gfx1153" | "gfx1200" | "gfx1201" => {
+            Ok(32)
+        }
+        other => Err(refuse(format!(
+            "`{other}` is not a target whose wavefront this emitter states (declined by name)"
+        ))),
+    }
+}
+
+impl Hip {
+    /// Lower a kernel-layer kernel for a stated target. Unlike `Backend::lower_kernel` (which
+    /// states no target and so refuses every `Collective` by name), this lowers the subgroup
+    /// collectives CireSnave's board 506 "A" lifted (shuffles, votes, reductions, broadcasts) on
+    /// RDNA1-4 and CDNA1-5; scans, every block-scope collective, `CollectiveTuple`, GCN3 and Vega
+    /// stay declined by name (board 434 C, US8539204B2). Patent note: basis board 506 and
+    /// `docs/PATENT-SWEEP.md` US8539204B2 claims 1, 12 and 13, dated 2026-11-26. Text only:
+    /// UNMEASURED on a device (no ROCm box).
+    ///
+    /// # Errors
+    /// [`LowerError::UnsupportedKernel`], by name, for anything outside the lowered set.
+    pub fn lower_kernel_for(
+        &self,
+        kernel: &KernelFn,
+        target: &TargetId,
+    ) -> Result<GeneratedKernel, LowerError> {
+        lower_kernel_impl(kernel, Some(wavefront_of(target)?))
+    }
+}
+
 /// Patents behind the async-scheduling declines (board 431 hit 22, board 434 C).
 const ASYNC: &str = "US12118382B2, US11294713B2; board 434 C";
 /// Patent behind the barrier-aggregation decline (board 431 hit 23, board 434 C).
@@ -227,7 +294,7 @@ const BARRIER_AGG: &str = "US8539204B2; board 434 C";
 /// The declined list (`docs/PATENT-SWEEP.md`): the first NVIDIA-only statement in `block`, at any
 /// nesting depth, with the patent that grounds it. The wildcard is deliberate and safe: this
 /// only chooses the refusal's wording, and `lower_kernel` refuses every kernel regardless.
-fn first_declined(block: &Block) -> Option<(&'static str, &'static str)> {
+fn first_declined(block: &Block, lift: bool) -> Option<(&'static str, &'static str)> {
     for stmt in &block.0 {
         let hit = match stmt {
             Stmt::MbarInit { .. } => Some(("MbarInit", "US11803380B2")),
@@ -243,10 +310,28 @@ fn first_declined(block: &Block) -> Option<(&'static str, &'static str)> {
             Stmt::AsyncWait { .. } => Some(("AsyncWait", ASYNC)),
             Stmt::CopyAsync { .. } => Some(("CopyAsync", ASYNC)),
             Stmt::AsyncCommit => Some(("AsyncCommit", ASYNC)),
+            // Board 506 "A" (CireSnave, 2026-11-26): the subgroup-scope shuffles, votes,
+            // reductions and broadcasts are lifted on a stated RDNA/CDNA target; scans and every
+            // block-scope collective stay declined.
+            Stmt::Collective { kind, scope, .. }
+                if lift
+                    && *scope == Scope::Subgroup
+                    && matches!(
+                        kind,
+                        CollectiveKind::Shuffle { .. }
+                            | CollectiveKind::Vote(_)
+                            | CollectiveKind::Reduce(_)
+                            | CollectiveKind::Broadcast { .. }
+                    ) =>
+            {
+                None
+            }
             Stmt::Collective { .. } => Some(("Collective", BARRIER_AGG)),
             Stmt::CollectiveTuple { .. } => Some(("CollectiveTuple", BARRIER_AGG)),
-            Stmt::If { then, els, .. } => first_declined(then).or_else(|| first_declined(els)),
-            Stmt::For { body, .. } | Stmt::While { body, .. } => first_declined(body),
+            Stmt::If { then, els, .. } => {
+                first_declined(then, lift).or_else(|| first_declined(els, lift))
+            }
+            Stmt::For { body, .. } | Stmt::While { body, .. } => first_declined(body, lift),
             _ => None,
         };
         if hit.is_some() {
