@@ -4,7 +4,8 @@
 
 - **docs:** `docs/DESIGN-R7-MFMA.md` and `docs/R7-MFMA-LAYOUT-PROVENANCE.md` (R7 MFMA layout design; the provenance table lists atom, fact, the calculator source line at 94b1f16 and verified-by-run NO: the calculator was not silent, no ISA PDF was opened and no ISA-derived file exists). ROADMAP updated. The work stops before any MFMA or WMMA statement.
 - **`rockfish-hip-emit`:** the refusal text for the NVIDIA async-proxy fence now says it is decided 2026-11-27 (R7-D14, not a patent ruling): not lowered. A diagnostic string only; the refusal itself is unchanged.
-- **tools:** `tools/check-package-files.py` updated (the package-files check).
+- **tools:** NEW `tools/check-package-files.py` (the first-publish package-files check), copied from the AOCL lane's tool (same owner, same licence); only the default crate glob changed to `rockfish*`.
+- **ROADMAP:** R6 audit rows (all 17 crates are `publish = false`; the package-files check reports BAD for all until #62; the layout asserts cover every non-opaque type, 34 + 29 opaque, generation target UNKNOWN) and R7-SUP-016 / GOV-010 flipped DONE (#55).
 
 ## 0.5.0 - 2026-11-27 (PM-allocated; **Breaking** for rockfish-hip-emit and rockfish-hip-parse: Unpopped 0.62.0 take)
 
