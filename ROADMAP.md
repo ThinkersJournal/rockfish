@@ -70,3 +70,13 @@ One row per Unpopped fixture the HIP emitter refuses by name (13 with a patent, 
 **What this is not:** not evidence that HIP is not thread-safe. It is one hang on one runtime, with a mitigation that worked on that runtime and a cause nobody has found.
 
 **Next:** repeat on any other AMD machine or driver that appears (the self-hosted runner question, board item 329) and report whether the hang reproduces without the warm-up.
+
+## R6 audit against the AOCL pattern (2026-11-27, origin/main 84c57dc + this PR's tool)
+
+Order per pm-kernels: package files, layout audit, link-all with negative control, then rows.
+
+| Row | Finding | Basis | Gap row |
+|---|---|---|---|
+| R6-A1 | **Every crate is `publish = false`** (17 of 17), so nothing ships today. `tools/check-package-files.py` (copied from AOCL's, glob changed to `rockfish*`) reports BAD for all 17: no `LICENSE*` in any package (the licences sit at the workspace root; cargo ships only files under the crate dir); `rockfish-hip-emit`/`-hip-parse` also lack a README. No crate has a NOTICE or a provenance statement, so no NOTICE is demanded. | `cargo package --list --allow-dirty` per crate, at origin/main + this branch | Before ANY first publish: copy `LICENSE-MIT`/`LICENSE-APACHE` into each published crate dir, add the two READMEs, rerun the tool to all OK (open) |
+| R6-A2 | Layout audit: none exists. The generated `-sys` files of rocFFT and rocRAND hold 10 `struct`/`union` definitions in all (counted with grep, not parsed). No test compares `size_of`/`align_of` with the header, so a mismatch is currently unseen. | grep of `generated.rs`; no `size_of` in any `-sys` test | Layout table for the by-value structs of every `-sys` crate, Windows x64 first, Linux x64 if a Linux target is reachable; say which (open) |
+| R6-A3 | Every `-sys` `tests/load.rs` has a loader negative control (a library without the symbols reports all `BOUND` missing). The positive half (every bound symbol resolves) runs only where a library loads. On this box: system `amdhip64_6.dll`; Ollama `rocm_v7_1`: `amdhip64_7.dll`, `libhipblas.dll`, `libhipblaslt.dll`, `rocblas.dll`. No rocFFT, rocRAND, rocSOLVER, rocSPARSE, MIOpen or `hiprtc.dll` found by filename. | `ls` of `System32` and Ollama's `rocm_v7_1` | Symbols of rocFFT/rocRAND/rocSOLVER/rocSPARSE/MIOpen/hiprtc are UNMEASURED until a rig run (R5-H) or a supplied library; do not claim them (open) |
