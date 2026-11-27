@@ -278,10 +278,13 @@ fn check(label: &str, k: &KernelFn, args: &[KernelArg], wave: u32, mutants: &[&[
             wave,
             mutate: m,
         };
-        assert!(
-            differential(&format!("{label}_mut{n}"), &mc).is_err(),
-            "{label}: mutant {n} {m:?} was NOT caught (vacuous differential)"
-        );
+        // The mutant must be caught by a VALUE difference, not by failing to compile or run.
+        match differential(&format!("{label}_mut{n}"), &mc) {
+            Err(e) if e.contains("differs") => {}
+            other => {
+                panic!("{label}: mutant {n} {m:?} was not caught as a value difference: {other:?}")
+            }
+        }
     }
 }
 
@@ -623,7 +626,19 @@ fn collective_kernel(
     n: u32,
     kinds: &[CollectiveKind],
 ) -> KernelFn {
-    let block = 2 * n;
+    collective_kernel_s(name, vt, rt, n, 2, kinds)
+}
+
+/// [`collective_kernel`] over `subs` subgroups of `n` lanes.
+fn collective_kernel_s(
+    name: &str,
+    vt: ElementKind,
+    rt: ElementKind,
+    n: u32,
+    subs: u32,
+    kinds: &[CollectiveKind],
+) -> KernelFn {
+    let block = subs * n;
     let mut locals = vec![LocalDecl::scalar(ElementKind::U32), LocalDecl::scalar(vt)];
     let mut body = vec![
         Stmt::Let {
@@ -659,7 +674,7 @@ fn collective_kernel(
         locals,
         Block(body),
     )
-    .with_launch(lanes(n))
+    .with_launch(LaunchShape::new([block, 1, 1], [1, 1, 1]).with_subgroup(n, n))
 }
 
 fn shuffle_kinds(n: i64) -> Vec<CollectiveKind> {
@@ -746,4 +761,204 @@ fn shuffle_edge_rules_at_wave_32_and_64() {
         let (k, a) = one(ShuffleMode::Up, nn + 5);
         check(&format!("upoor{n}"), &k, &a, n, &[&[("src0 >= 0 && ", "")]]);
     }
+}
+
+#[test]
+fn votes_all_any_ballot() {
+    for n in [32u32, 64] {
+        // Three subgroups: all non-zero, a mixed one, all zero.
+        let x: Vec<i32> = (0..3 * n)
+            .map(|i| match i / n {
+                0 => 1 + (i % 3) as i32,
+                1 => i32::from(i % 5 == 0),
+                _ => 0,
+            })
+            .collect();
+        let mut kinds = vec![
+            CollectiveKind::Vote(VoteKind::All),
+            CollectiveKind::Vote(VoteKind::Any),
+        ];
+        if n == 32 {
+            kinds.push(CollectiveKind::Vote(VoteKind::Ballot));
+        }
+        let k = collective_kernel_s("vote", ElementKind::I32, ElementKind::U32, n, 3, &kinds);
+        let args = [
+            i32s(&x),
+            zeros(ElementKind::U32, 3 * n as usize * kinds.len()),
+        ];
+        check(&format!("vote{n}"), &k, &args, n, &[]);
+        let one = |kind| {
+            let k = collective_kernel_s("vote1", ElementKind::I32, ElementKind::U32, n, 3, &[kind]);
+            let a = [i32s(&x), zeros(ElementKind::U32, 3 * n as usize)];
+            (k, a)
+        };
+        let (k, a) = one(CollectiveKind::Vote(VoteKind::All));
+        check(
+            &format!("all{n}"),
+            &k,
+            &a,
+            n,
+            &[&[("__all(v0 != 0)", "__any(v0 != 0)")]],
+        );
+        let (k, a) = one(CollectiveKind::Vote(VoteKind::Any));
+        check(
+            &format!("any{n}"),
+            &k,
+            &a,
+            n,
+            &[&[("__any(v0 != 0)", "__all(v0 != 0)")]],
+        );
+        if n == 32 {
+            let (k, a) = one(CollectiveKind::Vote(VoteKind::Ballot));
+            check(
+                "ballot32",
+                &k,
+                &a,
+                n,
+                &[&[("(unsigned int)__ballot(", "~(unsigned int)__ballot(")]],
+            );
+        }
+    }
+}
+
+#[test]
+fn integer_reductions_and_broadcast() {
+    use ElementKind::{I32, U32};
+    for n in [32u32, 64] {
+        let x: Vec<i32> = (0..2 * n)
+            .map(|i| (i as i32 * 2_654_435 - 91_000) ^ (i as i32 * 7))
+            .collect();
+        for vt in [I32, U32] {
+            let data = if vt == I32 {
+                i32s(&x)
+            } else {
+                buf(
+                    U32,
+                    x.iter().flat_map(|v| (*v as u32).to_le_bytes()).collect(),
+                )
+            };
+            let ops = [
+                ReduceOp::Sum,
+                ReduceOp::Max,
+                ReduceOp::Min,
+                ReduceOp::And,
+                ReduceOp::Or,
+                ReduceOp::Xor,
+                ReduceOp::Prod,
+            ];
+            let kinds: Vec<CollectiveKind> =
+                ops.iter().map(|o| CollectiveKind::Reduce(*o)).collect();
+            let k = collective_kernel("red", vt, vt, n, &kinds);
+            let args = [data.clone(), zeros(vt, 2 * n as usize * kinds.len())];
+            check(&format!("red{n}_{vt:?}"), &k, &args, n, &[]);
+        }
+        // Mutants on single-collective kernels (unique anchors).
+        let one = |op| {
+            let k = collective_kernel("red1", I32, I32, n, &[CollectiveKind::Reduce(op)]);
+            let a = [i32s(&x), zeros(I32, 2 * n as usize)];
+            (k, a)
+        };
+        let (k, a) = one(ReduceOp::Sum);
+        check(
+            &format!("sum{n}"),
+            &k,
+            &a,
+            n,
+            &[
+                &[("+ (unsigned int)t0", "- (unsigned int)t0")],
+                &[("o0 >>= 1", "o0 >>= 2")],
+            ],
+        );
+        let (k, a) = one(ReduceOp::Max);
+        check(&format!("max{n}"), &k, &a, n, &[&[("r0 > t0", "r0 < t0")]]);
+        // Broadcasts from constant lanes.
+        let from = [0, 5, i64::from(n) - 1];
+        let kinds: Vec<CollectiveKind> = from
+            .iter()
+            .map(|l| CollectiveKind::Broadcast { lane: ki32(*l) })
+            .collect();
+        let k = collective_kernel("bc", E, E, n, &kinds);
+        let xf: Vec<f32> = (0..2 * n).map(|i| i as f32 * 0.5 + 1.0).collect();
+        let args = [f32s(&xf), zeros(E, 2 * n as usize * kinds.len())];
+        check(&format!("bc{n}"), &k, &args, n, &[]);
+        let k = collective_kernel(
+            "bc1",
+            E,
+            E,
+            n,
+            &[CollectiveKind::Broadcast { lane: ki32(5) }],
+        );
+        let args = [f32s(&xf), zeros(E, 2 * n as usize)];
+        check(&format!("bc1_{n}"), &k, &args, n, &[&[(", 5, ", ", 6, ")]]);
+    }
+}
+
+#[test]
+fn shared_memory_with_a_block_barrier() {
+    use unpopped::exec::{AllocDecl, Extent, MemorySpace, Scope};
+    use unpopped::kernel::BarrierKind;
+    let tile = |index| Place::Alloc { alloc: 0, index };
+    let k = KernelFn::new(
+        "rev",
+        E,
+        vec![
+            Param::buffer("x", E, BufferRole::Read, Some(1)),
+            Param::buffer("y", E, BufferRole::Write, Some(1)),
+        ],
+        vec![
+            LocalDecl::scalar(ElementKind::U32),
+            LocalDecl::scalar(E),
+            LocalDecl::scalar(E),
+        ],
+        Block(vec![
+            Stmt::Let {
+                local: 0,
+                init: tid(),
+            },
+            Stmt::Load {
+                local: 1,
+                place: at(0, loc(0)),
+            },
+            Stmt::Store {
+                place: tile(loc(0)),
+                value: loc(1),
+            },
+            Stmt::Barrier {
+                scope: Scope::Block,
+                kind: BarrierKind::Full,
+            },
+            Stmt::Load {
+                local: 2,
+                place: tile(ScalarExpr::Sub(Box::new(ku32(63)), Box::new(loc(0)))),
+            },
+            Stmt::Store {
+                place: at(1, loc(0)),
+                value: loc(2),
+            },
+        ]),
+    )
+    .with_allocs(vec![AllocDecl::new(
+        "tile",
+        MemorySpace::Shared,
+        E,
+        Extent::Static(64),
+    )])
+    .with_launch(lanes(32));
+    let x: Vec<f32> = (0..64).map(|i| i as f32 * 3.0 - 11.0).collect();
+    let args = [f32s(&x), zeros(E, 64)];
+    // Mutant: the upper half stores late and the barrier is gone, so the lower half reads stale
+    // shared memory (a 150 ms sleep makes the race certain on a host).
+    check(
+        "shared_rev",
+        &k,
+        &args,
+        32,
+        &[&[
+            (
+                "s0[(long long)(l0)] = l1;",
+                "if (l0 >= 32) std::this_thread::sleep_for(std::chrono::milliseconds(150)); s0[(long long)(l0)] = l1;",
+            ),
+            ("__syncthreads();", ""),
+        ]],
+    );
 }

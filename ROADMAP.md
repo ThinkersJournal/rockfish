@@ -23,6 +23,34 @@ Order matters: survey, then design, then code. Every code row ships with a negat
 | R-PUBLISH-NOTICES | Publish gate (pm-kernels FIX 2026-11-25): the `*-sys` crate dirs hold only Cargo.toml, src, tests (no LICENSE-*, no THIRD-PARTY-NOTICES.md, no `include`/`exclude`), and the notices live at the repo root, which a published `.crate` does not contain, so the pointer in each `generated.rs` would not travel. Before the first publish of any `-sys` crate: `cargo package --list -p <crate>` shows LICENSE-MIT, LICENSE-APACHE and the notices file the generated.rs points to (the crate dir carries synced copies, with a CI check that they match the root, as fuel does), and rocsolver's package carries the BSD-2-Clause text. Nothing is published yet (`rockfish` 0.0.0 from 10-30), so not a live defect | scheduled, before any publish |
 | R8 | Fuel ROCm backend built on Rockfish (design with the Fuel lane; Baracuda is the precedent) | after R5 |
 
+## R7-D: kernel statements `Hip` declines, scheduled and not skipped (CIRESNAVE-EXPECTATIONS 6.21; 2026-11-27, Unpopped 0.60.8 fixtures)
+
+One row per Unpopped fixture the HIP emitter refuses by name (13 with a patent, 8 with "no lowering"; `tests/fixture_refusal.rs`). A row is **scheduled a way down, not declined for good**: the last column is what would unblock it. Nothing here is a clearance.
+
+| Row | Statement | Why declined | What would unblock it |
+|---|---|---|---|
+| R7-D01 | `Collective` | US8539204B2 (barrier aggregation), board 434 C; board 506 A lifted only the subgroup-scope shuffle/vote/reduce/broadcast kinds, which `Hip::lower_kernel_for` lowers on a stated RDNA/CDNA target | subgroup scans (US9417875B2, needs more), every block-scope collective (claim construction, a person), float reductions (Rockfish: order undecided), GCN3/Vega and CDNA5 ids (unread), and the plain `lower_kernel` (no target); each needs a CireSnave ruling or a patent read |
+| R7-D02 | `CollectiveTuple` | US8539204B2, board 434 C; 506 A did not name tuple-state collectives | a CireSnave/patent decision on tuple (`ReduceWith`/`ScanWith`) collectives, plus a module-level lowerer (the checker needs `check_module`) |
+| R7-D03 | `MbarInit` | US11803380B2 (mbarrier), CireSnave 2026-11-16 (board 453) | a patent read the PM routes plus a CireSnave ruling; whether AMD has an equivalent object is unread |
+| R7-D04 | `MbarArrive` | US11803380B2, board 453 | as MbarInit |
+| R7-D05 | `MbarCompleteTx` | US11803380B2, board 453 | as MbarInit |
+| R7-D06 | `MbarWait` | US11803380B2, board 453 | as MbarInit |
+| R7-D07 | `WgmmaWait` | US12204897B2 and US12710961B2, CireSnave 2026-11-16 | a patent read and ruling; whether AMD MMA needs a wait is unread: decide with the tile-statement release (board 519 B, Unpopped B1) |
+| R7-D08 | `Tcgen05Commit` | US11803380B2 by the PM's extension (not read separately against the claims) | the PM's extension read against the claims, then a ruling |
+| R7-D09 | `CopyAsync` | US12118382B2 and US11294713B2 (async data movement), board 434 C | a patent read and CireSnave ruling; AMD global-to-LDS async copies would be a different mechanism to chart first |
+| R7-D10 | `CopyBulk` | US11803380B2 (a copy on an mbarrier), board 453 | as MbarInit; tensor-map family US12657024/US12669996/US12645455 also unread |
+| R7-D11 | `CopyUnpack` | US11803380B2 (Unpopped 0.58.0 addition) | as CopyBulk |
+| R7-D12 | `AsyncCommit` | US12118382B2 and US11294713B2, board 434 C | as CopyAsync |
+| R7-D13 | `AsyncWait` | US12118382B2 and US11294713B2, board 434 C | as CopyAsync |
+| R7-D14 | `ProxyFence` | no patent claim; no AMD counterpart decided (an NVIDIA async-proxy fence) | decide whether an AMD fence (`__threadfence_block`/`__threadfence`, not read here) is a faithful lowering; needs the memory-model read |
+| R7-D15 | `Wgmma` | no patent claim made; an NVIDIA warpgroup MMA (a_layout/b_layout included) | lowering to AMD MFMA/WMMA through the opaque-tile statements Unpopped's B1 release adds (board 519 B, CireSnave's risk call, not a clearance); do not pre-build |
+| R7-D16 | `WgmmaCommit` | no patent claim made; an NVIDIA wgmma group commit | as Wgmma; whether AMD needs a commit is unread |
+| R7-D17 | `Tcgen05Mma` | no patent claim made; an NVIDIA tensor-memory MMA | as Wgmma; whether AMD has a tensor-memory analogue is unread |
+| R7-D18 | `Tcgen05Alloc` | no patent claim made; an NVIDIA tensor-memory allocation | whether AMD has a tensor-memory analogue is unread; unblock by that read and a design, or a decision to keep it NVIDIA-only |
+| R7-D19 | `Tcgen05Dealloc` | no patent claim made; an NVIDIA tensor-memory release | as Tcgen05Alloc |
+| R7-D20 | `Tcgen05RelinquishPermit` | no patent claim made; an NVIDIA allocation-permit relinquish | as Tcgen05Alloc |
+| R7-D21 | `Tcgen05Ld` | no patent claim made; an NVIDIA tensor-memory load | as Tcgen05Alloc |
+
 ## R5-H: parallel first use of HIP hung on one machine
 
 **Measured on:** Windows laptop, `amdhip64_6.dll` (driver bundled, HIP 6.4.50501), Radeon 610M (gfx1036), one device. Nothing else.
