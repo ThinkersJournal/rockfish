@@ -517,14 +517,15 @@ fn casts_float_to_int_and_int_to_float() {
         args.push(zeros(t, 64));
     }
     args.push(zeros(E, 64));
-    // The NaN guard is observable only where the host's own float-to-int of NaN is not already 0:
-    // x86 cvttsd2si gives INT_MIN, but arm64 fcvtzs gives 0, so on an aarch64 host (macOS CI) the
-    // mutant is equivalent and cannot differ. The case itself still must match everywhere; only the
-    // NaN-guard mutant is skipped there (stated, not weakened for the other mutants).
+    // Both guards are observable only where the host's own float-to-int is not already the rule we
+    // spell: x86 cvttsd2si gives INT_MIN for NaN and out of range, but arm64 fcvtzs already gives 0 for
+    // NaN and saturates at the limits, so on an aarch64 host (macOS CI) removing the NaN guard or moving
+    // the range boundary cannot differ (equivalent mutants; macOS run 45923778782 read). The case itself
+    // must still match the oracle everywhere; only the two mutants are skipped there.
     let nan_guard: &[(&str, &str)] = &[("(l1) != (l1) ? (int)0", "0 ? (int)0")];
     let range_guard: &[(&str, &str)] = &[("(l1) >= 2147483648.0 ?", "(l1) > 2147483648.0 ?")];
     let mutants: Vec<&[(&str, &str)]> = if cfg!(target_arch = "aarch64") {
-        vec![range_guard]
+        Vec::new()
     } else {
         vec![nan_guard, range_guard]
     };
