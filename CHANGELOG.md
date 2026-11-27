@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0 - 2026-11-27 (PM-allocated; **Breaking** for rockfish-hip-emit and rockfish-hip-parse: Unpopped 0.62.0 take)
+
+- **Breaking (Unpopped 0.62.0).** Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.61.0 -> 0.62.0. `Stmt` gains `TileLoad`, `TileMma`, `TileFill`, `TileStore` and `MemorySpace` gains `Tile`; nothing stopped compiling (both lowerers end in a wildcard/`let-else` that names the refusal). They are declined by name, not lowered, and no MFMA/WMMA mapping is made (waits for a design). The `Tile` allocation is refused as ``allocation `t` in Tile``. `tests/fixture_refusal.rs`: 46 -> 50 fixtures (13 lowered, 13 declined with a patent, 8 "no lowering", 13 unspelled incl. the four Tile fixtures, 3 module entries; 13+13+8+13+3 = 50). Lifted by CireSnave 2026-11-26 (board 519 B) as his risk call; not a clearance; no attorney; the Intel/NVIDIA tile-instruction method and medium claims remain NEEDS MORE as read. Single Windows machine, `cargo test --workspace`.
+
 ## 0.4.0 - 2026-11-27 (PM-allocated; **Breaking** for rockfish-hip-emit and rockfish-hip-parse: Unpopped 0.61.0 take)
 
 - **Breaking (Unpopped 0.61.0).** Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.60.23 -> 0.61.0 (`UnaryOp` gains `Popc`, `Clz`, `Brev`). Both lowerers already ended their `UnaryOp` matches in a wildcard, so nothing stopped compiling; the three ops are declined by name: `Hip` (expression layer) as `UnsupportedOp`, the kernel layer as ``unary op `Popc` ``/`Clz`/`Brev`. Not lowered to `__popc`/`__clz`/`__brev`: the integer-width and `clz(0)` rules against the IR's oracle are undecided, and nothing is measured on a device. Patent: `Popc`/`Brev` outside as read, `Clz` "no patent found: not a clearance; no packed/vector clz".
