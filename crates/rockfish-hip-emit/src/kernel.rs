@@ -26,7 +26,7 @@ use std::fmt::Write as _;
 
 use unpopped::backend::{GeneratedKernel, LowerError};
 use unpopped::exec::{ExecId, Extent, MemorySpace, Scope};
-use unpopped::ir::{BinaryOp, ReduceOp, ScalarExpr, UnaryOp};
+use unpopped::ir::{BinaryOp, ReduceOp, RoundMode, Saturation, ScalarExpr, UnaryOp};
 use unpopped::kernel::BarrierKind;
 use unpopped::kernel::{
     BufferRole, CollectiveKind, KernelFn, ParamKind, Place, ShuffleMode, Stmt, VoteKind,
@@ -115,6 +115,7 @@ impl Cx<'_> {
             ScalarExpr::Binary(BinaryOp::Max | BinaryOp::Min, a, _)
             | ScalarExpr::Unary(UnaryOp::Neg | UnaryOp::Abs, a)
             | ScalarExpr::Select(_, a, _) => self.ty_of(a),
+            ScalarExpr::Cast(_, spec) => Ok(spec.to),
             ScalarExpr::Add(a, _)
             | ScalarExpr::Sub(a, _)
             | ScalarExpr::Mul(a, _)
@@ -242,6 +243,7 @@ impl Cx<'_> {
                 };
                 Ok(format!("{f}({})", self.expr(a)?))
             }
+            ScalarExpr::Cast(a, spec) => self.cast(a, spec.to, spec.round, spec.sat),
             ScalarExpr::Select(c, a, b) => {
                 let ek = self.ty_of(e)?;
                 if !is_float(ek) {
@@ -273,6 +275,89 @@ impl Cx<'_> {
                 Ok(format!("({} / {})", self.expr(a)?, self.expr(b)?))
             }
             other => Err(decline(self.k, format!("expression `{}`", variant(other)))),
+        }
+    }
+
+    /// `Cast` between an integer and a float type (S1c). Int to float is C's conversion (round to
+    /// nearest even, the default); float to int is `TowardZero` with `Clamp`, NaN to 0, spelled
+    /// with explicit bounds so no input reaches C's undefined behaviour. Every other pair, rounding
+    /// mode and saturation is refused by name.
+    fn cast(
+        &self,
+        a: &ScalarExpr,
+        to: ElementKind,
+        round: RoundMode,
+        sat: Saturation,
+    ) -> Result<String, LowerError> {
+        let from = self.ty_of(a)?;
+        self.spelled(from, "a cast source")?;
+        let (tt, _) = self.spelled(to, "a cast destination")?;
+        let x = self.expr(a)?;
+        match (is_float(from), is_float(to)) {
+            (false, true) => {
+                if round != RoundMode::NearestEven {
+                    return Err(decline(
+                        self.k,
+                        format!(
+                            "an int to float `Cast` rounding {round:?} (only NearestEven is spelled)"
+                        ),
+                    ));
+                }
+                Ok(format!("(({tt})({x}))"))
+            }
+            (true, false) => {
+                if round != RoundMode::TowardZero || sat != Saturation::Clamp {
+                    return Err(decline(
+                        self.k,
+                        format!(
+                            "a float to int `Cast` with {round:?} and {sat:?} (only TowardZero with Clamp is spelled)"
+                        ),
+                    ));
+                }
+                let (bits, signed) = match to {
+                    ElementKind::I32 => (32, true),
+                    ElementKind::I64 => (64, true),
+                    ElementKind::U32 => (32, false),
+                    _ => (64, false),
+                };
+                let two_pow = |n: u32| format!("{:?}", 2f64.powi(n as i32));
+                let sfx = if from == ElementKind::F32 { "f" } else { "" };
+                let (hi, lo, max, min) = if signed {
+                    let w = bits - 1;
+                    let (max, min) = if bits == 32 {
+                        ("2147483647", "(-2147483647 - 1)")
+                    } else {
+                        ("9223372036854775807LL", "(-9223372036854775807LL - 1)")
+                    };
+                    (
+                        two_pow(w),
+                        format!("-{}", two_pow(w)),
+                        max.to_string(),
+                        min.to_string(),
+                    )
+                } else {
+                    let max = if bits == 32 {
+                        "4294967295u"
+                    } else {
+                        "18446744073709551615ull"
+                    };
+                    (
+                        two_pow(bits),
+                        "0.0".to_string(),
+                        max.to_string(),
+                        "0".to_string(),
+                    )
+                };
+                Ok(format!(
+                    "(({x}) != ({x}) ? ({tt})0 : (({x}) >= {hi}{sfx} ? ({tt}){max} : (({x}) <= {lo}{sfx} ? ({tt}){min} : ({tt})({x}))))"
+                ))
+            }
+            _ => Err(decline(
+                self.k,
+                format!(
+                    "a `Cast` from {from:?} to {to:?} (only int to float and float to int are spelled)"
+                ),
+            )),
         }
     }
 
