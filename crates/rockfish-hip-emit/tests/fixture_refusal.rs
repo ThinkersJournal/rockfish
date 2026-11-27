@@ -82,13 +82,16 @@ fn collective_is_declined_by_name_with_the_434c_marker() {
 /// decision, so this list is exact).
 #[test]
 fn arm_reached_per_fixture() {
-    let (mut lowered, mut declined, mut unlowered, mut s1) = (vec![], 0, 0, vec![]);
+    let (mut lowered, mut declined, mut unlowered, mut s1, mut checker) =
+        (vec![], 0, 0, vec![], vec![]);
     for (name, fx) in fixtures() {
         match outcome(name, &fx) {
             Ok(_) => lowered.push(name),
             Err(d) if d.contains("declined on AMD hardware") => declined += 1,
             Err(d) if d.contains("no lowering for") => unlowered += 1,
             Err(d) if d.contains("the S1 kernel-layer lowerer spells only") => s1.push(name),
+            // A module entry alone: the checker wants `check_module` (the Call fixtures).
+            Err(d) if d.contains("the Unpopped checker refuses it") => checker.push(name),
             Err(d) => panic!("{name}: no known arm: {d}"),
         }
     }
@@ -96,7 +99,11 @@ fn arm_reached_per_fixture() {
         "lowered={lowered:?}
 S1-declined={s1:?}"
     );
-    assert_eq!(lowered.len() + declined + unlowered + s1.len(), 46);
+    eprintln!("checker-refused={checker:?}");
+    assert_eq!(
+        lowered.len() + declined + unlowered + s1.len() + checker.len(),
+        46
+    );
     assert_eq!(declined, 13);
     assert_eq!(unlowered, 8);
 }

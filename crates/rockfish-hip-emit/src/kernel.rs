@@ -379,6 +379,14 @@ impl Cx<'_> {
 
 /// Lower one kernel-layer function (S1).
 pub(crate) fn lower(kernel: &KernelFn) -> Result<GeneratedKernel, LowerError> {
+    // The checker is the only gate on data (`Backend::lower_kernel` doc): a kernel it refuses is
+    // not lowered, whatever it contains.
+    unpopped::kernel::check_kernel(kernel).map_err(|e| LowerError::UnsupportedKernel {
+        detail: format!(
+            "hip backend: kernel `{}`: the Unpopped checker refuses it ({e:?})",
+            kernel.name
+        ),
+    })?;
     if !kernel.allocs.is_empty() {
         return Err(decline(
             kernel,

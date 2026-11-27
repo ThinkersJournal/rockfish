@@ -15,7 +15,7 @@ use std::process::Command;
 
 use rockfish_hip_emit::Hip;
 use unpopped::backend::{Backend, LowerError};
-use unpopped::exec::ExecId;
+use unpopped::exec::{ExecId, LaunchShape};
 use unpopped::fixtures::fixtures;
 use unpopped::ir::{BinaryOp, ScalarExpr};
 use unpopped::kernel::{Block, BufferRole, KernelFn, LocalDecl, Param, Place, Stmt};
@@ -88,6 +88,7 @@ fn saxpy() -> KernelFn {
             },
         ]),
     )
+    .with_launch(LaunchShape::new([256, 1, 1], [64, 1, 1]))
 }
 
 fn detail(k: &KernelFn) -> String {
@@ -188,7 +189,9 @@ fn a_store_to_a_read_only_buffer_is_refused() {
             coords: vec![local(3)],
         };
     }
-    assert!(detail(&k).contains("read-only buffer"));
+    let d = detail(&k);
+    // The checker is the first gate and names it; the lowerer's own role check is a second.
+    assert!(d.contains("WriteToReadOnly"), "{d}");
 }
 
 #[test]
@@ -205,14 +208,21 @@ fn unspelled_things_are_refused_by_name() {
     assert!(detail(&k).contains("statement `MaskedStore`"));
 
     let mut k = saxpy();
-    k.body.0.push(Stmt::Assign {
-        local: 0,
-        value: ScalarExpr::Unary(unpopped::ir::UnaryOp::Neg, Box::new(local(0))),
+    k.body.0.push(Stmt::Let {
+        local: 2,
+        init: ScalarExpr::Unary(unpopped::ir::UnaryOp::Neg, Box::new(ScalarExpr::Const(1.0))),
     });
-    assert!(detail(&k).contains("expression `Unary`"));
+    let d = detail(&k);
+    assert!(d.contains("expression `Unary`"));
 
     let mut k = saxpy();
-    k.params[0] = Param::buffer("x", ElementKind::F16, BufferRole::Read, Some(1));
+    // An unused trailing F16 buffer: checker-valid, so the refusal is the lowerer's.
+    k.params.push(Param::buffer(
+        "h",
+        ElementKind::F16,
+        BufferRole::Read,
+        Some(1),
+    ));
     assert!(detail(&k).contains("dtype F16"));
 
     let mut k = saxpy();
