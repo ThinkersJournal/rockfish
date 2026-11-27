@@ -517,16 +517,18 @@ fn casts_float_to_int_and_int_to_float() {
         args.push(zeros(t, 64));
     }
     args.push(zeros(E, 64));
-    check(
-        "casts",
-        &k,
-        &args,
-        32,
-        &[
-            &[("(l1) != (l1) ? (int)0", "0 ? (int)0")],
-            &[("(l1) >= 2147483648.0 ?", "(l1) > 2147483648.0 ?")],
-        ],
-    );
+    // The NaN guard is observable only where the host's own float-to-int of NaN is not already 0:
+    // x86 cvttsd2si gives INT_MIN, but arm64 fcvtzs gives 0, so on an aarch64 host (macOS CI) the
+    // mutant is equivalent and cannot differ. The case itself still must match everywhere; only the
+    // NaN-guard mutant is skipped there (stated, not weakened for the other mutants).
+    let nan_guard: &[(&str, &str)] = &[("(l1) != (l1) ? (int)0", "0 ? (int)0")];
+    let range_guard: &[(&str, &str)] = &[("(l1) >= 2147483648.0 ?", "(l1) > 2147483648.0 ?")];
+    let mutants: Vec<&[(&str, &str)]> = if cfg!(target_arch = "aarch64") {
+        vec![range_guard]
+    } else {
+        vec![nan_guard, range_guard]
+    };
+    check("casts", &k, &args, 32, &mutants);
 }
 
 #[test]
