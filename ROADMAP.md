@@ -29,15 +29,15 @@ One row per Unpopped fixture the HIP emitter refuses by name (13 with a patent, 
 
 | Row | Statement | Why declined | What would unblock it |
 |---|---|---|---|
-| R7-D01 | `Collective` | US8539204B2 (barrier aggregation), board 434 C; board 506 A lifted only the subgroup-scope shuffle/vote/reduce/broadcast kinds, which `Hip::lower_kernel_for` lowers on a stated RDNA/CDNA target | subgroup scans (US9417875B2, needs more), every block-scope collective (claim construction, a person), float reductions (Rockfish: order undecided), GCN3/Vega and CDNA5 ids (unread), and the plain `lower_kernel` (no target); each needs a CireSnave ruling or a patent read |
-| R7-D02 | `CollectiveTuple` | US8539204B2, board 434 C; 506 A did not name tuple-state collectives | a CireSnave/patent decision on tuple (`ReduceWith`/`ScanWith`) collectives, plus a module-level lowerer (the checker needs `check_module`) |
-| R7-D03 | `MbarInit` | US11803380B2 (mbarrier), CireSnave 2026-11-16 (board 453) | a patent read the PM routes plus a CireSnave ruling; whether AMD has an equivalent object is unread |
+| R7-D01 | `Collective` | US8539204B2, board 434 C; board 506 A lifted only subgroup shuffle/vote/reduce/broadcast, lowered by `lower_kernel_for` | subgroup scans (US9417875B2), block-scope collectives, float reductions, GCN3/Vega/CDNA5 ids: each needs a ruling, a patent read or a hardware page |
+| R7-D02 | `CollectiveTuple` | US8539204B2, board 434 C; 506 A did not name tuple-state collectives | a ruling on tuple collectives and a module-level lowerer |
+| R7-D03 | `MbarInit` | US11803380B2 (mbarrier), CireSnave 2026-11-16 (board 453) | a patent read and ruling; whether AMD has an equivalent object is unread |
 | R7-D04 | `MbarArrive` | US11803380B2, board 453 | as MbarInit |
 | R7-D05 | `MbarCompleteTx` | US11803380B2, board 453 | as MbarInit |
 | R7-D06 | `MbarWait` | US11803380B2, board 453 | as MbarInit |
-| R7-D07 | `WgmmaWait` | US12204897B2 and US12710961B2, CireSnave 2026-11-16 | a patent read and ruling; whether AMD MMA needs a wait is unread: decide with the tile-statement release (board 519 B, Unpopped B1) |
+| R7-D07 | `WgmmaWait` | US12204897B2 and US12710961B2, CireSnave 2026-11-16 | a patent read and ruling; whether AMD MMA needs a wait is unread (see board 519 B) |
 | R7-D08 | `Tcgen05Commit` | US11803380B2 by the PM's extension (not read separately against the claims) | the PM's extension read against the claims, then a ruling |
-| R7-D09 | `CopyAsync` | US12118382B2 and US11294713B2 (async data movement), board 434 C | a patent read and CireSnave ruling; AMD global-to-LDS async copies would be a different mechanism to chart first |
+| R7-D09 | `CopyAsync` | US12118382B2 and US11294713B2 (async data movement), board 434 C | a patent read and ruling; an AMD async-copy mechanism is unread |
 | R7-D10 | `CopyBulk` | US11803380B2 (a copy on an mbarrier), board 453 | as MbarInit; tensor-map family US12657024/US12669996/US12645455 also unread |
 | R7-D11 | `CopyUnpack` | US11803380B2 (Unpopped 0.58.0 addition) | as CopyBulk |
 | R7-D12 | `AsyncCommit` | US12118382B2 and US11294713B2, board 434 C | as CopyAsync |

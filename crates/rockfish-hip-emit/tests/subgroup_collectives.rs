@@ -7,10 +7,9 @@
 //! spelled, never inherited); the text parses against a Rockfish-written shim. Scans, block-scope
 //! collectives, a `Ballot` on a 64-lane wavefront, GCN3, Vega, an unlisted target, and a launch
 //! that does not state the subgroup size are each refused by name; the plain `lower_kernel`
-//! (no target) still refuses every `Collective`. **What it does not show:** that a device runs it:
-//! UNMEASURED (no ROCm box), nothing was executed, and the edge-lane results are the emitted
-//! arithmetic, not a measurement. Patent note: basis board 506 and docs/PATENT-SWEEP.md
-//! US8539204B2 claims 1, 12 and 13, dated 2026-11-26; not a clearance.
+//! (no target) still refuses every `Collective`. **Does not show:** that a device runs it:
+//! UNMEASURED (no ROCm box). Patent note: board 506 and docs/PATENT-SWEEP.md US8539204B2 claims
+//! 1, 12 and 13, dated 2026-11-26; not a clearance.
 
 use std::path::PathBuf;
 use std::process::Command;

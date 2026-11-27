@@ -15,7 +15,7 @@
 //! Vacuity: for each class a hand mutant edits the emitted text (anchor counted: exactly one
 //! hit) and the differential must then FAIL.
 //!
-//! Skips with a printed message when no `clang++` is found; `REQUIRE_CLANG=1` fails instead.
+//! Skips without `clang++`; `REQUIRE_CLANG=1` fails instead.
 
 use std::path::PathBuf;
 use std::process::Command;

@@ -7,9 +7,8 @@
 //! run on boundary vectors, and compared with Rust's own `as` casts, which saturate, truncate
 //! toward zero and map NaN to 0 (the ruled rule, independent of the emitted text).
 //!
-//! **What this shows:** the emitted expression gives the ruled results under a host C++ compiler.
-//! **What it does not:** hipcc, the device, or GPU codegen of the same text (rig rows stand).
-//! Skips with a printed message when no `clang++` is found; `REQUIRE_CLANG=1` fails instead.
+//! **Shows:** the emitted expression gives the ruled results under a host C++ compiler.
+//! **Does not show:** hipcc or a device. Skips without `clang++`; `REQUIRE_CLANG=1` fails instead.
 
 use std::path::PathBuf;
 use std::process::Command;
