@@ -30,7 +30,7 @@ fn generate(dt: ElementKind) -> Result<String, String> {
     let a = OperandDesc::new(1, &[1 << 20], &[1], dt, 1);
     let k = structure_key(
         OpCategory::BinaryElementwise,
-        &[a.clone(), a.clone(), a],
+        &[a, a, a],
         TargetId::parse("rocm:gfx906").unwrap(),
     );
     let o = OpDef::elementwise("add", 2, &[dt], input(0) + input(1));

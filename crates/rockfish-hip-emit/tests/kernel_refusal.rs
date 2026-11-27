@@ -143,12 +143,22 @@ fn declined() -> Vec<(&'static str, Stmt, &'static str)> {
 
 #[test]
 fn a_kernel_layer_kernel_is_refused_with_the_typed_error() {
-    let detail = refusal(Vec::new());
+    // A statement neither declined nor spelled by S1 is refused by the S1 lowerer, by name, not
+    // by the patent list: the control for the by-name tests below.
+    let detail = refusal(vec![Stmt::GridDepWait]);
     assert!(detail.contains("refusal_control"), "{detail}");
+    assert!(detail.contains("statement `GridDepWait`"), "{detail}");
     assert!(
-        !detail.contains("declined"),
+        !detail.contains("declined on AMD"),
         "control: no declined name: {detail}"
     );
+}
+
+#[test]
+fn an_empty_kernel_now_lowers() {
+    // S1 (0.60.8): a kernel with nothing declined and nothing unspelled is lowered, not refused.
+    let g = Hip.lower_kernel(&kernel(Vec::new())).expect("lowers");
+    assert!(g.source.contains("__global__"), "{}", g.source);
 }
 
 #[test]

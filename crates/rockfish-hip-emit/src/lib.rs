@@ -131,7 +131,7 @@ impl Backend for Hip {
         if let Some((name, why)) = first_unlowered(&kernel.body) {
             return Err(LowerError::UnsupportedKernel {
                 detail: format!(
-                    "hip backend: kernel `{}` contains `{name}`, which this emitter has no lowering for ({why}); it is declined by name",
+                    "hip backend: kernel `{}` contains `{name}`, which this emitter has no lowering for ({why}); the kernel is refused",
                     kernel.name
                 ),
             });

@@ -180,13 +180,13 @@ fn saxpy_text_and_abi() {
 fn a_store_to_a_read_only_buffer_is_refused() {
     let mut k = saxpy();
     // Mutant: point the store at buffer 0 (`Read`). Must be refused, not emitted.
-    if let Stmt::If { then, .. } = &mut k.body.0[1] {
-        if let Stmt::Store { place, .. } = &mut then.0[2] {
-            *place = Place::Logical {
-                buffer: 0,
-                coords: vec![local(3)],
-            };
-        }
+    if let Stmt::If { then, .. } = &mut k.body.0[1]
+        && let Stmt::Store { place, .. } = &mut then.0[2]
+    {
+        *place = Place::Logical {
+            buffer: 0,
+            coords: vec![local(3)],
+        };
     }
     assert!(detail(&k).contains("read-only buffer"));
 }
