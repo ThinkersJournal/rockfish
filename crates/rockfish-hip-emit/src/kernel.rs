@@ -25,9 +25,11 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
 use unpopped::backend::{GeneratedKernel, LowerError};
-use unpopped::exec::ExecId;
-use unpopped::ir::{BinaryOp, ScalarExpr};
-use unpopped::kernel::{BufferRole, KernelFn, ParamKind, Place, Stmt};
+use unpopped::exec::{ExecId, Scope};
+use unpopped::ir::{BinaryOp, ReduceOp, ScalarExpr};
+use unpopped::kernel::{
+    BufferRole, CollectiveKind, KernelFn, ParamKind, Place, ShuffleMode, Stmt, VoteKind,
+};
 use unpopped::kernel_interface::KernelInterface;
 use unpopped_vocab::ElementKind;
 
@@ -84,6 +86,8 @@ struct Cx<'a> {
     ranks: BTreeMap<u32, usize>,
     tmp: u32,
     out: String,
+    /// The wavefront size of the stated target, when the caller stated one.
+    wave: Option<u32>,
 }
 
 impl Cx<'_> {
@@ -269,6 +273,210 @@ impl Cx<'_> {
         }
     }
 
+    /// The ruled subgroup collectives (board 506 "A", 2026-11-26): `Shuffle`, `Vote`, `Reduce`
+    /// and `Broadcast` at `Scope::Subgroup` on a stated RDNA or CDNA target. Every source lane is
+    /// computed here, in range, and handed to HIP's `__shfl` with an in-range `srcLane`, so the
+    /// IR's edge rules (docs/design-kernel-collectives-edges.md) are spelled, never inherited
+    /// from a device. UNMEASURED on a device; text parsed by clang only.
+    fn collective(
+        &mut self,
+        kind: &CollectiveKind,
+        value: &ScalarExpr,
+        result: u32,
+        scope: Scope,
+        d: usize,
+    ) -> Result<(), LowerError> {
+        let k = self.k;
+        let marker = "declined by name: board 434 C, US8539204B2 (only subgroup-scope shuffles, votes, reductions and broadcasts are lifted, board 506 A)";
+        if scope != Scope::Subgroup {
+            return Err(decline(
+                k,
+                format!("a `Collective` at {scope:?} scope is {marker}"),
+            ));
+        }
+        let Some(n) = self.wave else {
+            return Err(decline(
+                k,
+                format!(
+                    "a `Collective` needs a target: call `Hip::lower_kernel_for` (the plain `lower_kernel` states none; {marker})"
+                ),
+            ));
+        };
+        let sub = k.launch.and_then(|l| l.subgroup);
+        let block_ok = k.launch.is_some_and(|l| {
+            l.block.iter().map(|&b| u64::from(b)).product::<u64>() % u64::from(n) == 0
+        });
+        if !sub.is_some_and(|s| s.min == n && s.max == n) || !block_ok {
+            return Err(decline(
+                k,
+                format!(
+                    "the launch does not state subgroup size {n} exactly (and a block of a multiple of {n} threads), which this target's wavefront needs"
+                ),
+            ));
+        }
+        let vt = self.ty_of(value)?;
+        let (t, unsigned) = self.spelled(vt, "a collective value")?;
+        let v = self.expr(value)?;
+        let rt = self.ty_of(&ScalarExpr::Local(result))?;
+        let id = self.tmp;
+        self.tmp += 1;
+        let nn = i64::from(n);
+        let lane = format!("lane{id}");
+        let int_operand = |this: &Self, e: &ScalarExpr| -> Result<String, LowerError> {
+            let ek = this.ty_of(e)?;
+            if !matches!(ek, ElementKind::I32 | ElementKind::I64 | ElementKind::U32) {
+                return Err(decline(
+                    k,
+                    format!("a lane operand of type {ek:?} (I32, I64 and U32 are spelled)"),
+                ));
+            }
+            Ok(format!("(long long)({})", this.expr(e)?))
+        };
+        let mut pre = vec![
+            format!("const {t} v{id} = {v};"),
+            format!(
+                "const long long {lane} = (long long)((threadIdx.x + threadIdx.y * blockDim.x + threadIdx.z * blockDim.x * blockDim.y) % {n}u);"
+            ),
+        ];
+        let rhs = match kind {
+            CollectiveKind::Shuffle { mode, operand } => {
+                if rt != vt {
+                    return Err(decline(
+                        k,
+                        "a shuffle result of another type than its value",
+                    ));
+                }
+                let o = int_operand(self, operand)?;
+                let src = match mode {
+                    ShuffleMode::Idx => format!("((({o}) % {nn}LL) + {nn}LL) % {nn}LL"),
+                    ShuffleMode::Up => format!("{lane} - ({o})"),
+                    ShuffleMode::Down => format!("{lane} + ({o})"),
+                    ShuffleMode::Xor => format!("{lane} ^ ({o})"),
+                    other => return Err(decline(k, format!("shuffle mode `{}`", variant(other)))),
+                };
+                pre.push(format!("const long long src{id} = {src};"));
+                // Out of range: the lane's own value (the IR rule, spelled here).
+                format!(
+                    "__shfl(v{id}, (int)((src{id} >= 0 && src{id} < {nn}LL) ? src{id} : {lane}), {n})"
+                )
+            }
+            CollectiveKind::Broadcast { lane: l } => {
+                if rt != vt {
+                    return Err(decline(
+                        k,
+                        "a broadcast result of another type than its value",
+                    ));
+                }
+                let ScalarExpr::ConstInt(c, _) = l else {
+                    return Err(decline(
+                        k,
+                        "a broadcast from a lane that is not a constant (the IR states no edge rule for it)",
+                    ));
+                };
+                if !(0..nn).contains(c) {
+                    return Err(decline(
+                        k,
+                        format!("a broadcast from lane {c}, outside 0..{n}"),
+                    ));
+                }
+                format!("__shfl(v{id}, {c}, {n})")
+            }
+            CollectiveKind::Vote(vote) => {
+                let (rtn, _) = self.spelled(rt, "a vote result")?;
+                if is_float(rt) {
+                    return Err(decline(k, "a float vote result"));
+                }
+                match vote {
+                    VoteKind::All => format!("(({rtn})__all(v{id} != 0))"),
+                    VoteKind::Any => format!("(({rtn})__any(v{id} != 0))"),
+                    VoteKind::Ballot => {
+                        if n != 32 {
+                            return Err(decline(
+                                k,
+                                format!(
+                                    "a `Ballot` on a wavefront of {n} lanes: the IR defines it for 32 lanes and HIP's `__ballot` returns 64 bits, so it is lowered at wave size 32 only"
+                                ),
+                            ));
+                        }
+                        format!("(({rtn})(unsigned int)__ballot(v{id} != 0))")
+                    }
+                    other => return Err(decline(k, format!("vote `{}`", variant(other)))),
+                }
+            }
+            CollectiveKind::Reduce(op) => {
+                if rt != vt {
+                    return Err(decline(
+                        k,
+                        "a reduction result of another type than its value",
+                    ));
+                }
+                if is_float(vt) {
+                    return Err(decline(
+                        k,
+                        "a float reduction (the butterfly order is not the IR's lane order, and the float tolerance is not decided for it)",
+                    ));
+                }
+                let step = match op {
+                    ReduceOp::Sum | ReduceOp::Prod => {
+                        let o = if matches!(op, ReduceOp::Sum) {
+                            '+'
+                        } else {
+                            '*'
+                        };
+                        match unsigned {
+                            Some(u) => format!("({t})(({u})r{id} {o} ({u})t{id})"),
+                            None => format!("r{id} {o} t{id}"),
+                        }
+                    }
+                    ReduceOp::Max => format!("(r{id} > t{id} ? r{id} : t{id})"),
+                    ReduceOp::Min => format!("(r{id} < t{id} ? r{id} : t{id})"),
+                    ReduceOp::And => format!("r{id} & t{id}"),
+                    ReduceOp::Or => format!("r{id} | t{id}"),
+                    ReduceOp::Xor => format!("r{id} ^ t{id}"),
+                    other => return Err(decline(k, format!("reduce op `{}`", variant(other)))),
+                };
+                let (rtn0, _) = self.spelled(rt, "a reduction result")?;
+                self.line(d, &format!("{rtn0} l{result};"));
+                self.line(d, "{");
+                for l in &pre[..1] {
+                    self.line(d + 1, l);
+                }
+                self.line(d + 1, &format!("{t} r{id} = v{id};"));
+                self.line(
+                    d + 1,
+                    &format!("for (int o{id} = {n} / 2; o{id} > 0; o{id} >>= 1) {{"),
+                );
+                self.line(
+                    d + 2,
+                    &format!("const {t} t{id} = __shfl_xor(r{id}, o{id}, {n});"),
+                );
+                self.line(d + 2, &format!("r{id} = {step};"));
+                self.line(d + 1, "}");
+                let (rtn, _) = self.spelled(rt, "a reduction result")?;
+                self.line(d + 1, &format!("l{result} = ({rtn})r{id};"));
+                self.line(d, "}");
+                return Ok(());
+            }
+            other => {
+                return Err(decline(
+                    k,
+                    format!("a `Collective` of kind `{}` is {marker}", variant(other)),
+                ));
+            }
+        };
+        let (rtn, _) = self.spelled(rt, "a collective result")?;
+        // The result local is declared at the statement's own scope; the temporaries sit in a
+        // block of their own so repeated collectives do not collide.
+        self.line(d, &format!("{rtn} l{result};"));
+        self.line(d, "{");
+        for l in &pre {
+            self.line(d + 1, l);
+        }
+        self.line(d + 1, &format!("l{result} = {rhs};"));
+        self.line(d, "}");
+        Ok(())
+    }
+
     fn block(&mut self, b: &unpopped::kernel::Block, depth: usize) -> Result<(), LowerError> {
         for s in &b.0 {
             self.stmt(s, depth)?;
@@ -371,6 +579,14 @@ impl Cx<'_> {
             Stmt::Break => self.line(d, "break;"),
             Stmt::Continue => self.line(d, "continue;"),
             Stmt::Return => self.line(d, "return;"),
+            Stmt::Collective {
+                kind,
+                value,
+                result,
+                scope,
+            } => {
+                self.collective(kind, value, *result, *scope, d)?;
+            }
             other => return Err(decline(self.k, format!("statement `{}`", variant(other)))),
         }
         Ok(())
@@ -378,7 +594,7 @@ impl Cx<'_> {
 }
 
 /// Lower one kernel-layer function (S1).
-pub(crate) fn lower(kernel: &KernelFn) -> Result<GeneratedKernel, LowerError> {
+pub(crate) fn lower(kernel: &KernelFn, wave: Option<u32>) -> Result<GeneratedKernel, LowerError> {
     // The checker is the only gate on data (`Backend::lower_kernel` doc): a kernel it refuses is
     // not lowered, whatever it contains.
     unpopped::kernel::check_kernel(kernel).map_err(|e| LowerError::UnsupportedKernel {
@@ -404,6 +620,7 @@ pub(crate) fn lower(kernel: &KernelFn) -> Result<GeneratedKernel, LowerError> {
         ranks: BTreeMap::new(),
         tmp: 0,
         out: String::new(),
+        wave,
     };
     cx.block(&kernel.body, 1)?;
     let body = std::mem::take(&mut cx.out);
