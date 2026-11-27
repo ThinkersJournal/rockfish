@@ -7,8 +7,10 @@
 //! instruction built *only from lane positions* (lane `16g + r` of A holds `A[r][g]`; of B holds `B[g][r]`; the product pairs
 //! A lane `16g + i` with B lane `16g + j`) reproduces the oracle's `D` after the output map gathers it. A wrong lane in a map
 //! (the mutant in `a_swapped_lane_is_caught`) breaks that.
-//! The output map `d_slot` is scattered and gathered with the same function, so a wrong *output* map is caught only by the
-//! coverage test (a collision or out-of-range slot), not by the value comparison; the A-input map is caught by both.
+//! The output map `d_slot` is checked by value too: the model's lanes compute their own element from the inverse form of the
+//! formula (`D[4*(l/16)+r][l%16]` in register `r`, lane `l`), and `d_slot` gathers D; a swapped output slot changes a value
+//! (`a_swapped_output_slot_is_caught`). The inverse form restates the same calculator formula, so this tests that `d_slot` and
+//! its inverse agree, not that AMD's hardware does.
 //! **What it does not show:** that hardware behaves this way. The model is ours, derived by hand from the calculator's code
 //! and never run against it or against a device (no ROCm box); the lane-pairing rule is the calculator's own formula
 //! restated, so agreement is not independent evidence about AMD hardware. UNVERIFIED. Nothing here lowers an MFMA.
@@ -122,7 +124,12 @@ fn oracle_d(a: &[f32], b: &[f32]) -> Vec<f32> {
 }
 
 /// The instruction modelled from lane positions only. `amap` places `A[i][k]` into a lane of the A register.
-fn model_d(a: &[f32], b: &[f32], amap: &dyn Fn(usize, usize) -> usize) -> Vec<f32> {
+fn model_d(
+    a: &[f32],
+    b: &[f32],
+    amap: &dyn Fn(usize, usize) -> usize,
+    dmap: &dyn Fn(usize, usize) -> (usize, usize),
+) -> Vec<f32> {
     let (mut ra, mut rb) = ([0f32; LANES], [0f32; LANES]);
     for i in 0..M {
         for k in 0..K {
@@ -136,20 +143,22 @@ fn model_d(a: &[f32], b: &[f32], amap: &dyn Fn(usize, usize) -> usize) -> Vec<f3
     }
     // Lanes pair within a group of 16 by output position: D[i][j] = sum over groups g of A_lane[16g+i] * B_lane[16g+j],
     // accumulated in f64, ascending g (= k), rounded once to f32.
+    // The hardware side is written from lane positions, as the inverse of `d_slot` (register `r`, lane `l` holds
+    // `D[4*(l/16) + r][l % 16]`): each lane computes its own output element, then the map UNDER TEST gathers D by (i, j).
     let mut regs = [[0f32; LANES]; 4];
-    for i in 0..M {
-        for j in 0..N {
+    for (r, reg) in regs.iter_mut().enumerate() {
+        for (l, slot) in reg.iter_mut().enumerate() {
+            let (i, j) = (4 * (l / 16) + r, l % 16);
             let s: f64 = (0..K)
                 .map(|g| f64::from(ra[16 * g + i]) * f64::from(rb[16 * g + j]))
                 .sum();
-            let (r, l) = d_slot(i, j);
-            regs[r][l] = s as f32;
+            *slot = s as f32;
         }
     }
     let mut d = vec![0f32; M * N];
     for i in 0..M {
         for j in 0..N {
-            let (r, l) = d_slot(i, j);
+            let (r, l) = dmap(i, j);
             d[i * N + j] = regs[r][l];
         }
     }
@@ -197,7 +206,7 @@ fn maps_cover_every_slot_exactly_once() {
 fn the_lane_model_matches_the_tile_oracle() {
     let (a, b) = inputs();
     let want = oracle_d(&a, &b);
-    assert_eq!(model_d(&a, &b, &a_lane), want);
+    assert_eq!(model_d(&a, &b, &a_lane, &d_slot), want);
     // Control: the oracle result is not all zeros and not symmetric, so a match says something.
     assert!(want.iter().any(|&x| x != 0.0) && want[1] != want[N]);
 }
@@ -212,5 +221,26 @@ fn a_swapped_lane_is_caught() {
         1 => 0,
         l => l,
     };
-    assert_ne!(model_d(&a, &b, &swapped), want, "the swap must change D");
+    assert_ne!(
+        model_d(&a, &b, &swapped, &d_slot),
+        want,
+        "the swap must change D"
+    );
+}
+
+#[test]
+fn a_swapped_output_slot_is_caught() {
+    let (a, b) = inputs();
+    let want = oracle_d(&a, &b);
+    // Mutant: the slots of D[0][0] and D[0][1] swapped.
+    let swapped = |i: usize, j: usize| match (i, j) {
+        (0, 0) => d_slot(0, 1),
+        (0, 1) => d_slot(0, 0),
+        _ => d_slot(i, j),
+    };
+    assert_ne!(
+        model_d(&a, &b, &a_lane, &swapped),
+        want,
+        "the swap must change D"
+    );
 }
