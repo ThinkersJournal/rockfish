@@ -19,7 +19,7 @@ hiprtc = ["dep:rockfish-hiprtc"]
 
 [dependencies]
 unpopped = "0.63.3"
-rockfish-hiprtc = { path = "../rockfish-hiprtc", version = "=0.6.5", optional = true }
+rockfish-hiprtc = { path = "../rockfish-hiprtc", version = "=0.6.6", optional = true }
 unpopped-vocab = "0.63.3"
 
 [dev-dependencies]
