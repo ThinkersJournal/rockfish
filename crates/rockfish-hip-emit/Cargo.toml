@@ -17,13 +17,13 @@ repository.workspace = true
 hiprtc = ["dep:rockfish-hiprtc"]
 
 [dependencies]
-unpopped = "0.62.0"
+unpopped = "0.63.3"
 rockfish-hiprtc = { path = "../rockfish-hiprtc", version = "=0.5.1", optional = true }
-unpopped-vocab = "0.62.0"
+unpopped-vocab = "0.63.3"
 
 [dev-dependencies]
 # The parse side of the same ownership: the round-trip tests lift what `Hip` emits.
 rockfish-hip-parse = { path = "../rockfish-hip-parse", version = "0.56.12" }
-unpopped-convert = "0.62.0"
+unpopped-convert = "0.63.3"
 # The published one-kernel-per-`Stmt`-variant fixtures: every one is checker-valid.
-unpopped = { version = "0.62.0", features = ["fixtures"] }
+unpopped = { version = "0.63.3", features = ["fixtures"] }
