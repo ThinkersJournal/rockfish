@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.1 - 2026-11-27 (PM-allocated; package files and a CI check: no behaviour change; written by pm-assist from the diff)
+
+- **Package files:** per-crate `LICENSE-MIT` and `LICENSE-APACHE` copies and a README for the crates that lacked them (30 new files, 4 modified), so the first-publish package-files check (`tools/check-package-files.py`) can pass for all 17 crates (they stay `publish = false`).
+- **CI:** a `tools/check-synced-copies.sh` step that fails when a per-crate licence copy differs from the root file. **ROADMAP:** R-PUBLISH-NOTICES row.
+
 ## 0.6.0 - 2026-11-27 (PM-allocated; **Breaking** for rockfish-hip-emit and rockfish-hip-parse: Unpopped 0.63.3 take; written by pm-assist from the diff)
 
 - **Breaking (Unpopped 0.63.3).** Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.62.0 -> 0.63.3 (0.63.0 adds a `spelling` field to the exhaustive `Numerics` struct; 0.63.1 to 0.63.3 are additive). `rockfish-hip-emit` and `rockfish-hip-parse` move 0.56.12 -> 0.63.3 (their number tracks the `unpopped` they take: cluster ruling 2026-11-28, pm-kernels; every other crate follows the workspace 0.6.0). No source change: rockfish builds no `Numerics { .. }` literal (the lane's grep; positive control: `KernelFn::new` is found). The public emitter and parser expose unpopped types, so a consumer must take unpopped 0.63.3 too.
