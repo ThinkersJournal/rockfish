@@ -2,6 +2,7 @@
 name = "rockfish-hip-parse"
 description = "HIP C++ -> IR frontend for the neutral `unpopped` kernel generator: the tree-sitter grammar binding (`parse_hip`), the HIP residue list and the `HIP` `Frontend` descriptor. Source text only; no ROCm or GPU needed."
 publish = false
+readme = "README.md"
 # TRACKS UNPOPPED, not the Rockfish workspace number (CireSnave's one-version rule, exception for
 # a crate built to work with another project; PM ruling 2026-10-31, as `baracuda-cuda-parse`): the
 # number answers "which Unpopped does this work with?". 0.63.3 = the `unpopped` it is built
