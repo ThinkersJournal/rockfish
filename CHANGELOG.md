@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.2 - 2026-11-27 (PM-allocated; tests only: no behaviour change; written by pm-assist from the diff)
+
+- **tests:** `crates/rockfish-hip-emit/tests/mfma_layout_reference.rs` (+304 lines): an MFMA layout reference test for the R7 design (no source change).
+
 ## 0.6.1 - 2026-11-27 (PM-allocated; package files and a CI check: no behaviour change; written by pm-assist from the diff)
 
 - **Package files:** per-crate `LICENSE-MIT` and `LICENSE-APACHE` copies and a README for the crates that lacked them (30 new files, 4 modified), so the first-publish package-files check (`tools/check-package-files.py`) can pass for all 17 crates (they stay `publish = false`).
