@@ -82,6 +82,22 @@ jobs:
       - run: tools/verify-vendor.sh
       - run: tools/check-synced-copies.sh
 
+  # The nine generated.rs files carry bindgen layout_tests (size/align/offset const assertions) computed by
+  # libclang for the host that ran tools/gen-bindings (it passes no --target). Regenerating on Linux and
+  # diffing proves the committed files are what the tool produces here, so a layout cannot drift unseen.
+  regen:
+    name: generated bindings match the generator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: sudo apt-get update && sudo apt-get install -y libclang-dev
+      - run: |
+          set -euo pipefail
+          for w in hip hiprtc rocblas hipblaslt miopen rocfft rocsolver rocsparse rocrand; do
+            cargo run --locked --manifest-path tools/gen-bindings/Cargo.toml -- "$w"
+          done
+          git diff --exit-code -- 'crates/*/src/generated.rs'
+
   # Advisory only (CireSnave 2026-10-23): not a required check.
   portfolio:
     permissions:
