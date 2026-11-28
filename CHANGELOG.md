@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.5 - 2026-11-27 (PM-allocated; package files only: no behaviour change; written by pm-assist from the diff)
+
+- **package files:** `LICENSE-APACHE` copies in 8 crate directories, byte-identical to the root `LICENSE-APACHE` (git blob d6456956 in all 8: checked by pm-assist), so the first-publish package-files check can see them (the crates stay `publish = false`).
+
 ## 0.6.4 - 2026-11-27 (PM-allocated; docs only: no behaviour change; written by pm-assist from the diff)
 
 - **docs:** `docs/R7-MFMA-LAYOUT-PROVENANCE.md` (R7-D15 layout provenance table): the lane ran the layout facts against the calculator and updated the "Verified by run" column (45 lines added, 26 removed); the source stays `ROCm/amd_matrix_instruction_calculator` at commit 94b1f16b (MIT, Copyright (c) 2022-2024 Advanced Micro Devices, Inc.); no ISA PDF was opened and nothing in it is ISA-derived (board 525 C).
