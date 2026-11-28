@@ -25,6 +25,7 @@ gfx1036, HIP 6.4; without a device they print so and stop; never `#[ignore]`).
 | `Handle::gemm_strided_batched` | `plan()`, `batched_len` per buffer, `stride_c >= c_len` | `gemm_strided_batched_refuses_a_buffer_short_by_one_before_rocblas` (+ `batched_len_*`) | MEASURED, 4 mutants caught |
 | `fill_zero`, `to_vec` | no caller-supplied length | n/a | READ-ONLY |
 | `Function::launch` | `unsafe`: contract in its doc; HIP cannot check arguments against the signature | not checkable | READ-ONLY |
+| `rockfish-hiprtc`: `Program::new`, `add_name_expression`, `lowered_name`, `compile` | no caller-supplied length: every string goes through `c_string` (NUL refused), the option count through `c_int::try_from`; `log()` and `code()` size their buffers from hipRTC's own size query | `c_string` unit tests only | READ 2026-11-28, UNMEASURED: no `hiprtc.dll` on this box, so no call has reached hipRTC; the buffer sizes are library-trusted |
 | rocBLAS level 1/2 | no such wrapper exists (`gemm` and `gemm_strided_batched` only) | n/a | n/a |
 
 (1) Mutants: each guard call replaced by nothing (copy_from_host, copy_to_host, copy_to_pinned_async,
@@ -39,7 +40,7 @@ were chosen so a missing guard copies fewer bytes than the larger side holds (ne
 - **No GEMM has run on any device** (`UNVERIFIED on a GPU`); these tests prove the guards refuse,
   not that an accepted GEMM is right. rocBLAS never ran in these tests (null handle, no library).
 - The `alloc` guard has no mutant run. `Function::launch` and `fill_zero`/`to_vec` are READ-ONLY.
-- rockfish-hiprtc (not read in this pass; no `hiprtc.dll` on this box), rocFFT, rocRAND, rocSOLVER,
+- rockfish-hiprtc is in the table above as READ-ONLY (no library on this box); rocFFT, rocRAND, rocSOLVER,
   rocSPARSE, MIOpen (`-sys` crates only, no library here). UNMEASURED.
 
 — lane: rockfish

@@ -41,6 +41,7 @@
 mod kernel;
 #[cfg(feature = "hiprtc")]
 mod rtc;
+mod tile;
 #[cfg(feature = "hiprtc")]
 pub use rtc::{HipRtcCompiler, HipRtcTargetError};
 
@@ -120,7 +121,7 @@ impl Backend for Hip {
     /// name**, so the reason is the declined list, not a missing feature. Those statements are
     /// never lowered to a hardware operation on AMD hardware (CireSnave's rulings of 2026-11-16).
     fn lower_kernel(&self, kernel: &KernelFn) -> Result<GeneratedKernel, LowerError> {
-        lower_kernel_impl(kernel, None)
+        lower_kernel_impl(kernel, None, None)
     }
 
     fn lower(&self, plan: &KernelPlan<'_>) -> Result<GeneratedKernel, LowerError> {
@@ -202,7 +203,11 @@ impl Backend for Hip {
 
 /// The shared body of `Backend::lower_kernel` (`wave: None`, no target) and
 /// [`Hip::lower_kernel_for`] (`wave: Some(n)`, a target whose wavefront is `n` lanes).
-fn lower_kernel_impl(kernel: &KernelFn, wave: Option<u32>) -> Result<GeneratedKernel, LowerError> {
+fn lower_kernel_impl(
+    kernel: &KernelFn,
+    wave: Option<u32>,
+    arch: Option<&str>,
+) -> Result<GeneratedKernel, LowerError> {
     if let Some((name, patent)) = first_declined(&kernel.body, wave.is_some()) {
         return Err(LowerError::UnsupportedKernel {
             detail: format!(
@@ -219,7 +224,7 @@ fn lower_kernel_impl(kernel: &KernelFn, wave: Option<u32>) -> Result<GeneratedKe
             ),
         });
     }
-    kernel::lower(kernel, wave)
+    kernel::lower(kernel, wave, arch)
 }
 
 /// Targets whose wavefront size this emitter states, for the lifted subgroup collectives
@@ -282,7 +287,11 @@ impl Hip {
         kernel: &KernelFn,
         target: &TargetId,
     ) -> Result<GeneratedKernel, LowerError> {
-        lower_kernel_impl(kernel, Some(wavefront_of(target)?))
+        let wave = wavefront_of(target)?;
+        let text = target.to_string();
+        let arch = text.rsplit(':').next().unwrap_or("");
+        let arch = arch.split('+').next().unwrap_or(arch);
+        lower_kernel_impl(kernel, Some(wave), Some(arch))
     }
 }
 
