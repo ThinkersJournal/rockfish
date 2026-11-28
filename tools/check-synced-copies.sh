@@ -10,7 +10,8 @@ python3 - <<'PY' || bad=1
 import re, os, sys
 s = open('THIRD-PARTY-NOTICES.md', encoding='utf-8', newline='').read()
 head, *secs = re.split(r'(?m)^(?=## )', s)
-by = {re.match(r'## AMD .+? \(`vendor/(\w+)/`\)', x).group(1): x for x in secs}
+# Only the vendored-header sections are synced into crates; other sections (e.g. the calculator notice, not vendored) are skipped.
+by = {m.group(1): x for x in secs if (m := re.match(r'## AMD .+? \(`vendor/(\w+)/`\)', x))}
 want = {'hip-sys': 'hip', 'hiprtc-sys': 'hip', 'rocblas-sys': 'rocblas', 'hipblaslt-sys': 'hipblaslt', 'miopen-sys': 'miopen',
         'rocfft-sys': 'rocfft', 'rocrand-sys': 'rocrand', 'rocsparse-sys': 'rocsparse', 'rocsolver-sys': 'rocsolver'}
 bad = 0

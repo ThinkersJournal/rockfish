@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
 # R7-D15/D16/D17: lowering Unpopped's opaque tile to AMD matrix instructions (design only)
 
-Design note; **nothing here is built, and nothing is lowered.** Labels as in `docs/DESIGN.md`: **[measured]**, **[read]**, **[unverified]**. Written 2026-11-27 on pm-kernels' TASK (rows R7-D15..D17 in `ROADMAP.md`).
+Design note. **Update 2026-11-28: the three atoms of section 4 are now lowered** (`crates/rockfish-hip-emit/src/tile.rs`, draft PR for the PM's read; PM chart read patents-2 #471, relayed by pm-kernels 2026-11-28: all three outside as read, no hold). Every statement below that says "nothing is built" predates it. Sections 5-6 stand for everything outside the three atoms. The lowered kernels are compiled by clang 18 for the AMDGPU target (`-S`; the right MFMA/WMMA instruction is selected) and never run: no device here has MFMA or WMMA, so numerics and lane maps are UNMEASURED on silicon. Labels as in `docs/DESIGN.md`: **[measured]**, **[read]**, **[unverified]**. Written 2026-11-27 on pm-kernels' TASK (rows R7-D15..D17 in `ROADMAP.md`).
 
 **Standing text (board 519 B), verbatim as it must travel:** lifted by CireSnave 2026-11-26 (board 519 B) as his risk call; not a clearance; no attorney; the Intel/NVIDIA tile-instruction method and medium claims remain NEEDS MORE as read. AMD matrix patents (PM ODP search + patents-2, as relayed 2026-11-27): 16 outside as read, 3 read-gaps, nothing AMD-shaped shipped; no hold on a design row. **A shipped MFMA/WMMA statement is a chart read first: the atom list in section 4 goes to the PM before any code.**
 

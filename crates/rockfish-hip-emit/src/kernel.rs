@@ -6,7 +6,8 @@
 //! `If`, `For`, `While`, `Break`, `Continue`, `Return`, and the expressions `Const`, `ConstInt`,
 //! `Local`, `Exec` (thread, block, block-dim and grid-dim ids), `Add`, `Sub`, `Mul`, `Div` at
 //! a float type, and the six comparisons `CmpEq`..`CmpGe` (`(a < b) ? 1 : 0`, in the operand
-//! dtype, NaN as the C operators; Unpopped's `BinaryOp` doc), at `f32`, `f64`, `i32`, `i64`, `u32` and `u64`. **Everything else is declined by
+//! dtype, NaN as the C operators; Unpopped's `BinaryOp` doc), at `f32`, `f64`, `i32`, `i64`, `u32` and `u64`. **Tiles (R7-D15):** with a stated
+//! target the four `Tile*` statements lower to three AMD matrix atoms (`tile.rs`). **Everything else is declined by
 //! name** with a typed `UnsupportedKernel` (statement, expression, place, dtype, parameter kind,
 //! packed local, allocation).
 //!
@@ -21,6 +22,7 @@
 //! **Integer arithmetic** at a signed type wraps (computed through the unsigned type of the same
 //! width) so the text has no signed-overflow undefined behaviour.
 
+use std::cell::Cell;
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
@@ -33,6 +35,8 @@ use unpopped::kernel::{
 };
 use unpopped::kernel_interface::KernelInterface;
 use unpopped_vocab::ElementKind;
+
+use crate::tile::{Role, TilePlan};
 
 fn decline(kernel: &KernelFn, what: impl std::fmt::Display) -> LowerError {
     LowerError::UnsupportedKernel {
@@ -89,6 +93,11 @@ struct Cx<'a> {
     out: String,
     /// The wavefront size of the stated target, when the caller stated one.
     wave: Option<u32>,
+    /// The tile plan (R7-D15), when the kernel has `Tile` allocations and states a target that lowers them.
+    tiles: Option<TilePlan>,
+    /// `f16` is spelled (`_Float16`) only while a tile statement, a tile-kernel parameter or a tile-kernel `Shared` array is
+    /// being written: it is a tile operand type, not a general local type.
+    f16_ok: Cell<bool>,
 }
 
 impl Cx<'_> {
@@ -137,6 +146,9 @@ impl Cx<'_> {
         ek: ElementKind,
         what: &str,
     ) -> Result<(&'static str, Option<&'static str>), LowerError> {
+        if ek == ElementKind::F16 && self.f16_ok.get() {
+            return Ok(("_Float16", None));
+        }
         c_type(ek).ok_or_else(|| decline(self.k, format!("dtype {ek:?} ({what}) is not spelled")))
     }
 
@@ -809,6 +821,17 @@ impl Cx<'_> {
             } => {
                 self.collective(kind, value, *result, *scope, d)?;
             }
+            Stmt::TileLoad { .. }
+            | Stmt::TileFill { .. }
+            | Stmt::TileMma { .. }
+            | Stmt::TileStore { .. }
+                if self.tiles.is_some() =>
+            {
+                self.f16_ok.set(true);
+                let r = self.tile_stmt(s, d);
+                self.f16_ok.set(false);
+                r?;
+            }
             other => return Err(decline(self.k, format!("statement `{}`", variant(other)))),
         }
         Ok(())
@@ -816,7 +839,11 @@ impl Cx<'_> {
 }
 
 /// Lower one kernel-layer function (S1).
-pub(crate) fn lower(kernel: &KernelFn, wave: Option<u32>) -> Result<GeneratedKernel, LowerError> {
+pub(crate) fn lower(
+    kernel: &KernelFn,
+    wave: Option<u32>,
+    arch: Option<&str>,
+) -> Result<GeneratedKernel, LowerError> {
     // The checker is the only gate on data (`Backend::lower_kernel` doc): a kernel it refuses is
     // not lowered, whatever it contains.
     unpopped::kernel::check_kernel(kernel).map_err(|e| LowerError::UnsupportedKernel {
@@ -825,10 +852,33 @@ pub(crate) fn lower(kernel: &KernelFn, wave: Option<u32>) -> Result<GeneratedKer
             kernel.name
         ),
     })?;
+    // Tiles (R7-D15): planned first so a refusal names the tile, not the allocation. Needs a stated target.
+    let tiles = match (wave, arch) {
+        (Some(w), Some(a)) if kernel.allocs.iter().any(|x| x.space == MemorySpace::Tile) => {
+            let plan = crate::tile::plan(kernel, w, a).map_err(|e| decline(kernel, e))?;
+            let sub = kernel.launch.and_then(|l| l.subgroup);
+            let block_ok = kernel.launch.is_some_and(|l| {
+                l.block.iter().map(|&b| u64::from(b)).product::<u64>() % u64::from(w) == 0
+            });
+            if !sub.is_some_and(|s| s.min == w && s.max == w) || !block_ok {
+                return Err(decline(
+                    kernel,
+                    format!(
+                        "the launch does not state subgroup size {w} exactly (and a block of a multiple of {w} threads), which a tile on `{a}` needs"
+                    ),
+                ));
+            }
+            Some(plan)
+        }
+        _ => None,
+    };
     // Static `Shared` arrays only: `__shared__ T s<i>[n];`. Dynamic extents, private, constant,
     // tensor and global allocations are refused by name.
     let mut shared = String::new();
     for (i, a) in kernel.allocs.iter().enumerate() {
+        if a.space == MemorySpace::Tile && tiles.is_some() {
+            continue; // lowered as per-lane fragments, declared with the body
+        }
         let (MemorySpace::Shared, Extent::Static(n)) = (a.space, a.extent) else {
             return Err(decline(
                 kernel,
@@ -838,7 +888,12 @@ pub(crate) fn lower(kernel: &KernelFn, wave: Option<u32>) -> Result<GeneratedKer
                 ),
             ));
         };
-        let (t, _) = c_type(a.elem).ok_or_else(|| {
+        let c = if a.elem == ElementKind::F16 && tiles.is_some() {
+            Some(("_Float16", None))
+        } else {
+            c_type(a.elem)
+        };
+        let (t, _): (&str, Option<&str>) = c.ok_or_else(|| {
             decline(
                 kernel,
                 format!(
@@ -861,10 +916,14 @@ pub(crate) fn lower(kernel: &KernelFn, wave: Option<u32>) -> Result<GeneratedKer
         tmp: 0,
         out: String::new(),
         wave,
+        tiles,
+        f16_ok: Cell::new(false),
     };
+    cx.tile_prologue();
     cx.block(&kernel.body, 1)?;
     let body = std::mem::take(&mut cx.out);
 
+    cx.f16_ok.set(cx.tiles.is_some());
     let mut sig = Vec::new();
     for (i, p) in kernel.params.iter().enumerate() {
         match &p.kind {
@@ -904,6 +963,7 @@ pub(crate) fn lower(kernel: &KernelFn, wave: Option<u32>) -> Result<GeneratedKer
         return Err(decline(kernel, "a kernel name that is not a C identifier"));
     }
     let mut s = String::from("#include <hip/hip_runtime.h>\n\n");
+    s.push_str(&cx.tile_typedefs());
     let _ = writeln!(s, "extern \"C\" __global__ void {name}(");
     let _ = writeln!(s, "    {}", sig.join(",\n    "));
     s.push_str(") {\n");
@@ -912,4 +972,169 @@ pub(crate) fn lower(kernel: &KernelFn, wave: Option<u32>) -> Result<GeneratedKer
     s.push_str("}\n");
     Ok(GeneratedKernel::new(name.clone(), s)
         .with_interface(KernelInterface::of(kernel).with_entry_symbol(name)))
+}
+
+/// The tile statements (R7-D15; the lane maps and the atom table are in `tile.rs`).
+impl Cx<'_> {
+    /// The fragment typedefs the planned atoms need, each once, ahead of the kernel.
+    fn tile_typedefs(&self) -> String {
+        let mut seen = Vec::new();
+        if let Some(p) = &self.tiles {
+            for (atom, _) in p.tiles.values() {
+                for t in atom.typedefs() {
+                    if !seen.contains(t) {
+                        seen.push(*t);
+                    }
+                }
+            }
+        }
+        seen.iter().map(|t| format!("{t}\n")).collect::<String>()
+            + if seen.is_empty() { "" } else { "\n" }
+    }
+
+    /// The lane id and one fragment variable per tile, at the top of the body. A tile is held by the whole subgroup; this lane
+    /// holds the elements the atom's lane map gives it.
+    fn tile_prologue(&mut self) {
+        let Some(p) = self.tiles.take() else { return };
+        self.line(1, "const int rf_lane = (int)__lane_id();");
+        for (t, (atom, role)) in &p.tiles {
+            let (ty, _) = atom.fragment(*role);
+            self.line(1, &format!("{ty} t{t} = {{}};"));
+        }
+        self.tiles = Some(p);
+    }
+
+    /// `t<tile>` for a scalar fragment, `t<tile>[e]` for a vector one.
+    fn frag(tile: u32, atom: crate::tile::Atom, role: Role, e: usize) -> String {
+        if atom.fragment(role).1 == 1 {
+            format!("t{tile}")
+        } else {
+            format!("t{tile}[{e}]")
+        }
+    }
+
+    /// The element of a tile place at `off` elements from the element the place names: a one-index buffer place or a `Shared`
+    /// allocation place (the checker allows no other).
+    fn tile_elem(&mut self, p: &Place, off: &str) -> Result<String, LowerError> {
+        match p {
+            Place::Logical { buffer, coords } if coords.len() == 1 => {
+                let param = self.k.params.get(*buffer as usize).ok_or_else(|| {
+                    decline(self.k, format!("buffer parameter {buffer} does not exist"))
+                })?;
+                let ParamKind::Buffer { elem, .. } = &param.kind else {
+                    return Err(decline(
+                        self.k,
+                        format!("parameter {buffer} is not a buffer"),
+                    ));
+                };
+                self.spelled(*elem, "a tile buffer element")?;
+                let rank = *self.ranks.entry(*buffer).or_insert(1);
+                if rank != 1 {
+                    return Err(decline(
+                        self.k,
+                        format!("buffer {buffer} is addressed with {rank} and 1 coordinates"),
+                    ));
+                }
+                let c = self.expr(&coords[0])?;
+                Ok(format!(
+                    "p{buffer}[((long long)({c}) + {off}) * p{buffer}_s0]"
+                ))
+            }
+            Place::Alloc { alloc, index } => {
+                let c = self.expr(index)?;
+                Ok(format!("s{alloc}[(long long)({c}) + {off}]"))
+            }
+            other => Err(decline(
+                self.k,
+                format!("a tile place `{}`", variant(other)),
+            )),
+        }
+    }
+
+    fn tile_stmt(&mut self, s: &Stmt, d: usize) -> Result<(), LowerError> {
+        let plan_of = |cx: &Self, t: u32| {
+            cx.tiles
+                .as_ref()
+                .and_then(|p| p.tiles.get(&t).copied())
+                .ok_or_else(|| decline(cx.k, format!("tile {t} has no planned layout")))
+        };
+        match s {
+            Stmt::TileLoad {
+                d: t,
+                src,
+                elements_per_row,
+                origin,
+            }
+            | Stmt::TileStore {
+                a: t,
+                dst: src,
+                elements_per_row,
+                origin,
+            } => {
+                let load = matches!(s, Stmt::TileLoad { .. });
+                let (atom, role) = plan_of(self, *t)?;
+                if !load && role != Role::C {
+                    return Err(decline(
+                        self.k,
+                        format!(
+                            "a `TileStore` of operand tile `{}` (only accumulator tiles are stored: an operand has two lanes per element on some atoms)",
+                            self.k.allocs[*t as usize].name
+                        ),
+                    ));
+                }
+                let (epr, o0, o1) = (
+                    self.expr(elements_per_row)?,
+                    self.expr(&origin[0])?,
+                    self.expr(&origin[1])?,
+                );
+                self.line(d, "{");
+                self.line(
+                    d + 1,
+                    &format!(
+                        "const long long rf_epr = (long long)({epr}), rf_o0 = (long long)({o0}), rf_o1 = (long long)({o1});"
+                    ),
+                );
+                for e in 0..atom.fragment(role).1 {
+                    let (r, c) = atom.coord(role, e);
+                    let off = format!("(rf_o0 + {r}) * rf_epr + rf_o1 + {c}");
+                    let place = self.tile_elem(src, &off)?;
+                    let frag = Self::frag(*t, atom, role, e);
+                    let line = if load {
+                        format!("{frag} = {place};")
+                    } else {
+                        format!("{place} = {frag};")
+                    };
+                    self.line(d + 1, &line);
+                }
+                self.line(d, "}");
+            }
+            Stmt::TileFill { d: t, value } => {
+                let (atom, role) = plan_of(self, *t)?;
+                let ek = self.k.allocs[*t as usize].elem;
+                let (ty, _) = self.spelled(ek, "a tile fill value")?;
+                let v = self.expr(value)?;
+                self.line(d, "{");
+                self.line(d + 1, &format!("const {ty} rf_v = {v};"));
+                for e in 0..atom.fragment(role).1 {
+                    let frag = Self::frag(*t, atom, role, e);
+                    self.line(d + 1, &format!("{frag} = rf_v;"));
+                }
+                self.line(d, "}");
+            }
+            Stmt::TileMma { d: td, a, b, c } => {
+                let (atom, _) = plan_of(self, *td)?;
+                self.line(
+                    d,
+                    &format!(
+                        "t{td} = {};",
+                        atom.call(&format!("t{a}"), &format!("t{b}"), &format!("t{c}"))
+                    ),
+                );
+            }
+            other => {
+                return Err(decline(self.k, format!("statement `{}`", variant(other))));
+            }
+        }
+        Ok(())
+    }
 }
