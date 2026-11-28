@@ -51,7 +51,7 @@ One row per Unpopped fixture the HIP emitter refuses by name (13 with a patent, 
 | R7-D19 | `Tcgen05Dealloc` | no patent claim made; an NVIDIA tensor-memory release | as Tcgen05Alloc |
 | R7-D20 | `Tcgen05RelinquishPermit` | no patent claim made; an NVIDIA allocation-permit relinquish | as Tcgen05Alloc |
 | R7-D21 | `Tcgen05Ld` | no patent claim made; an NVIDIA tensor-memory load | as Tcgen05Alloc |
-| R7-D22 | `Assume` (optional hint lowering) | SHIPPED as omission in 0.8.0 (no hint emitted); the hint lowering is unread against patents: not cleared, no sweep done | PROPOSAL in `docs/ASSUME-HINT-PROPOSAL.md` (clang docs read 2026-11-28): emit `__builtin_assume(cond);`; needs the PM's read of that text, then a PR; device effect UNMEASURED |
+| R7-D22 | `Assume` (optional hint lowering) | omission SHIPPED in 0.8.0 (writes nothing, no patent question); the emitted `__builtin_assume(cond);` has had no patent read: not cleared | **BLOCKED (cluster ruling 2026-11-28, pm-kernels): keep omission.** Waits on (1) a patent read of the emitted construct (patents batch, unpopped-patents-2, not yet run) and (2) a device check that hipcc's clang honours it and a false assume is UB as documented (needs ROCm: none on this box). Proposal: `docs/ASSUME-HINT-PROPOSAL.md` |
 
 ## R5-H: parallel first use of HIP hung on one machine
 
