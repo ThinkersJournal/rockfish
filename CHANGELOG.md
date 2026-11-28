@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.0 - 2026-11-27 (PM-allocated; **Breaking** for rockfish-hip-emit and rockfish-hip-parse: Unpopped 0.63.3 take; written by pm-assist from the diff)
+
+- **Breaking (Unpopped 0.63.3).** Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.62.0 -> 0.63.3 (0.63.0 adds a `spelling` field to the exhaustive `Numerics` struct; 0.63.1 to 0.63.3 are additive). No source change: rockfish builds no `Numerics { .. }` literal (the lane's grep; positive control: `KernelFn::new` is found). The public emitter and parser expose unpopped types, so a consumer must take unpopped 0.63.3 too.
+
 ## 0.5.1 - 2026-11-27 (PM-allocated; docs, one diagnostic string and a package-files tool: no behaviour change; written by pm-assist from the diff: the lane reads it)
 
 - **docs:** `docs/DESIGN-R7-MFMA.md` and `docs/R7-MFMA-LAYOUT-PROVENANCE.md` (R7 MFMA layout design; the provenance table lists atom, fact, the calculator source line at 94b1f16 and verified-by-run NO: the calculator was not silent, no ISA PDF was opened and no ISA-derived file exists). ROADMAP updated. The work stops before any MFMA or WMMA statement.
