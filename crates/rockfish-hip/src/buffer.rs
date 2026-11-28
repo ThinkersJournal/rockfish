@@ -367,6 +367,42 @@ mod tests {
         ));
     }
 
+    /// A copy whose lengths differ by one is refused before HIP is asked, and
+    /// nothing moves. Directions are chosen so that a missing guard would copy
+    /// FEWER bytes than the larger side holds (never out of bounds): the
+    /// mutant then returns `Ok` and the test fails on a value, not a crash.
+    #[test]
+    fn copies_short_by_one_are_refused_and_move_nothing() {
+        let Some(device) = device() else { return };
+        let stream = Stream::new(device).expect("stream");
+        // Control: equal lengths succeed (round trips above also cover this).
+        let mut buf = DeviceBuffer::from_slice(device, &[1u32, 2, 3, 4]).expect("buf");
+        buf.copy_from_host(&[9, 9, 9, 9]).expect("equal length");
+        assert_eq!(buf.to_vec().unwrap(), vec![9, 9, 9, 9]);
+        // copy_from_host: host slice one short.
+        assert!(matches!(
+            buf.copy_from_host(&[5, 5, 5]),
+            Err(Error::Misuse(_))
+        ));
+        assert_eq!(
+            buf.to_vec().unwrap(),
+            vec![9, 9, 9, 9],
+            "short upload moved data"
+        );
+        // copy_to_host: host slice one short; the sentinel must survive.
+        let mut out = [0xAAu32; 3];
+        assert!(matches!(buf.copy_to_host(&mut out), Err(Error::Misuse(_))));
+        assert_eq!(out, [0xAA; 3], "short download wrote");
+        // copy_to_pinned_async: device buffer one SHORTER than the pinned out.
+        let short = DeviceBuffer::from_slice(device, &[7u32, 7, 7]).expect("short");
+        let mut pinned = PinnedBuffer::from_slice(device, &[0xBBu32; 4]).expect("pinned");
+        assert!(matches!(
+            short.copy_to_pinned_async(&mut pinned, &stream),
+            Err(Error::Misuse(_))
+        ));
+        assert_eq!(&pinned[..], &[0xBB; 4], "short async download wrote");
+    }
+
     #[test]
     fn impossible_allocation_is_an_api_error_with_a_name() {
         let Some(device) = device() else { return };
