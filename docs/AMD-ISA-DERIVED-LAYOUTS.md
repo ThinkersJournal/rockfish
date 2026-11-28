@@ -27,6 +27,8 @@ pages, sha256 `0cec4237...a6e2a` (`PROVENANCE.txt`). Page numbers are the printe
 - **Exact wait counts: UNREAD.** Text extraction interleaves the table's columns, so no number is taken from
   it here; a clean read of pp. 55-58 is needed before a lowering inserts any count.
 
+**Decision (D16):** `WgmmaCommit` has a faithful lowering of nothing (no instruction); the wait rule belongs to the MFMA lowering row (R7-D15), a scheduled row, not a decline.
+
 ## Is there a tensor-memory analogue? (R7-D17)
 
 - No. Searching the whole text of the document for "tensor memory", "tensor-memory" and "tmem" finds 0 hits;
@@ -34,6 +36,8 @@ pages, sha256 `0cec4237...a6e2a` (`PROVENANCE.txt`). Page numbers are the printe
   live in ordinary VGPRs or in the separate accumulation VGPRs (AccVGPRs, moved to and from with
   `V_ACCVGPR_*`; p. 41, with the register file listed on p. 8). The A/B register file is chosen by the two
   bits of the instruction's ACC field and C/D by ACC_CD.
+**Decision (D17):** declined because the construct does not exist on AMD.
+
 - Scope: MI300 (CDNA3) only. CDNA4/gfx950 and RDNA3/RDNA4 documents are not read (RDNA files pending).
 
 — lane: rockfish
