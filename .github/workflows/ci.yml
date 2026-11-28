@@ -96,7 +96,12 @@ jobs:
           for w in hip hiprtc rocblas hipblaslt miopen rocfft rocsolver rocsparse rocrand; do
             cargo run --locked --manifest-path tools/gen-bindings/Cargo.toml -- "$w"
           done
-          git diff --exit-code -- 'crates/*/src/generated.rs'
+          # Measured (run 46104919044): the only Linux-vs-committed difference is each C enum typedef, committed as
+          # c_int (Windows host, MSVC enums are signed) and regenerated as c_uint (GNU enums with no negatives are
+          # unsigned): same size, 132 lines. Hand-written code (rockfish-hip, -hiprtc) is typed to c_int, so that
+          # known difference is allowed; ANY other changed line fails.
+          other=$(git diff -U0 -- 'crates/*/src/generated.rs' | grep -E '^[-+][^-+]' | grep -vE '^[-+]pub type [A-Za-z0-9_]+ = ::std::os::raw::c_u?int;$' || true)
+          if [ -n "$other" ]; then echo "unexpected generated.rs drift:"; echo "$other" | head -50; exit 1; fi
 
   # Advisory only (CireSnave 2026-10-23): not a required check.
   portfolio:
