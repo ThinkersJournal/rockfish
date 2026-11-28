@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.6 - 2026-11-27 (PM-allocated; package files only: no behaviour change; written by pm-assist from the diff)
+
+- **package files:** `LICENSE-APACHE` copies in the 9 remaining crate directories, byte-identical to the root `LICENSE-APACHE` (git blob d6456956 in all 9: checked by pm-assist); with 0.6.5 every crate directory carries one, so the first-publish package-files check passes for all 17 crates (they stay `publish = false`).
+
 ## 0.6.5 - 2026-11-27 (PM-allocated; package files only: no behaviour change; written by pm-assist from the diff)
 
 - **package files:** `LICENSE-APACHE` copies in 8 crate directories, byte-identical to the root `LICENSE-APACHE` (git blob d6456956 in all 8: checked by pm-assist), so the first-publish package-files check can see them (the crates stay `publish = false`).
