@@ -186,7 +186,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hip-emit"
-version = "0.63.3"
+version = "0.64.0"
 dependencies = [
  "rockfish-hip-parse",
  "rockfish-hiprtc",
@@ -197,7 +197,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hip-parse"
-version = "0.63.3"
+version = "0.64.0"
 dependencies = [
  "tree-sitter",
  "tree-sitter-cuda",
@@ -436,9 +436,9 @@ checksum = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
 
 [[package]]
 name = "unpopped"
-version = "0.63.3"
+version = "0.64.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bd75f96614e5b65c8f61e5968b2946d9fc9a194a3147c3ad879ebfded7a7d6c"
+checksum = "d2f491b705abb52dfc0bf7ae4f7d03d63f8eb91449458f0f399bfd774a99d451"
 dependencies = [
  "libm",
  "serde",
@@ -448,9 +448,9 @@ dependencies = [
 
 [[package]]
 name = "unpopped-convert"
-version = "0.63.3"
+version = "0.64.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a06581cb97a8c9f6f79e9a9f3334e2595c3046cc07debcba4c1714c4666ca8e3"
+checksum = "f2d94b37fbe949ad82e73250f191f3f00235e91f90806a36e0110ac10ff48de1"
 dependencies = [
  "tree-sitter",
  "unpopped",
@@ -459,9 +459,9 @@ dependencies = [
 
 [[package]]
 name = "unpopped-vocab"
-version = "0.63.3"
+version = "0.64.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c88b8339288cdc55dc5c846bd8253ba37ed940bf7d5dec4f491f1b2699aa3ed"
+checksum = "c8591978cd0eb665468c9cd2bbbbf8f4ed6e034dedc6c6aa03db865ccb7393a4"
 dependencies = [
  "float8",
  "half",
