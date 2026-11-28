@@ -24,7 +24,7 @@ gfx1036, HIP 6.4; without a device they print so and stop; never `#[ignore]`).
 | `Handle::gemm` | `plan()`, `need()` per buffer A, B, C | `gemm_refuses_a_buffer_short_by_one_before_rocblas` (+ `plan_*`) | MEASURED, 3 mutants caught |
 | `Handle::gemm_strided_batched` | `plan()`, `batched_len` per buffer, `stride_c >= c_len` | `gemm_strided_batched_refuses_a_buffer_short_by_one_before_rocblas` (+ `batched_len_*`) | MEASURED, 4 mutants caught |
 | `fill_zero`, `to_vec` | no caller-supplied length | n/a | READ-ONLY |
-| `Function::launch` | `unsafe`: contract in its doc; HIP cannot check arguments against the signature | not checkable | READ-ONLY |
+| `Function::launch` | `unsafe`: contract in its doc; HIP cannot check arguments against the signature | not checkable | READ-ONLY; detail `docs/LAUNCH-AUDIT.md` |
 | `rockfish-hiprtc`: `Program::new`, `add_name_expression`, `lowered_name`, `compile` | no caller-supplied length: every string goes through `c_string` (NUL refused), the option count through `c_int::try_from`; `log()` and `code()` size their buffers from hipRTC's own size query | `c_string` unit tests only | READ 2026-11-28, UNMEASURED: no `hiprtc.dll` on this box, so no call has reached hipRTC; the buffer sizes are library-trusted |
 | rocBLAS level 1/2 | no such wrapper exists (`gemm` and `gemm_strided_batched` only) | n/a | n/a |
 
