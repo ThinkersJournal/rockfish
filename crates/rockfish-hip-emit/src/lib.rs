@@ -369,7 +369,7 @@ fn first_unlowered(block: &Block) -> Option<(&'static str, &'static str)> {
         let hit = match stmt {
             Stmt::ProxyFence { .. } => Some((
                 "ProxyFence",
-                "an NVIDIA async-proxy fence; no AMD counterpart decided",
+                "an NVIDIA async-proxy fence; decided 2026-11-27 (R7-D14, not a patent ruling): not lowered, no AMD async proxy read and `__threadfence_block` orders generic accesses only",
             )),
             Stmt::Wgmma { .. } => Some((
                 "Wgmma",
