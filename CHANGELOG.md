@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.4 - 2026-11-27 (PM-allocated; docs only: no behaviour change; written by pm-assist from the diff)
+
+- **docs:** `docs/R7-MFMA-LAYOUT-PROVENANCE.md` (R7-D15 layout provenance table): the lane ran the layout facts against the calculator and updated the "Verified by run" column (45 lines added, 26 removed); the source stays `ROCm/amd_matrix_instruction_calculator` at commit 94b1f16b (MIT, Copyright (c) 2022-2024 Advanced Micro Devices, Inc.); no ISA PDF was opened and nothing in it is ISA-derived (board 525 C).
+
 ## 0.6.3 - 2026-11-27 (PM-allocated; tests only: no behaviour change; written by pm-assist from the diff)
 
 - **tests:** `crates/rockfish-hip-emit/tests/wide_int_refusal.rs` (+124 lines): a kernel carrying `I128`/`U128`/`I256`/`U256` (as a buffer element, a local or the compute type) must be refused BY NAME by `Hip::lower_kernel` as a typed `UnsupportedKernel`, never source and never a panic; control: the same shape over `I32` lowers. Wide-integer lowering stays held (the carry-flag emit hold).
