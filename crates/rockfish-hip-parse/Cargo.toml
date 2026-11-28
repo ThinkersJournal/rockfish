@@ -4,9 +4,9 @@ description = "HIP C++ -> IR frontend for the neutral `unpopped` kernel generato
 publish = false
 # TRACKS UNPOPPED, not the Rockfish workspace number (CireSnave's one-version rule, exception for
 # a crate built to work with another project; PM ruling 2026-10-31, as `baracuda-cuda-parse`): the
-# number answers "which Unpopped does this work with?". 0.56.12 = the `unpopped` it was built
-# against. The PM allocates the number at gate time.
-version = "0.56.12"
+# number answers "which Unpopped does this work with?". 0.63.3 = the `unpopped` it is built
+# against; bump it at every unpopped take (cluster ruling 2026-11-28). The PM allocates the number at gate time.
+version = "0.63.3"
 edition.workspace = true
 # No `rust-version`: the tree-sitter dependencies' floor is unmeasured here, so none is claimed.
 license.workspace = true

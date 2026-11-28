@@ -186,7 +186,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hip-emit"
-version = "0.56.12"
+version = "0.63.3"
 dependencies = [
  "rockfish-hip-parse",
  "rockfish-hiprtc",
@@ -197,7 +197,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hip-parse"
-version = "0.56.12"
+version = "0.63.3"
 dependencies = [
  "tree-sitter",
  "tree-sitter-cuda",

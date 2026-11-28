@@ -2,7 +2,7 @@
 
 ## 0.6.0 - 2026-11-27 (PM-allocated; **Breaking** for rockfish-hip-emit and rockfish-hip-parse: Unpopped 0.63.3 take; written by pm-assist from the diff)
 
-- **Breaking (Unpopped 0.63.3).** Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.62.0 -> 0.63.3 (0.63.0 adds a `spelling` field to the exhaustive `Numerics` struct; 0.63.1 to 0.63.3 are additive). No source change: rockfish builds no `Numerics { .. }` literal (the lane's grep; positive control: `KernelFn::new` is found). The public emitter and parser expose unpopped types, so a consumer must take unpopped 0.63.3 too.
+- **Breaking (Unpopped 0.63.3).** Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.62.0 -> 0.63.3 (0.63.0 adds a `spelling` field to the exhaustive `Numerics` struct; 0.63.1 to 0.63.3 are additive). `rockfish-hip-emit` and `rockfish-hip-parse` move 0.56.12 -> 0.63.3 (their number tracks the `unpopped` they take: cluster ruling 2026-11-28, pm-kernels; every other crate follows the workspace 0.6.0). No source change: rockfish builds no `Numerics { .. }` literal (the lane's grep; positive control: `KernelFn::new` is found). The public emitter and parser expose unpopped types, so a consumer must take unpopped 0.63.3 too.
 
 ## 0.5.1 - 2026-11-27 (PM-allocated; docs, one diagnostic string and a package-files tool: no behaviour change; written by pm-assist from the diff: the lane reads it)
 
