@@ -80,6 +80,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - run: tools/verify-vendor.sh
+      - run: tools/check-synced-copies.sh
 
   # Advisory only (CireSnave 2026-10-23): not a required check.
   portfolio:

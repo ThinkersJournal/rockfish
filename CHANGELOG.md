@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.6.3 - 2026-11-27 (PM-allocated; tests only: no behaviour change; written by pm-assist from the diff)
+
+- **tests:** `crates/rockfish-hip-emit/tests/wide_int_refusal.rs` (+124 lines): a kernel carrying `I128`/`U128`/`I256`/`U256` (as a buffer element, a local or the compute type) must be refused BY NAME by `Hip::lower_kernel` as a typed `UnsupportedKernel`, never source and never a panic; control: the same shape over `I32` lowers. Wide-integer lowering stays held (the carry-flag emit hold).
+
+## 0.6.2 - 2026-11-27 (PM-allocated; tests only: no behaviour change; written by pm-assist from the diff)
+
+- **tests:** `crates/rockfish-hip-emit/tests/mfma_layout_reference.rs` (+304 lines): an MFMA layout reference test for the R7 design (no source change).
+
+## 0.6.1 - 2026-11-27 (PM-allocated; package files and a CI check: no behaviour change; written by pm-assist from the diff)
+
+- **Package files:** per-crate `LICENSE-MIT` and `LICENSE-APACHE` copies and a README for the crates that lacked them (30 new files, 4 modified), so the first-publish package-files check (`tools/check-package-files.py`) can pass for all 17 crates (they stay `publish = false`).
+- **CI:** a `tools/check-synced-copies.sh` step that fails when a per-crate licence copy differs from the root file. **ROADMAP:** R-PUBLISH-NOTICES row.
+
+## 0.6.0 - 2026-11-27 (PM-allocated; **Breaking** for rockfish-hip-emit and rockfish-hip-parse: Unpopped 0.63.3 take; written by pm-assist from the diff)
+
+- **Breaking (Unpopped 0.63.3).** Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.62.0 -> 0.63.3 (0.63.0 adds a `spelling` field to the exhaustive `Numerics` struct; 0.63.1 to 0.63.3 are additive). `rockfish-hip-emit` and `rockfish-hip-parse` move 0.56.12 -> 0.63.3 (their number tracks the `unpopped` they take: cluster ruling 2026-11-28, pm-kernels; every other crate follows the workspace 0.6.0). No source change: rockfish builds no `Numerics { .. }` literal (the lane's grep; positive control: `KernelFn::new` is found). The public emitter and parser expose unpopped types, so a consumer must take unpopped 0.63.3 too.
+
 ## 0.5.1 - 2026-11-27 (PM-allocated; docs, one diagnostic string and a package-files tool: no behaviour change; written by pm-assist from the diff: the lane reads it)
 
 - **docs:** `docs/DESIGN-R7-MFMA.md` and `docs/R7-MFMA-LAYOUT-PROVENANCE.md` (R7 MFMA layout design; the provenance table lists atom, fact, the calculator source line at 94b1f16 and verified-by-run NO: the calculator was not silent, no ISA PDF was opened and no ISA-derived file exists). ROADMAP updated. The work stops before any MFMA or WMMA statement.
