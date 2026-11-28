@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.6.1 - 2026-11-27 (PM-allocated; package files and a CI check: no behaviour change; written by pm-assist from the diff)
+
+- **Package files:** per-crate `LICENSE-MIT` and `LICENSE-APACHE` copies and a README for the crates that lacked them (30 new files, 4 modified), so the first-publish package-files check (`tools/check-package-files.py`) can pass for all 17 crates (they stay `publish = false`).
+- **CI:** a `tools/check-synced-copies.sh` step that fails when a per-crate licence copy differs from the root file. **ROADMAP:** R-PUBLISH-NOTICES row.
+
+## 0.6.0 - 2026-11-27 (PM-allocated; **Breaking** for rockfish-hip-emit and rockfish-hip-parse: Unpopped 0.63.3 take; written by pm-assist from the diff)
+
+- **Breaking (Unpopped 0.63.3).** Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.62.0 -> 0.63.3 (0.63.0 adds a `spelling` field to the exhaustive `Numerics` struct; 0.63.1 to 0.63.3 are additive). `rockfish-hip-emit` and `rockfish-hip-parse` move 0.56.12 -> 0.63.3 (their number tracks the `unpopped` they take: cluster ruling 2026-11-28, pm-kernels; every other crate follows the workspace 0.6.0). No source change: rockfish builds no `Numerics { .. }` literal (the lane's grep; positive control: `KernelFn::new` is found). The public emitter and parser expose unpopped types, so a consumer must take unpopped 0.63.3 too.
+
+## 0.5.1 - 2026-11-27 (PM-allocated; docs, one diagnostic string and a package-files tool: no behaviour change; written by pm-assist from the diff: the lane reads it)
+
+- **docs:** `docs/DESIGN-R7-MFMA.md` and `docs/R7-MFMA-LAYOUT-PROVENANCE.md` (R7 MFMA layout design; the provenance table lists atom, fact, the calculator source line at 94b1f16 and verified-by-run NO: the calculator was not silent, no ISA PDF was opened and no ISA-derived file exists). ROADMAP updated. The work stops before any MFMA or WMMA statement.
+- **`rockfish-hip-emit`:** the refusal text for the NVIDIA async-proxy fence now says it is decided 2026-11-27 (R7-D14, not a patent ruling): not lowered. A diagnostic string only; the refusal itself is unchanged.
+- **tools:** NEW `tools/check-package-files.py` (the first-publish package-files check), copied from the AOCL lane's tool (same owner, same licence); only the default crate glob changed to `rockfish*`.
+- **ROADMAP:** R6 audit rows (all 17 crates are `publish = false`; the package-files check reports BAD for all until #62; the layout asserts cover every non-opaque type, 34 + 29 opaque, generation target UNKNOWN) and R7-SUP-016 / GOV-010 flipped DONE (#55).
+
 ## 0.5.0 - 2026-11-27 (PM-allocated; **Breaking** for rockfish-hip-emit and rockfish-hip-parse: Unpopped 0.62.0 take)
 
 - **Breaking (Unpopped 0.62.0).** Repin `unpopped`, `unpopped-vocab`, `unpopped-convert` 0.61.0 -> 0.62.0. `Stmt` gains `TileLoad`, `TileMma`, `TileFill`, `TileStore` and `MemorySpace` gains `Tile`; nothing stopped compiling (both lowerers end in a wildcard/`let-else` that names the refusal). They are declined by name, not lowered, and no MFMA/WMMA mapping is made (waits for a design). The `Tile` allocation is refused as ``allocation `t` in Tile``. `tests/fixture_refusal.rs`: 46 -> 50 fixtures (13 lowered, 13 declined with a patent, 8 "no lowering", 13 unspelled incl. the four Tile fixtures, 3 module entries; 13+13+8+13+3 = 50). Lifted by CireSnave 2026-11-26 (board 519 B) as his risk call; not a clearance; no attorney; the Intel/NVIDIA tile-instruction method and medium claims remain NEEDS MORE as read. Single Windows machine, `cargo test --workspace`.
