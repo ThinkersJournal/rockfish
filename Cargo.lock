@@ -164,11 +164,11 @@ checksum = "d902046e6a28a1e4c3cab97258a0ce11e994903f01c2d97a9447a0b3df85f4f6"
 
 [[package]]
 name = "rockfish"
-version = "0.6.4"
+version = "0.6.5"
 
 [[package]]
 name = "rockfish-core"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "libloading",
  "thiserror",
@@ -176,7 +176,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hip"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "half",
  "rockfish-core",
@@ -208,14 +208,14 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hip-sys"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "rockfish-core",
 ]
 
 [[package]]
 name = "rockfish-hipblaslt-sys"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "rockfish-core",
  "rockfish-hip-sys",
@@ -223,7 +223,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hiprtc"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "rockfish-core",
  "rockfish-hiprtc-sys",
@@ -232,14 +232,14 @@ dependencies = [
 
 [[package]]
 name = "rockfish-hiprtc-sys"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "rockfish-core",
 ]
 
 [[package]]
 name = "rockfish-miopen-sys"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "rockfish-core",
  "rockfish-hip-sys",
@@ -247,7 +247,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-rocblas"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "half",
  "rockfish-core",
@@ -259,7 +259,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-rocblas-sys"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "rockfish-core",
  "rockfish-hip-sys",
@@ -267,14 +267,14 @@ dependencies = [
 
 [[package]]
 name = "rockfish-rocfft-sys"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "rockfish-core",
 ]
 
 [[package]]
 name = "rockfish-rocrand-sys"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "rockfish-core",
  "rockfish-hip-sys",
@@ -282,7 +282,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-rocsolver-sys"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "rockfish-core",
  "rockfish-rocblas-sys",
@@ -290,7 +290,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-rocsparse-sys"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "rockfish-core",
  "rockfish-hip-sys",
@@ -298,7 +298,7 @@ dependencies = [
 
 [[package]]
 name = "rockfish-sys"
-version = "0.6.4"
+version = "0.6.5"
 
 [[package]]
 name = "serde"
