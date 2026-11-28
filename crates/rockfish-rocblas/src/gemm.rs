@@ -467,6 +467,218 @@ mod tests {
         assert_eq!(Op::ConjugateTranspose.raw(), 113);
     }
 
+    // End-to-end guard tests (GPU-labelled: they need one HIP device for the
+    // `DeviceBuffer`s, and say so and stop without one; never `#[ignore]`).
+    // The handle is NULL (`Handle::null_for_test`): a short-by-one call must be
+    // refused with the safe layer's own `Misuse` message before any rocBLAS
+    // call; a call reaching rocBLAS fails with a different error (library
+    // absent, or an invalid-handle status), so removing a guard changes the
+    // error kind and fails the test. The unshortened call is the control: it
+    // must NOT be refused as `Misuse`.
+    fn gpu() -> Option<rockfish_hip::Device> {
+        match rockfish_hip::device_count() {
+            Ok(n) if n > 0 => Some(rockfish_hip::Device::get(0).expect("device 0")),
+            _ => {
+                eprintln!("no HIP device on this machine: GPU assertions not exercised");
+                None
+            }
+        }
+    }
+
+    fn buf(d: rockfish_hip::Device, len: usize) -> DeviceBuffer<f32> {
+        DeviceBuffer::alloc(d, len).expect("alloc")
+    }
+
+    fn not_misuse(r: Result<()>) {
+        assert!(
+            !matches!(r, Err(Error::Misuse(_))),
+            "the unshortened call was refused by a guard: {r:?}"
+        );
+    }
+
+    #[test]
+    fn gemm_refuses_a_buffer_short_by_one_before_rocblas() {
+        let Some(d) = gpu() else { return };
+        let h = Handle::null_for_test(d);
+        let (a, b, mut c) = (buf(d, 4), buf(d, 4), buf(d, 4));
+        // Control: 2x2x2, tight leading dimensions, every buffer exactly 4.
+        not_misuse(h.gemm(
+            Op::None,
+            Op::None,
+            2,
+            2,
+            2,
+            1.0,
+            &a,
+            2,
+            &b,
+            2,
+            0.0,
+            &mut c,
+            2,
+        ));
+        let short = buf(d, 3);
+        let m = misuse(h.gemm(
+            Op::None,
+            Op::None,
+            2,
+            2,
+            2,
+            1.0,
+            &short,
+            2,
+            &b,
+            2,
+            0.0,
+            &mut c,
+            2,
+        ));
+        assert!(m.contains("buffer A"), "{m}");
+        let m = misuse(h.gemm(
+            Op::None,
+            Op::None,
+            2,
+            2,
+            2,
+            1.0,
+            &a,
+            2,
+            &short,
+            2,
+            0.0,
+            &mut c,
+            2,
+        ));
+        assert!(m.contains("buffer B"), "{m}");
+        let mut short_c = buf(d, 3);
+        let m = misuse(h.gemm(
+            Op::None,
+            Op::None,
+            2,
+            2,
+            2,
+            1.0,
+            &a,
+            2,
+            &b,
+            2,
+            0.0,
+            &mut short_c,
+            2,
+        ));
+        assert!(m.contains("buffer C"), "{m}");
+    }
+
+    #[test]
+    fn gemm_strided_batched_refuses_a_buffer_short_by_one_before_rocblas() {
+        let Some(d) = gpu() else { return };
+        let h = Handle::null_for_test(d);
+        // Batch 2 of 2x2x2, stride 4: each operand needs exactly 8 elements.
+        let (a, b, mut c) = (buf(d, 8), buf(d, 8), buf(d, 8));
+        not_misuse(h.gemm_strided_batched(
+            Op::None,
+            Op::None,
+            2,
+            2,
+            2,
+            1.0,
+            &a,
+            2,
+            4,
+            &b,
+            2,
+            4,
+            0.0,
+            &mut c,
+            2,
+            4,
+            2,
+        ));
+        let short = buf(d, 7);
+        let m = misuse(h.gemm_strided_batched(
+            Op::None,
+            Op::None,
+            2,
+            2,
+            2,
+            1.0,
+            &short,
+            2,
+            4,
+            &b,
+            2,
+            4,
+            0.0,
+            &mut c,
+            2,
+            4,
+            2,
+        ));
+        assert!(m.contains("buffer A"), "{m}");
+        let m = misuse(h.gemm_strided_batched(
+            Op::None,
+            Op::None,
+            2,
+            2,
+            2,
+            1.0,
+            &a,
+            2,
+            4,
+            &short,
+            2,
+            4,
+            0.0,
+            &mut c,
+            2,
+            4,
+            2,
+        ));
+        assert!(m.contains("buffer B"), "{m}");
+        let mut short_c = buf(d, 7);
+        let m = misuse(h.gemm_strided_batched(
+            Op::None,
+            Op::None,
+            2,
+            2,
+            2,
+            1.0,
+            &a,
+            2,
+            4,
+            &b,
+            2,
+            4,
+            0.0,
+            &mut short_c,
+            2,
+            4,
+            2,
+        ));
+        assert!(m.contains("buffer C"), "{m}");
+        // C stride smaller than one C matrix (overlapping results) is refused too.
+        let m = misuse(h.gemm_strided_batched(
+            Op::None,
+            Op::None,
+            2,
+            2,
+            2,
+            1.0,
+            &a,
+            2,
+            4,
+            &b,
+            2,
+            4,
+            0.0,
+            &mut c,
+            2,
+            3,
+            2,
+        ));
+        assert!(m.contains("stride of C"), "{m}");
+    }
+
     #[cfg(feature = "half")]
     #[test]
     fn half_types_accumulate_in_f32() {

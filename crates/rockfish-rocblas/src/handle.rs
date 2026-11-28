@@ -38,6 +38,21 @@ impl Handle<'static> {
     }
 }
 
+#[cfg(test)]
+impl Handle<'static> {
+    /// A handle with a NULL raw pointer, for tests that must stop at the
+    /// safe layer's own checks. Any call that reaches rocBLAS with it is a
+    /// test failure by construction (the guard it tests was bypassed).
+    pub(crate) fn null_for_test(device: Device) -> Self {
+        Self {
+            raw: std::ptr::null_mut(),
+            device,
+            stream: std::ptr::null_mut(),
+            _stream: PhantomData,
+        }
+    }
+}
+
 impl<'s> Handle<'s> {
     /// A handle whose work is queued on `stream`.
     pub fn on_stream(stream: &'s Stream) -> Result<Self> {

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1 - 2026-11-27 (PM-allocated; docs only: no behaviour change; written by pm-assist from the diff)
+
+- **docs:** `docs/SAFE-API-AUDIT.md`: a read audit (not a harness run) of the safe slice/buffer/size functions of `rockfish-hip` and `rockfish-rocblas` at main 206a9e1: each names the check before the FFI call and its test; result: no safe function reaches an FFI call with an unchecked length; nothing changed. NOT measured (stated in the file): `gemm` and `gemm_strided_batched` have never run on a device; whether the per-buffer `need()` checks are exercised end to end; `rockfish-hiprtc` (no `hiprtc.dll` on the box), rocFFT, rocRAND, rocSOLVER, rocSPARSE and MIOpen (`-sys` crates only).
+
 ## 0.7.0 - 2026-11-27 (PM-allocated; **Breaking** for the public `Error::Api.code` of `rockfish-hip`, `rockfish-hiprtc` and `rockfish-rocblas`; written by pm-assist from the diff and the lane's READY)
 
 - **Breaking:** `Error::Api { code }` changes type from `i32` to the generated enum alias (`hipError_t`, `hiprtcResult`, `rocblas_status_`): the pm-kernels enum-signedness ruling (bindings generated on Linux, typedef names, an exact CI regeneration diff); a consumer that matched or built `code` as `i32` must convert. The crates stay `publish = false`.
