@@ -51,7 +51,7 @@ One row per Unpopped fixture the HIP emitter refuses by name (13 with a patent, 
 | R7-D19 | `Tcgen05Dealloc` | no patent claim made; an NVIDIA tensor-memory release | as Tcgen05Alloc |
 | R7-D20 | `Tcgen05RelinquishPermit` | no patent claim made; an NVIDIA allocation-permit relinquish | as Tcgen05Alloc |
 | R7-D21 | `Tcgen05Ld` | no patent claim made; an NVIDIA tensor-memory load | as Tcgen05Alloc |
-| R7-D22 | `Assume` (optional hint lowering) | omission SHIPPED in 0.8.0 (writes nothing, no patent question); the emitted `__builtin_assume(cond);` has had no patent read: not cleared | **BLOCKED (cluster ruling 2026-11-28, pm-kernels): keep omission.** Waits on (1) a patent read of the emitted construct (patents batch, unpopped-patents-2, not yet run) and (2) a device check that hipcc's clang honours it and a false assume is UB as documented (needs ROCm: none on this box). Proposal: `docs/ASSUME-HINT-PROPOSAL.md` |
+| R7-D22 | `Assume` (optional hint lowering) | omission SHIPPED in 0.8.0 (writes nothing, no patent question); the emitted `__builtin_assume(cond);` has had no patent read: not cleared | **BLOCKED (cluster ruling 2026-11-28, pm-kernels): keep omission.** Waits on (1) DONE: patent read of the emitted `__builtin_assume(cond);` line (unpopped-patents-2, 2026-11-28): outside as read x3 (US9146759B2, US8418157B2, US7818729B1), no patent on an assume statement surfaced, NOT cleared beyond those three, not advice, no attorney; and (2) STILL OPEN: a device check that hipcc's clang honours it and a false assume is UB as documented (needs ROCm: none on this box). Proposal: `docs/ASSUME-HINT-PROPOSAL.md` |
 
 ## R5-H: parallel first use of HIP hung on one machine
 
