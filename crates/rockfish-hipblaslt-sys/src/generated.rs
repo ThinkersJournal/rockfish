@@ -31,7 +31,7 @@ pub const hipblasStatus_t_HIPBLAS_STATUS_INVALID_ENUM: hipblasStatus_t = 10;
 ///<  back-end returned an unsupported status code
 pub const hipblasStatus_t_HIPBLAS_STATUS_UNKNOWN: hipblasStatus_t = 11;
 /// \brief hipblas status codes definition
-pub type hipblasStatus_t = ::std::os::raw::c_int;
+pub type hipblasStatus_t = ::std::os::raw::c_uint;
 ///<  Operate with the matrix.
 pub const hipblasOperation_t_HIPBLAS_OP_N: hipblasOperation_t = 111;
 ///<  Operate with the transpose of the matrix.
@@ -39,7 +39,7 @@ pub const hipblasOperation_t_HIPBLAS_OP_T: hipblasOperation_t = 112;
 ///< Operate with the conjugate transpose of the matrix.
 pub const hipblasOperation_t_HIPBLAS_OP_C: hipblasOperation_t = 113;
 /// \brief Used to specify whether the matrix is to be transposed or not.
-pub type hipblasOperation_t = ::std::os::raw::c_int;
+pub type hipblasOperation_t = ::std::os::raw::c_uint;
 ///< compute will be at least 16-bit precision
 pub const hipblasComputeType_t_HIPBLAS_COMPUTE_16F: hipblasComputeType_t = 0;
 ///< compute will be exactly 16-bit precision
@@ -71,7 +71,7 @@ pub const hipblasComputeType_t_HIPBLAS_COMPUTE_32F_FAST_8F8BF_FNUZ: hipblasCompu
 pub const hipblasComputeType_t_HIPBLAS_COMPUTE_32F_FAST_8BF8F_FNUZ: hipblasComputeType_t = 103;
 /** \brief The compute type to be used. Currently only used with GemmEx with the HIPBLAS_V2 interface.
          Note that support for compute types is largely dependent on backend.*/
-pub type hipblasComputeType_t = ::std::os::raw::c_int;
+pub type hipblasComputeType_t = ::std::os::raw::c_uint;
 pub const hipDataType_HIP_R_32F: hipDataType = 0;
 pub const hipDataType_HIP_R_64F: hipDataType = 1;
 pub const hipDataType_HIP_R_16F: hipDataType = 2;
@@ -108,7 +108,7 @@ pub const hipDataType_HIP_R_6F_E3M2: hipDataType = 32;
 pub const hipDataType_HIP_R_4F_E2M1: hipDataType = 33;
 pub const hipDataType_HIP_R_8F_E4M3_FNUZ: hipDataType = 1000;
 pub const hipDataType_HIP_R_8F_E5M2_FNUZ: hipDataType = 1001;
-pub type hipDataType = ::std::os::raw::c_int;
+pub type hipDataType = ::std::os::raw::c_uint;
 ///<No special postprocessing, just scale and quantize the results if necessary.
 pub const hipblasLtEpilogue_t_HIPBLASLT_EPILOGUE_DEFAULT: hipblasLtEpilogue_t = 1;
 ///<Apply ReLU point-wise transform to the results:(x:=max(x, 0))
@@ -155,7 +155,7 @@ pub const hipblasLtEpilogue_t_HIPBLASLT_EPILOGUE_SIGMOID_EXT: hipblasLtEpilogue_
 pub const hipblasLtEpilogue_t_HIPBLASLT_EPILOGUE_SIGMOID_BIAS_EXT: hipblasLtEpilogue_t = 262148;
 /** \ingroup types_module
   \brief Specify the enum type to set the postprocessing options for the epilogue.*/
-pub type hipblasLtEpilogue_t = ::std::os::raw::c_int;
+pub type hipblasLtEpilogue_t = ::std::os::raw::c_uint;
 ///<Number of batch of this matrix. Default value is 1. Data Type: int32_t
 pub const hipblasLtMatrixLayoutAttribute_t_HIPBLASLT_MATRIX_LAYOUT_BATCH_COUNT: hipblasLtMatrixLayoutAttribute_t = 0;
 ///<Stride (in elements) to the next matrix for the strided batch operation. Default value is 0. Data Type: int64_t
@@ -192,7 +192,7 @@ pub const hipblasLtMatrixLayoutAttribute_t_HIPBLASLT_MATRIX_LAYOUT_COLS: hipblas
 pub const hipblasLtMatrixLayoutAttribute_t_HIPBLASLT_MATRIX_LAYOUT_LD: hipblasLtMatrixLayoutAttribute_t = 6;
 /** \ingroup types_module
   \brief Specify the attributes that define the details of the matrix.*/
-pub type hipblasLtMatrixLayoutAttribute_t = ::std::os::raw::c_int;
+pub type hipblasLtMatrixLayoutAttribute_t = ::std::os::raw::c_uint;
 pub const hipblasLtPointerMode_t_HIPBLASLT_POINTER_MODE_HOST: hipblasLtPointerMode_t = 0;
 /// targets host memory
 pub const hipblasLtPointerMode_t_HIPBLASLT_POINTER_MODE_DEVICE: hipblasLtPointerMode_t = 1;
@@ -200,7 +200,7 @@ pub const hipblasLtPointerMode_t_HIPBLASLT_POINTER_MODE_DEVICE: hipblasLtPointer
 pub const hipblasLtPointerMode_t_HIPBLASLT_POINTER_MODE_ALPHA_DEVICE_VECTOR_BETA_HOST: hipblasLtPointerMode_t = 4;
 /** \ingroup types_module
   \brief Pointer mode to use for alpha.*/
-pub type hipblasLtPointerMode_t = ::std::os::raw::c_int;
+pub type hipblasLtPointerMode_t = ::std::os::raw::c_uint;
 ///<Scaling factors are single-precision scalars applied to the whole tensors (this mode is the default for fp8).
 pub const hipblasLtMatmulMatrixScale_t_HIPBLASLT_MATMUL_MATRIX_SCALE_SCALAR_32F: hipblasLtMatmulMatrixScale_t = 0;
 ///<Not supported yet. Scaling factors are tensors that contain a dedicated scaling factor stored as an 8-bit HIP_R_8F_E4M3 value for each 16-element block in the innermost dimension of the corresponding data tensor.
@@ -216,7 +216,7 @@ pub const hipblasLtMatmulMatrixScale_t_HIPBLASLT_MATMUL_MATRIX_SCALE_BLK128x128_
 pub const hipblasLtMatmulMatrixScale_t_HIPBLASLT_MATMUL_MATRIX_SCALE_END: hipblasLtMatmulMatrixScale_t = 6;
 /** \ingroup types_module
   \brief Block scale mode for A and B.*/
-pub type hipblasLtMatmulMatrixScale_t = ::std::os::raw::c_int;
+pub type hipblasLtMatmulMatrixScale_t = ::std::os::raw::c_uint;
 ///<Specifies the type of transformation operation that should be performed on matrix A. Default value is HIPBLAS_OP_N (for example, non-transpose operation). See hipblasOperation_t. Data Type:int32_t
 pub const hipblasLtMatmulDescAttributes_t_HIPBLASLT_MATMUL_DESC_TRANSA: hipblasLtMatmulDescAttributes_t = 0;
 ///<Specifies the type of transformation operation that should be performed on matrix B. Default value is HIPBLAS_OP_N (for example, non-transpose operation). See hipblasOperation_t. Data Type:int32_t
@@ -264,7 +264,7 @@ pub const hipblasLtMatmulDescAttributes_t_HIPBLASLT_MATMUL_DESC_EPILOGUE_ACT_ARG
 pub const hipblasLtMatmulDescAttributes_t_HIPBLASLT_MATMUL_DESC_MAX: hipblasLtMatmulDescAttributes_t = 104;
 /** \ingroup types_module
   \brief Specify the attributes that define the specifics of the matrix multiply operation.*/
-pub type hipblasLtMatmulDescAttributes_t = ::std::os::raw::c_int;
+pub type hipblasLtMatmulDescAttributes_t = ::std::os::raw::c_uint;
 ///<Search mode. Data Type: uint32_t
 pub const hipblasLtMatmulPreferenceAttributes_t_HIPBLASLT_MATMUL_PREF_SEARCH_MODE: hipblasLtMatmulPreferenceAttributes_t = 0;
 ///<Maximum allowed workspace memory. Default is 0 (no workspace memory allowed). Data Type: uint64_t
@@ -272,7 +272,7 @@ pub const hipblasLtMatmulPreferenceAttributes_t_HIPBLASLT_MATMUL_PREF_MAX_WORKSP
 pub const hipblasLtMatmulPreferenceAttributes_t_HIPBLASLT_MATMUL_PREF_MAX: hipblasLtMatmulPreferenceAttributes_t = 2;
 /** \ingroup types_module
   \brief It is an enumerated type used to apply algorithm search preferences while fine-tuning the heuristic function.*/
-pub type hipblasLtMatmulPreferenceAttributes_t = ::std::os::raw::c_int;
+pub type hipblasLtMatmulPreferenceAttributes_t = ::std::os::raw::c_uint;
 /** Column-major
 
  Leading dimension is the stride (in elements) to the beginning of next column in memory.*/
@@ -307,7 +307,7 @@ pub const hipblasLtOrder_t_HIPBLASLT_ORDER_COL16_4R4: hipblasLtOrder_t = 102;
 pub const hipblasLtOrder_t_HIPBLASLT_ORDER_COL16_4R2: hipblasLtOrder_t = 103;
 /** \ingroup types_module
   \brief Enum for data ordering.*/
-pub type hipblasLtOrder_t = ::std::os::raw::c_int;
+pub type hipblasLtOrder_t = ::std::os::raw::c_uint;
 /** Scale type, see hipDataType. Inputs are converted to scale type for scaling and summation and results are then
  converted to output type to store in memory.
 
@@ -326,7 +326,7 @@ pub const hipblasLtMatrixTransformDescAttributes_t_HIPBLASLT_MATRIX_TRANSFORM_DE
  int32_t, default: HIPBLAS_OP_N*/
 pub const hipblasLtMatrixTransformDescAttributes_t_HIPBLASLT_MATRIX_TRANSFORM_DESC_TRANSB: hipblasLtMatrixTransformDescAttributes_t = 3;
 /// Matrix transform descriptor attributes to define details of the operation.
-pub type hipblasLtMatrixTransformDescAttributes_t = ::std::os::raw::c_int;
+pub type hipblasLtMatrixTransformDescAttributes_t = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct hipblasLtMatmulDescOpaque_t {

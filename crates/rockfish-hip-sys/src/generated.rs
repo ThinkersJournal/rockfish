@@ -610,7 +610,7 @@ pub const hipJitOption_hipJitOptionIRtoISAOptExt: hipJitOption = 10000;
 ///< Hip Only Count of linker options to be passed on to compiler
 pub const hipJitOption_hipJitOptionIRtoISAOptCountExt: hipJitOption = 10001;
 /// hipJitOption
-pub type hipJitOption = ::std::os::raw::c_int;
+pub type hipJitOption = ::std::os::raw::c_uint;
 #[doc = " @defgroup GlobalDefs Global enum and defines\n @{\n\n/\n/**\n hipDeviceArch_t\n"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -2356,7 +2356,7 @@ pub const hipError_t_hipErrorRuntimeOther: hipError_t = 1053;
 pub const hipError_t_hipErrorTbd: hipError_t = 1054;
 /** HIP error type
 */
-pub type hipError_t = ::std::os::raw::c_int;
+pub type hipError_t = ::std::os::raw::c_uint;
 pub const hipDeviceAttribute_t_hipDeviceAttributeCudaCompatibleBegin: hipDeviceAttribute_t = 0;
 pub const hipDeviceAttribute_t_hipDeviceAttributeEccEnabled: hipDeviceAttribute_t = 0;
 /**< Cuda only. The maximum size of the window
@@ -2639,7 +2639,7 @@ pub const hipDeviceAttribute_t_hipDeviceAttributeAmdSpecificEnd: hipDeviceAttrib
 pub const hipDeviceAttribute_t_hipDeviceAttributeVendorSpecificBegin: hipDeviceAttribute_t = 20000;
 /** hipDeviceAttribute_t
  hipDeviceAttributeUnused number: 5*/
-pub type hipDeviceAttribute_t = ::std::os::raw::c_int;
+pub type hipDeviceAttribute_t = ::std::os::raw::c_uint;
 /**  @defgroup DriverTypes Driver Types
   @{
   This section describes the driver data types.
@@ -2658,7 +2658,7 @@ pub const hipMemcpyKind_hipMemcpyDeviceToDevice: hipMemcpyKind = 3;
 pub const hipMemcpyKind_hipMemcpyDefault: hipMemcpyKind = 4;
 ///< Device-to-Device Copy without using compute units
 pub const hipMemcpyKind_hipMemcpyDeviceToDeviceNoCU: hipMemcpyKind = 1024;
-pub type hipMemcpyKind = ::std::os::raw::c_int;
+pub type hipMemcpyKind = ::std::os::raw::c_uint;
 /**< The maximum number of threads per block. Depends
 < on function and device.*/
 pub const hipFunction_attribute_HIP_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK: hipFunction_attribute = 0;
@@ -2687,7 +2687,7 @@ pub const hipFunction_attribute_HIP_FUNC_ATTRIBUTE_MAX_DYNAMIC_SHARED_SIZE_BYTES
 < memory.*/
 pub const hipFunction_attribute_HIP_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT: hipFunction_attribute = 9;
 pub const hipFunction_attribute_HIP_FUNC_ATTRIBUTE_MAX: hipFunction_attribute = 10;
-pub type hipFunction_attribute = ::std::os::raw::c_int;
+pub type hipFunction_attribute = ::std::os::raw::c_uint;
 pub type hipDevice_t = ::std::os::raw::c_int;
 #[repr(C)]
 #[derive(Debug)]
@@ -2722,7 +2722,7 @@ pub const hipStreamBatchMemOpType_hipStreamMemOpBarrier: hipStreamBatchMemOpType
 ///< Currently not supported
 pub const hipStreamBatchMemOpType_hipStreamMemOpFlushRemoteWrites: hipStreamBatchMemOpType = 3;
 /// Operations for hipStreamBatchMemOp
-pub type hipStreamBatchMemOpType = ::std::os::raw::c_int;
+pub type hipStreamBatchMemOpType = ::std::os::raw::c_uint;
 /** @brief Union representing batch memory operation parameters for HIP streams.
 
  hipStreamBatchMemOpParams is used to specify the parameters for batch memory
@@ -3040,7 +3040,7 @@ pub type hipStreamBatchMemOpParams = hipStreamBatchMemOpParams_union;
 pub const hipStreamCaptureMode_hipStreamCaptureModeGlobal: hipStreamCaptureMode = 0;
 pub const hipStreamCaptureMode_hipStreamCaptureModeThreadLocal: hipStreamCaptureMode = 1;
 pub const hipStreamCaptureMode_hipStreamCaptureModeRelaxed: hipStreamCaptureMode = 2;
-pub type hipStreamCaptureMode = ::std::os::raw::c_int;
+pub type hipStreamCaptureMode = ::std::os::raw::c_uint;
 ///< Stream is not capturing
 pub const hipStreamCaptureStatus_hipStreamCaptureStatusNone: hipStreamCaptureStatus = 0;
 ///< Stream is actively capturing
@@ -3048,12 +3048,12 @@ pub const hipStreamCaptureStatus_hipStreamCaptureStatusActive: hipStreamCaptureS
 /**< Stream is part of a capture sequence that has been
 < invalidated, but not terminated*/
 pub const hipStreamCaptureStatus_hipStreamCaptureStatusInvalidated: hipStreamCaptureStatus = 2;
-pub type hipStreamCaptureStatus = ::std::os::raw::c_int;
+pub type hipStreamCaptureStatus = ::std::os::raw::c_uint;
 ///< Add new nodes to the dependency set
 pub const hipStreamUpdateCaptureDependenciesFlags_hipStreamAddCaptureDependencies: hipStreamUpdateCaptureDependenciesFlags = 0;
 ///< Replace the dependency set with the new nodes
 pub const hipStreamUpdateCaptureDependenciesFlags_hipStreamSetCaptureDependencies: hipStreamUpdateCaptureDependenciesFlags = 1;
-pub type hipStreamUpdateCaptureDependenciesFlags = ::std::os::raw::c_int;
+pub type hipStreamUpdateCaptureDependenciesFlags = ::std::os::raw::c_uint;
 /// Event record node params
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -3102,7 +3102,7 @@ pub type hipStreamCallback_t = ::std::option::Option<
 >;
 /// Name of each `hipError_t` status code in the header (the first
 /// name where several share a code), sorted by code.
-pub const ERROR_NAMES: &[(i32, &str)] = &[
+pub const ERROR_NAMES: &[(hipError_t, &str)] = &[
     (0, "hipSuccess"),
     (1, "hipErrorInvalidValue"),
     (2, "hipErrorOutOfMemory"),

@@ -91,7 +91,7 @@ pub const rocrand_status_ROCRAND_STATUS_LAUNCH_FAILURE: rocrand_status = 107;
 ///< Internal library error
 pub const rocrand_status_ROCRAND_STATUS_INTERNAL_ERROR: rocrand_status = 108;
 /// \brief rocRAND function call status type
-pub type rocrand_status = ::std::os::raw::c_int;
+pub type rocrand_status = ::std::os::raw::c_uint;
 ///< Default pseudorandom generator
 pub const rocrand_rng_type_ROCRAND_RNG_PSEUDO_DEFAULT: rocrand_rng_type = 400;
 ///< XORWOW pseudorandom generator
@@ -123,7 +123,7 @@ pub const rocrand_rng_type_ROCRAND_RNG_QUASI_SOBOL64: rocrand_rng_type = 504;
 ///< Scrambled Sobol64 quasirandom generator
 pub const rocrand_rng_type_ROCRAND_RNG_QUASI_SCRAMBLED_SOBOL64: rocrand_rng_type = 505;
 /// \brief rocRAND generator type
-pub type rocrand_rng_type = ::std::os::raw::c_int;
+pub type rocrand_rng_type = ::std::os::raw::c_uint;
 ///< Best ordering for pseudorandom results
 pub const rocrand_ordering_ROCRAND_ORDERING_PSEUDO_BEST: rocrand_ordering = 100;
 ///< Default ordering for pseudorandom results
@@ -136,13 +136,13 @@ pub const rocrand_ordering_ROCRAND_ORDERING_PSEUDO_DYNAMIC: rocrand_ordering = 1
 ///< n-dimensional ordering for quasirandom results
 pub const rocrand_ordering_ROCRAND_ORDERING_QUASI_DEFAULT: rocrand_ordering = 201;
 /// \brief rocRAND generator ordering
-pub type rocrand_ordering = ::std::os::raw::c_int;
+pub type rocrand_ordering = ::std::os::raw::c_uint;
 pub const rocrand_direction_vector_set_ROCRAND_DIRECTION_VECTORS_32_JOEKUO6: rocrand_direction_vector_set = 101;
 pub const rocrand_direction_vector_set_ROCRAND_SCRAMBLED_DIRECTION_VECTORS_32_JOEKUO6: rocrand_direction_vector_set = 102;
 pub const rocrand_direction_vector_set_ROCRAND_DIRECTION_VECTORS_64_JOEKUO6: rocrand_direction_vector_set = 103;
 pub const rocrand_direction_vector_set_ROCRAND_SCRAMBLED_DIRECTION_VECTORS_64_JOEKUO6: rocrand_direction_vector_set = 104;
 /// \brief rocRAND vector set
-pub type rocrand_direction_vector_set = ::std::os::raw::c_int;
+pub type rocrand_direction_vector_set = ::std::os::raw::c_uint;
 pub type rocrand_create_generator_fn = unsafe extern "C" fn(
     generator: *mut rocrand_generator,
     rng_type: rocrand_rng_type,

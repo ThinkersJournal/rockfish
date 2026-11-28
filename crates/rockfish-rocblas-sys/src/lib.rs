@@ -11,6 +11,16 @@
 //! `rocblas.dll` from Ollama's ROCm 7.1 bundle on one Windows laptop: it exports
 //! every function bound here. The Linux names are unverified guesses from the
 //! soname convention, and nothing here has been run on a GPU yet.
+//!
+//! # Enum typedef signedness
+//!
+//! The signedness of each C enum typedef in `generated.rs` follows the C compiler of the generation host:
+//! the file is generated on Linux (where ROCm ships), so an enum with no negative enumerator is `c_uint` there
+//! (MSVC would give `c_int`). The C ABI is the same 32-bit integer for these enums on MSVC and GCC, so the
+//! call ABI is unchanged. Hand-written code names the generated typedef (`hipError_t`, `hiprtcResult`, ...),
+//! never `c_int`/`c_uint`, so it does not depend on that choice. A Windows build with the Linux-generated file
+//! is UNMEASURED beyond the loader tests run on the Windows laptop (see ROADMAP R6-A2). An enum with a negative
+//! enumerator is `c_int` on both hosts; the HIP/hipRTC enums have none (grep of the generated file).
 
 use rockfish_core::LibrarySpec;
 

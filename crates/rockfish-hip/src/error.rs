@@ -4,7 +4,7 @@
 use std::ffi::CStr;
 
 use rockfish_core::LoadError;
-use rockfish_hip_sys::{ERROR_NAMES, HipApi, hipError_t_hipErrorNotReady};
+use rockfish_hip_sys::{ERROR_NAMES, HipApi, hipError_t, hipError_t_hipErrorNotReady};
 
 /// Why a `rockfish-hip` call failed.
 #[derive(Debug, thiserror::Error)]
@@ -19,7 +19,7 @@ pub enum Error {
         /// The HIP function that failed.
         call: &'static str,
         /// The raw `hipError_t`.
-        code: i32,
+        code: hipError_t,
         /// Its name, such as `hipErrorOutOfMemory`.
         name: String,
     },
@@ -33,7 +33,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 /// Name of a status code from the built-in table (the names in the vendored
 /// header), or `None` for a code the table does not know.
-pub fn builtin_name(code: i32) -> Option<&'static str> {
+pub fn builtin_name(code: hipError_t) -> Option<&'static str> {
     ERROR_NAMES
         .iter()
         .find(|(c, _)| *c == code)
@@ -44,7 +44,7 @@ pub fn builtin_name(code: i32) -> Option<&'static str> {
 ///
 /// The name comes from `hipGetErrorName` when the library has it, else from
 /// the built-in table, else `hipError(<code>)`.
-pub(crate) fn check(api: &HipApi, call: &'static str, code: i32) -> Result<()> {
+pub(crate) fn check(api: &HipApi, call: &'static str, code: hipError_t) -> Result<()> {
     if code == 0 {
         return Ok(());
     }
@@ -63,7 +63,7 @@ pub(crate) fn check(api: &HipApi, call: &'static str, code: i32) -> Result<()> {
 
 /// Like [`check`] for the polling calls: `hipErrorNotReady` is `Ok(false)`,
 /// success is `Ok(true)`, anything else an error.
-pub(crate) fn check_ready(api: &HipApi, call: &'static str, code: i32) -> Result<bool> {
+pub(crate) fn check_ready(api: &HipApi, call: &'static str, code: hipError_t) -> Result<bool> {
     if code == hipError_t_hipErrorNotReady {
         return Ok(false);
     }
@@ -88,7 +88,7 @@ mod tests {
     fn known_and_unknown_codes() {
         assert_eq!(builtin_name(0), Some("hipSuccess"));
         assert_eq!(builtin_name(2), Some("hipErrorOutOfMemory"));
-        assert_eq!(builtin_name(-12345), None);
+        assert_eq!(builtin_name(12345), None);
     }
 
     #[cfg(any(windows, target_os = "linux"))]

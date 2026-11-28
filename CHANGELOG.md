@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.0 - 2026-11-27 (PM-allocated; **Breaking** for the public `Error::Api.code` of `rockfish-hip`, `rockfish-hiprtc` and `rockfish-rocblas`; written by pm-assist from the diff and the lane's READY)
+
+- **Breaking:** `Error::Api { code }` changes type from `i32` to the generated enum alias (`hipError_t`, `hiprtcResult`, `rocblas_status_`): the pm-kernels enum-signedness ruling (bindings generated on Linux, typedef names, an exact CI regeneration diff); a consumer that matched or built `code` as `i32` must convert. The crates stay `publish = false`.
+- **CI:** a bindgen regeneration job (the generated headers carry the layout target; the CI diff must be empty) and the ROADMAP R6-A2 row; the `*-sys` crates' generated bindings are regenerated accordingly (25 files, 262 insertions, 156 deletions).
+
 ## 0.6.6 - 2026-11-27 (PM-allocated; package files only: no behaviour change; written by pm-assist from the diff)
 
 - **package files:** `LICENSE-APACHE` copies in the 9 remaining crate directories, byte-identical to the root `LICENSE-APACHE` (git blob d6456956 in all 9: checked by pm-assist); with 0.6.5 every crate directory carries one, so the first-publish package-files check passes for all 17 crates (they stay `publish = false`).
