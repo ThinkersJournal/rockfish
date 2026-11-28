@@ -810,6 +810,9 @@ impl Cx<'_> {
                     ));
                 }
             },
+            // Unpopped 0.64.0 `Assume`: a value fact the emitter "may lower to an optimiser hint or ignore".
+            // We ignore it (emit nothing); a `__builtin_assume` lowering is a later row. Decision, not an ISA fact.
+            Stmt::Assume { .. } => {}
             Stmt::Break => self.line(d, "break;"),
             Stmt::Continue => self.line(d, "continue;"),
             Stmt::Return => self.line(d, "return;"),

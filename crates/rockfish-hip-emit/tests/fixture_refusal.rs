@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! `Hip::lower_kernel` over Unpopped's published per-`Stmt`-variant fixtures (`fixtures` feature).
 //!
-//! **What this shows:** each of the 50 fixtures passes Unpopped's own checker (so the refusal is
+//! **What this shows:** each of the 51 fixtures passes Unpopped's own checker (so the refusal is
 //! the emitter's, not an invalid input), and `Hip` answers `UnsupportedKernel` for every one,
 //! never a panic and never text. A variant on the declined list (`docs/PATENT-SWEEP.md`, board
 //! 434 C / 506) is refused **by name**; `Collective`, which now includes the exclusive
@@ -46,7 +46,7 @@ fn every_fixture_is_checker_valid() {
     let all = fixtures();
     assert_eq!(
         all.len(),
-        50,
+        51,
         "the published fixture set is one per Stmt variant"
     );
     for (name, fx) in &all {
@@ -102,7 +102,7 @@ S1-declined={s1:?}"
     eprintln!("checker-refused={checker:?}");
     assert_eq!(
         lowered.len() + declined + unlowered + s1.len() + checker.len(),
-        50
+        51
     );
     assert_eq!(declined, 13);
     assert_eq!(unlowered, 8);

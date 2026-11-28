@@ -33,7 +33,10 @@ fn u(v: i64) -> ScalarExpr {
 
 /// `d = a . b` over one tile each: load A, load B, zero C, `TileMma`, store D. `(m, k, n)` and the element types are free so
 /// the declines can reuse it.
-#[allow(clippy::too_many_arguments)]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "a test builder whose knobs are each one axis of the fixture"
+)]
 fn kernel_with(
     name: &str,
     ab: ElementKind,

@@ -5,9 +5,9 @@ publish = false
 readme = "README.md"
 # TRACKS UNPOPPED, not the Rockfish workspace number (CireSnave's one-version rule, exception for
 # a crate built to work with another project; PM ruling 2026-10-31, as `baracuda-cuda-emit`): the
-# number answers "which Unpopped does this work with?". 0.63.3 = the `unpopped` it is built and
+# number answers "which Unpopped does this work with?". 0.64.0 = the `unpopped` it is built and
 # tested against; bump it at every unpopped take (cluster ruling 2026-11-28). The PM allocates the number at gate time.
-version = "0.63.3"
+version = "0.64.0"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -18,13 +18,13 @@ repository.workspace = true
 hiprtc = ["dep:rockfish-hiprtc"]
 
 [dependencies]
-unpopped = "0.63.3"
-rockfish-hiprtc = { path = "../rockfish-hiprtc", version = "=0.7.2", optional = true }
-unpopped-vocab = "0.63.3"
+unpopped = "0.64.0"
+rockfish-hiprtc = { path = "../rockfish-hiprtc", version = "=0.8.0", optional = true }
+unpopped-vocab = "0.64.0"
 
 [dev-dependencies]
 # The parse side of the same ownership: the round-trip tests lift what `Hip` emits.
-rockfish-hip-parse = { path = "../rockfish-hip-parse", version = "0.63.3" }
-unpopped-convert = "0.63.3"
+rockfish-hip-parse = { path = "../rockfish-hip-parse", version = "0.64.0" }
+unpopped-convert = "0.64.0"
 # The published one-kernel-per-`Stmt`-variant fixtures: every one is checker-valid.
-unpopped = { version = "0.63.3", features = ["fixtures"] }
+unpopped = { version = "0.64.0", features = ["fixtures"] }

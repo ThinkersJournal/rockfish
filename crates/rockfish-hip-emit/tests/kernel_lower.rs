@@ -285,8 +285,8 @@ fn every_fixture_s1_lowers_parses() {
         }
     }
     assert_eq!(
-        n, 13,
-        "the S1-lowered fixture set changed: a decision (S1c added Barrier)"
+        n, 14,
+        "the S1-lowered fixture set changed: a decision (S1c added Barrier; 0.64.0 added the ignored Assume)"
     );
 }
 
