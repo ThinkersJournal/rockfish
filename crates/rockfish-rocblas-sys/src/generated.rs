@@ -110,7 +110,7 @@ pub const rocblas_operation__rocblas_operation_none: rocblas_operation_ = 111;
 pub const rocblas_operation__rocblas_operation_transpose: rocblas_operation_ = 112;
 pub const rocblas_operation__rocblas_operation_conjugate_transpose: rocblas_operation_ = 113;
 /// \brief Used to specify whether the matrix is to be transposed or not.
-pub type rocblas_operation_ = ::std::os::raw::c_int;
+pub type rocblas_operation_ = ::std::os::raw::c_uint;
 /// \brief Used to specify whether the matrix is to be transposed or not.
 pub use self::rocblas_operation_ as rocblas_operation;
 ///< Upper triangle.
@@ -120,7 +120,7 @@ pub const rocblas_fill__rocblas_fill_lower: rocblas_fill_ = 122;
 pub const rocblas_fill__rocblas_fill_full: rocblas_fill_ = 123;
 /** \brief Used by the Hermitian, symmetric and triangular matrix
  routines to specify whether the upper, or lower triangle is being referenced.*/
-pub type rocblas_fill_ = ::std::os::raw::c_int;
+pub type rocblas_fill_ = ::std::os::raw::c_uint;
 /** \brief Used by the Hermitian, symmetric and triangular matrix
  routines to specify whether the upper, or lower triangle is being referenced.*/
 pub use self::rocblas_fill_ as rocblas_fill;
@@ -130,7 +130,7 @@ pub const rocblas_diagonal__rocblas_diagonal_non_unit: rocblas_diagonal_ = 131;
 pub const rocblas_diagonal__rocblas_diagonal_unit: rocblas_diagonal_ = 132;
 /** \brief It is used by the triangular matrix routines to specify whether the
  matrix is unit triangular.*/
-pub type rocblas_diagonal_ = ::std::os::raw::c_int;
+pub type rocblas_diagonal_ = ::std::os::raw::c_uint;
 /** \brief It is used by the triangular matrix routines to specify whether the
  matrix is unit triangular.*/
 pub use self::rocblas_diagonal_ as rocblas_diagonal;
@@ -142,7 +142,7 @@ Hermitian, or triangular matrix on the right.*/
 pub const rocblas_side__rocblas_side_right: rocblas_side_ = 142;
 pub const rocblas_side__rocblas_side_both: rocblas_side_ = 143;
 /// \brief Indicates the side matrix A is located relative to matrix B during multiplication.
-pub type rocblas_side_ = ::std::os::raw::c_int;
+pub type rocblas_side_ = ::std::os::raw::c_uint;
 /// \brief Indicates the side matrix A is located relative to matrix B during multiplication.
 pub use self::rocblas_side_ as rocblas_side;
 ///< 16-bit floating point, real
@@ -180,7 +180,7 @@ pub const rocblas_datatype__rocblas_datatype_bf16_c: rocblas_datatype_ = 169;
 ///< Invalid datatype value, do not use
 pub const rocblas_datatype__rocblas_datatype_invalid: rocblas_datatype_ = 255;
 /// \brief Indicates the precision width of data stored in a blas type.
-pub type rocblas_datatype_ = ::std::os::raw::c_int;
+pub type rocblas_datatype_ = ::std::os::raw::c_uint;
 /// \brief Indicates the precision width of data stored in a blas type.
 pub use self::rocblas_datatype_ as rocblas_datatype;
 ///< Success
@@ -213,7 +213,7 @@ pub const rocblas_status__rocblas_status_check_numerics_fail: rocblas_status_ = 
 pub const rocblas_status__rocblas_status_excluded_from_build: rocblas_status_ = 14;
 pub const rocblas_status__rocblas_status_arch_mismatch: rocblas_status_ = 15;
 ///   @brief rocblas status codes definition
-pub type rocblas_status_ = ::std::os::raw::c_int;
+pub type rocblas_status_ = ::std::os::raw::c_uint;
 ///   @brief rocblas status codes definition
 pub use self::rocblas_status_ as rocblas_status;
 /// \brief Scalar values affected by this variable are located on the host.
@@ -222,7 +222,7 @@ pub const rocblas_pointer_mode__rocblas_pointer_mode_host: rocblas_pointer_mode_
 pub const rocblas_pointer_mode__rocblas_pointer_mode_device: rocblas_pointer_mode_ = 1;
 /** \brief Indicates if scalar pointers are on host or device. This is used for
     scalars alpha and beta and for scalar function return values.*/
-pub type rocblas_pointer_mode_ = ::std::os::raw::c_int;
+pub type rocblas_pointer_mode_ = ::std::os::raw::c_uint;
 /** \brief Indicates if scalar pointers are on host or device. This is used for
     scalars alpha and beta and for scalar function return values.*/
 pub use self::rocblas_pointer_mode_ as rocblas_pointer_mode;
@@ -233,7 +233,7 @@ pub const rocblas_atomics_mode__rocblas_atomics_allowed: rocblas_atomics_mode_ =
 /** \brief Indicates if atomics operations are allowed. Not allowing atomic operations
     may generally improve determinism and repeatability of results at a cost of performance.
     Defaults to rocblas_atomics_allowed.*/
-pub type rocblas_atomics_mode_ = ::std::os::raw::c_int;
+pub type rocblas_atomics_mode_ = ::std::os::raw::c_uint;
 /** \brief Indicates if atomics operations are allowed. Not allowing atomic operations
     may generally improve determinism and repeatability of results at a cost of performance.
     Defaults to rocblas_atomics_allowed.*/
@@ -247,7 +247,7 @@ pub const rocblas_performance_metric__rocblas_device_efficiency_performance_metr
 pub const rocblas_performance_metric__rocblas_cu_efficiency_performance_metric: rocblas_performance_metric_ = 2;
 /** \brief Indicates which performance metric Tensile uses when selecting the optimal
     solution for gemm problems.*/
-pub type rocblas_performance_metric_ = ::std::os::raw::c_int;
+pub type rocblas_performance_metric_ = ::std::os::raw::c_uint;
 /** \brief Indicates which performance metric Tensile uses when selecting the optimal
     solution for gemm problems.*/
 pub use self::rocblas_performance_metric_ as rocblas_performance_metric;
@@ -262,19 +262,19 @@ pub const rocblas_layer_mode__rocblas_layer_mode_log_profile: rocblas_layer_mode
 /// \brief Outputs to the same stream as trace logging with limited internal API details like GEMM backend used
 pub const rocblas_layer_mode__rocblas_layer_mode_log_internal: rocblas_layer_mode_ = 8;
 /// \brief Indicates if layer is active with bitmask
-pub type rocblas_layer_mode_ = ::std::os::raw::c_int;
+pub type rocblas_layer_mode_ = ::std::os::raw::c_uint;
 /// \brief Indicates if layer is active with bitmask
 pub use self::rocblas_layer_mode_ as rocblas_layer_mode;
 pub const rocblas_gemm_algo__rocblas_gemm_algo_standard: rocblas_gemm_algo_ = 0;
 pub const rocblas_gemm_algo__rocblas_gemm_algo_solution_index: rocblas_gemm_algo_ = 1;
 /// \brief Indicates if layer is active with bitmask
-pub type rocblas_gemm_algo_ = ::std::os::raw::c_int;
+pub type rocblas_gemm_algo_ = ::std::os::raw::c_uint;
 /// \brief Indicates if layer is active with bitmask
 pub use self::rocblas_gemm_algo_ as rocblas_gemm_algo;
 pub const rocblas_geam_ex_operation__rocblas_geam_ex_operation_min_plus: rocblas_geam_ex_operation_ = 0;
 pub const rocblas_geam_ex_operation__rocblas_geam_ex_operation_plus_min: rocblas_geam_ex_operation_ = 1;
 /// \brief Which mathematical geam-like operation to perform for geam_ex
-pub type rocblas_geam_ex_operation_ = ::std::os::raw::c_int;
+pub type rocblas_geam_ex_operation_ = ::std::os::raw::c_uint;
 /// \brief Which mathematical geam-like operation to perform for geam_ex
 pub use self::rocblas_geam_ex_operation_ as rocblas_geam_ex_operation;
 /// \brief Default empty flags
@@ -310,7 +310,7 @@ pub const rocblas_gemm_flags__rocblas_gemm_flags_fp16_alt_impl_rnz: rocblas_gemm
  section for more details.*/
 pub const rocblas_gemm_flags__rocblas_gemm_flags_stochastic_rounding: rocblas_gemm_flags_ = 32;
 /// \brief Control flags passed into gemm algorithms invoked by Tensile Host
-pub type rocblas_gemm_flags_ = ::std::os::raw::c_int;
+pub type rocblas_gemm_flags_ = ::std::os::raw::c_uint;
 /// \brief Control flags passed into gemm algorithms invoked by Tensile Host
 pub use self::rocblas_gemm_flags_ as rocblas_gemm_flags;
 /// \brief Union for representing scalar values
@@ -355,12 +355,12 @@ pub const rocblas_check_numerics_mode__rocblas_check_numerics_mode_warn: rocblas
 pub const rocblas_check_numerics_mode__rocblas_check_numerics_mode_fail: rocblas_check_numerics_mode_ = 4;
 pub const rocblas_check_numerics_mode__rocblas_check_numerics_mode_only_nan_inf: rocblas_check_numerics_mode_ = 8;
 /// \brief Numerical checking for verifying the Input and Output vector/matrix of the rocBLAS functions for a NaN, zero, infinity and denormal value
-pub type rocblas_check_numerics_mode_ = ::std::os::raw::c_int;
+pub type rocblas_check_numerics_mode_ = ::std::os::raw::c_uint;
 /// \brief Numerical checking for verifying the Input and Output vector/matrix of the rocBLAS functions for a NaN, zero, infinity and denormal value
 pub use self::rocblas_check_numerics_mode_ as rocblas_check_numerics_mode;
 pub const rocblas_math_mode__rocblas_default_math: rocblas_math_mode_ = 0;
 pub const rocblas_math_mode__rocblas_xf32_xdl_math_op: rocblas_math_mode_ = 1;
-pub type rocblas_math_mode_ = ::std::os::raw::c_int;
+pub type rocblas_math_mode_ = ::std::os::raw::c_uint;
 pub use self::rocblas_math_mode_ as rocblas_math_mode;
 pub type rocblas_create_handle_fn = unsafe extern "C" fn(
     handle: *mut rocblas_handle,

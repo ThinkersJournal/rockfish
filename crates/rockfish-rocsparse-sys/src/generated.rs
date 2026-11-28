@@ -331,7 +331,7 @@ pub const rocsparse_operation__rocsparse_operation_conjugate_transpose: rocspars
 
   \details
   The \ref rocsparse_operation indicates the operation performed with the given matrix.*/
-pub type rocsparse_operation_ = ::std::os::raw::c_int;
+pub type rocsparse_operation_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief Specify whether the matrix is to be transposed or not.
 
@@ -350,7 +350,7 @@ pub const rocsparse_index_base__rocsparse_index_base_one: rocsparse_index_base_ 
   given \ref rocsparse_mat_descr, the \ref rocsparse_index_base can be set using
   rocsparse_set_mat_index_base(). The current \ref rocsparse_index_base of a matrix
   can be obtained by rocsparse_get_mat_index_base().*/
-pub type rocsparse_index_base_ = ::std::os::raw::c_int;
+pub type rocsparse_index_base_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief Specify the matrix index base.
 
@@ -391,7 +391,7 @@ pub const rocsparse_matrix_type__rocsparse_matrix_type_triangular: rocsparse_mat
   multiplication which is slower. For this reason, where space allows, it is faster to store the
   entire symmetric matrix and use \ref rocsparse_matrix_type_general instead of
   \ref rocsparse_matrix_type_symmetric.*/
-pub type rocsparse_matrix_type_ = ::std::os::raw::c_int;
+pub type rocsparse_matrix_type_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief Specify the matrix type.
 
@@ -430,7 +430,7 @@ pub const rocsparse_diag_type__rocsparse_diag_type_unit: rocsparse_diag_type_ = 
   \ref rocsparse_diag_type can be set using rocsparse_set_mat_diag_type(). The current
   \ref rocsparse_diag_type of a matrix can be obtained by
   rocsparse_get_mat_diag_type().*/
-pub type rocsparse_diag_type_ = ::std::os::raw::c_int;
+pub type rocsparse_diag_type_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief Indicates if the diagonal entries are unity.
 
@@ -455,7 +455,7 @@ pub const rocsparse_fill_mode__rocsparse_fill_mode_upper: rocsparse_fill_mode_ =
   \ref rocsparse_fill_mode can be set using rocsparse_set_mat_fill_mode(). The current
   \ref rocsparse_fill_mode of a matrix can be obtained by
   rocsparse_get_mat_fill_mode().*/
-pub type rocsparse_fill_mode_ = ::std::os::raw::c_int;
+pub type rocsparse_fill_mode_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief Specify the matrix fill mode.
 
@@ -478,7 +478,7 @@ pub const rocsparse_storage_mode__rocsparse_storage_mode_unsorted: rocsparse_sto
   For a given \ref rocsparse_mat_descr, the \ref rocsparse_storage_mode can be set
   using rocsparse_set_mat_storage_mode(). The current \ref rocsparse_storage_mode of a
   matrix can be obtained by rocsparse_get_mat_storage_mode().*/
-pub type rocsparse_storage_mode_ = ::std::os::raw::c_int;
+pub type rocsparse_storage_mode_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief Specify whether the matrix is stored sorted or not.
 
@@ -498,7 +498,7 @@ pub const rocsparse_action__rocsparse_action_numeric: rocsparse_action_ = 1;
   \details
   The \ref rocsparse_action indicates whether the operation is performed on the full
   matrix, or only on the sparsity pattern of the matrix.*/
-pub type rocsparse_action_ = ::std::os::raw::c_int;
+pub type rocsparse_action_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief Specify where the operation is performed on.
 
@@ -516,7 +516,7 @@ pub const rocsparse_direction__rocsparse_direction_column: rocsparse_direction_ 
   \details
   The \ref rocsparse_direction indicates whether a dense matrix should be parsed by
   rows or by columns, assuming column-major storage.*/
-pub type rocsparse_direction_ = ::std::os::raw::c_int;
+pub type rocsparse_direction_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief Specify the matrix direction.
 
@@ -536,7 +536,7 @@ pub const rocsparse_hyb_partition__rocsparse_hyb_partition_max: rocsparse_hyb_pa
   \details
   The \ref rocsparse_hyb_partition type indicates how the hybrid format partitioning
   between COO and ELL storage formats is performed.*/
-pub type rocsparse_hyb_partition_ = ::std::os::raw::c_int;
+pub type rocsparse_hyb_partition_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief HYB matrix partitioning type.
 
@@ -557,7 +557,7 @@ pub const rocsparse_analysis_policy__rocsparse_analysis_policy_force: rocsparse_
   "rocsparse_Xcsrilu0_analysis()" call is available, it can be re-used for subsequent calls to e.g.
   \ref rocsparse_scsrsv_analysis "rocsparse_Xcsrsv_analysis()" and greatly improve performance
   of the analysis function.*/
-pub type rocsparse_analysis_policy_ = ::std::os::raw::c_int;
+pub type rocsparse_analysis_policy_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief Specify policy in analysis functions.
 
@@ -575,7 +575,7 @@ pub const rocsparse_solve_policy__rocsparse_solve_policy_auto: rocsparse_solve_p
 
   \details
   This is a placeholder.*/
-pub type rocsparse_solve_policy_ = ::std::os::raw::c_int;
+pub type rocsparse_solve_policy_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief Specify policy in triangular solvers and factorizations.
 
@@ -594,7 +594,7 @@ pub const rocsparse_pointer_mode__rocsparse_pointer_mode_device: rocsparse_point
   reference on the host or device. The \ref rocsparse_pointer_mode can be changed by
   rocsparse_set_pointer_mode(). The currently used pointer mode can be obtained by
   rocsparse_get_pointer_mode().*/
-pub type rocsparse_pointer_mode_ = ::std::os::raw::c_int;
+pub type rocsparse_pointer_mode_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief Indicates if the pointer is device pointer or host pointer.
 
@@ -617,7 +617,7 @@ pub const rocsparse_layer_mode_rocsparse_layer_mode_log_debug: rocsparse_layer_m
 
   \details
   The \ref rocsparse_layer_mode bit mask indicates the logging characteristics.*/
-pub type rocsparse_layer_mode = ::std::os::raw::c_int;
+pub type rocsparse_layer_mode = ::std::os::raw::c_uint;
 ///< success.
 pub const rocsparse_status__rocsparse_status_success: rocsparse_status_ = 0;
 ///< handle not initialized, invalid or null.
@@ -654,7 +654,7 @@ pub const rocsparse_status__rocsparse_status_continue: rocsparse_status_ = 14;
   \details
   This is a list of the \ref rocsparse_status types that are used by the rocSPARSE
   library.*/
-pub type rocsparse_status_ = ::std::os::raw::c_int;
+pub type rocsparse_status_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of rocsparse status codes definition.
 
@@ -684,7 +684,7 @@ pub const rocsparse_data_status__rocsparse_data_status_invalid_fill: rocsparse_d
   \details
   This is a list of the \ref rocsparse_data_status types that are used by the rocSPARSE
   library in the matrix check routines.*/
-pub type rocsparse_data_status_ = ::std::os::raw::c_int;
+pub type rocsparse_data_status_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of rocsparse data status codes definition.
 
@@ -703,7 +703,7 @@ pub const rocsparse_indextype__rocsparse_indextype_i64: rocsparse_indextype_ = 3
 
   \details
   Indicates the index width of a rocsparse index type.*/
-pub type rocsparse_indextype_ = ::std::os::raw::c_int;
+pub type rocsparse_indextype_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of rocsparse index types.
 
@@ -735,7 +735,7 @@ pub const rocsparse_datatype__rocsparse_datatype_bf16_r: rocsparse_datatype_ = 1
 
   \details
   Indicates the precision width of data stored in a rocsparse type.*/
-pub type rocsparse_datatype_ = ::std::os::raw::c_int;
+pub type rocsparse_datatype_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of rocsparse data types.
 
@@ -764,7 +764,7 @@ pub const rocsparse_format__rocsparse_format_sell: rocsparse_format_ = 7;
   \details
   This is a list of supported \ref rocsparse_format types that are used to describe a
   sparse matrix.*/
-pub type rocsparse_format_ = ::std::os::raw::c_int;
+pub type rocsparse_format_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of sparse matrix formats.
 
@@ -782,7 +782,7 @@ pub const rocsparse_order__rocsparse_order_column: rocsparse_order_ = 1;
   \details
   This is a list of supported \ref rocsparse_order types that are used to describe the
   memory layout of a dense matrix*/
-pub type rocsparse_order_ = ::std::os::raw::c_int;
+pub type rocsparse_order_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of dense matrix ordering.
 
@@ -800,7 +800,7 @@ pub const rocsparse_spmat_attribute__rocsparse_spmat_matrix_type: rocsparse_spma
 pub const rocsparse_spmat_attribute__rocsparse_spmat_storage_mode: rocsparse_spmat_attribute_ = 3;
 /** \ingroup types_module
   \brief List of sparse matrix attributes*/
-pub type rocsparse_spmat_attribute_ = ::std::os::raw::c_int;
+pub type rocsparse_spmat_attribute_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of sparse matrix attributes*/
 pub use self::rocsparse_spmat_attribute_ as rocsparse_spmat_attribute;
@@ -811,7 +811,7 @@ pub const rocsparse_sparse_to_sparse_alg__rocsparse_sparse_to_sparse_alg_default
   \details
   This is a list of supported \ref rocsparse_sparse_to_sparse_alg types that are used to perform
   sparse to sparse conversion.*/
-pub type rocsparse_sparse_to_sparse_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_sparse_to_sparse_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of sparse to sparse algorithms.
 
@@ -829,7 +829,7 @@ pub const rocsparse_sparse_to_sparse_stage__rocsparse_sparse_to_sparse_stage_com
   \details
   This is a list of possible stages during sparse_to_sparse conversion. Typical order is
   \ref rocsparse_sparse_to_sparse_stage_analysis, \ref rocsparse_sparse_to_sparse_stage_compute.*/
-pub type rocsparse_sparse_to_sparse_stage_ = ::std::os::raw::c_int;
+pub type rocsparse_sparse_to_sparse_stage_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of sparse_to_sparse stages.
 
@@ -845,7 +845,7 @@ pub const rocsparse_extract_alg__rocsparse_extract_alg_default: rocsparse_extrac
   \details
   This is a list of supported \ref rocsparse_extract_alg types that are used to perform
   the submatrix extraction.*/
-pub type rocsparse_extract_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_extract_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of extract algorithms.
 
@@ -862,7 +862,7 @@ pub const rocsparse_extract_stage__rocsparse_extract_stage_compute: rocsparse_ex
 
   \details
   The analysis \ref rocsparse_extract_stage_analysis must be done before the first call of the calculation \ref rocsparse_extract_stage_compute.*/
-pub type rocsparse_extract_stage_ = ::std::os::raw::c_int;
+pub type rocsparse_extract_stage_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of extract stages.
 
@@ -881,7 +881,7 @@ pub const rocsparse_itilu0_alg__rocsparse_itilu0_alg_sync_split_fusion: rocspars
   \details
   This is a list of supported \ref rocsparse_itilu0_alg types that are used to perform
   the iterative ILU0 algorithm.*/
-pub type rocsparse_itilu0_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_itilu0_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of Iterative ILU0 algorithms.
 
@@ -907,7 +907,7 @@ pub const rocsparse_itilu0_option__rocsparse_itilu0_option_coo_format: rocsparse
   \details
   This is a list of supported \ref rocsparse_itilu0_option options that are used to perform
   the iterative ILU0 algorithm.*/
-pub type rocsparse_itilu0_option_ = ::std::os::raw::c_int;
+pub type rocsparse_itilu0_option_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of Iterative ILU0 options.
 
@@ -925,7 +925,7 @@ pub const rocsparse_gtsv_interleaved_alg__rocsparse_gtsv_interleaved_alg_qr: roc
   \details
   This is a list of supported \ref rocsparse_gtsv_interleaved_alg types that are used to perform
   interleaved tridiagonal solve.*/
-pub type rocsparse_gtsv_interleaved_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_gtsv_interleaved_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of interleaved gtsv algorithms.
 
@@ -943,7 +943,7 @@ pub const rocsparse_check_spmat_stage__rocsparse_check_spmat_stage_compute: rocs
   \details
   This is a list of possible stages during check matrix computation. Typical order is
   \ref rocsparse_check_spmat_stage_buffer_size, \ref rocsparse_check_spmat_stage_compute.*/
-pub type rocsparse_check_spmat_stage_ = ::std::os::raw::c_int;
+pub type rocsparse_check_spmat_stage_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of check matrix stages.
 
@@ -965,7 +965,7 @@ pub const rocsparse_spmv_input__rocsparse_spmv_input_nnz_use_starting_block_ids:
 
   \details
   This is a list of possible inputs to the SpMV descriptor.*/
-pub type rocsparse_spmv_input_ = ::std::os::raw::c_int;
+pub type rocsparse_spmv_input_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of inputs to SpMV descriptor.
 
@@ -981,7 +981,7 @@ pub const rocsparse_v2_spmv_stage__rocsparse_v2_spmv_stage_compute: rocsparse_v2
 
   \details
   This is a list of possible stages during SpMV-Version2 computation.*/
-pub type rocsparse_v2_spmv_stage_ = ::std::os::raw::c_int;
+pub type rocsparse_v2_spmv_stage_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpMV-Version2 stages.
 
@@ -1000,7 +1000,7 @@ pub const rocsparse_spmv_stage__rocsparse_spmv_stage_compute: rocsparse_spmv_sta
   \details
   This is a list of possible stages during SpMV computation. Typical order is
   \ref rocsparse_spmv_stage_buffer_size, \ref rocsparse_spmv_stage_preprocess, \ref rocsparse_spmv_stage_compute.*/
-pub type rocsparse_spmv_stage_ = ::std::os::raw::c_int;
+pub type rocsparse_spmv_stage_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpMV stages.
 
@@ -1035,7 +1035,7 @@ pub const rocsparse_spmv_alg__rocsparse_spmv_alg_csr_stream: rocsparse_spmv_alg_
   \details
   This is a list of supported \ref rocsparse_spmv_alg types that are used to perform
   matrix vector product.*/
-pub type rocsparse_spmv_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_spmv_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpMV algorithms.
 
@@ -1051,7 +1051,7 @@ pub const rocsparse_spsv_alg__rocsparse_spsv_alg_default: rocsparse_spsv_alg_ = 
   \details
   This is a list of supported \ref rocsparse_spsv_alg types that are used to perform
   triangular solve.*/
-pub type rocsparse_spsv_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_spsv_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpSV algorithms.
 
@@ -1071,7 +1071,7 @@ pub const rocsparse_spsv_stage__rocsparse_spsv_stage_compute: rocsparse_spsv_sta
   \details
   This is a list of possible stages during SpSV computation. Typical order is
   \ref rocsparse_spsv_stage_buffer_size, \ref rocsparse_spsv_stage_preprocess, \ref rocsparse_spsv_stage_compute.*/
-pub type rocsparse_spsv_stage_ = ::std::os::raw::c_int;
+pub type rocsparse_spsv_stage_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpSV stages.
 
@@ -1087,7 +1087,7 @@ pub const rocsparse_spitsv_alg__rocsparse_spitsv_alg_default: rocsparse_spitsv_a
   \details
   This is a list of supported \ref rocsparse_spitsv_alg types that are used to perform
   triangular solve.*/
-pub type rocsparse_spitsv_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_spitsv_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpITSV algorithms.
 
@@ -1107,7 +1107,7 @@ pub const rocsparse_spitsv_stage__rocsparse_spitsv_stage_compute: rocsparse_spit
   \details
   This is a list of possible stages during SpITSV computation. Typical order is
   \ref rocsparse_spitsv_stage_buffer_size, \ref rocsparse_spitsv_stage_preprocess, \ref rocsparse_spitsv_stage_compute.*/
-pub type rocsparse_spitsv_stage_ = ::std::os::raw::c_int;
+pub type rocsparse_spitsv_stage_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpITSV stages.
 
@@ -1123,7 +1123,7 @@ pub const rocsparse_spsm_alg__rocsparse_spsm_alg_default: rocsparse_spsm_alg_ = 
   \details
   This is a list of supported \ref rocsparse_spsm_alg types that are used to perform
   triangular solve.*/
-pub type rocsparse_spsm_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_spsm_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpSM algorithms.
 
@@ -1143,7 +1143,7 @@ pub const rocsparse_spsm_stage__rocsparse_spsm_stage_compute: rocsparse_spsm_sta
   \details
   This is a list of possible stages during SpSM computation. Typical order is
   \ref rocsparse_spsm_stage_buffer_size, \ref rocsparse_spsm_stage_preprocess, \ref rocsparse_spsm_stage_compute.*/
-pub type rocsparse_spsm_stage_ = ::std::os::raw::c_int;
+pub type rocsparse_spsm_stage_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpSM stages.
 
@@ -1178,7 +1178,7 @@ pub const rocsparse_spmm_alg__rocsparse_spmm_alg_csr_nnz_split: rocsparse_spmm_a
   \details
   This is a list of supported \ref rocsparse_spmm_alg types that are used to perform
   matrix vector product.*/
-pub type rocsparse_spmm_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_spmm_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpMM algorithms.
 
@@ -1196,7 +1196,7 @@ pub const rocsparse_sddmm_alg__rocsparse_sddmm_alg_dense: rocsparse_sddmm_alg_ =
   \details
   This is a list of supported \ref rocsparse_sddmm_alg types that are used to perform
   matrix vector product.*/
-pub type rocsparse_sddmm_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_sddmm_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of sddmm algorithms.
 
@@ -1211,7 +1211,7 @@ pub const rocsparse_sparse_to_dense_alg__rocsparse_sparse_to_dense_alg_default: 
   \details
   This is a list of supported \ref rocsparse_sparse_to_dense_alg types that are used to perform
   sparse to dense conversion.*/
-pub type rocsparse_sparse_to_dense_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_sparse_to_dense_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of sparse to dense algorithms.
 
@@ -1226,7 +1226,7 @@ pub const rocsparse_dense_to_sparse_alg__rocsparse_dense_to_sparse_alg_default: 
   \details
   This is a list of supported \ref rocsparse_dense_to_sparse_alg types that are used to perform
   dense to sparse conversion.*/
-pub type rocsparse_dense_to_sparse_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_dense_to_sparse_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of dense to sparse algorithms.
 
@@ -1246,7 +1246,7 @@ pub const rocsparse_spmm_stage__rocsparse_spmm_stage_compute: rocsparse_spmm_sta
   \details
   This is a list of possible stages during SpMM computation. Typical order is
   \ref rocsparse_spmm_stage_buffer_size, \ref rocsparse_spmm_stage_preprocess, \ref rocsparse_spmm_stage_compute.*/
-pub type rocsparse_spmm_stage_ = ::std::os::raw::c_int;
+pub type rocsparse_spmm_stage_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpMM stages.
 
@@ -1270,7 +1270,7 @@ pub const rocsparse_spgemm_stage__rocsparse_spgemm_stage_numeric: rocsparse_spge
   \details
   This is a list of possible stages during SpGEMM computation. Typical order is
   \ref rocsparse_spgemm_stage_buffer_size, \ref rocsparse_spgemm_stage_nnz, \ref rocsparse_spgemm_stage_compute.*/
-pub type rocsparse_spgemm_stage_ = ::std::os::raw::c_int;
+pub type rocsparse_spgemm_stage_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpGEMM stages.
 
@@ -1286,7 +1286,7 @@ pub const rocsparse_spgemm_alg__rocsparse_spgemm_alg_default: rocsparse_spgemm_a
   \details
   This is a list of supported \ref rocsparse_spgemm_alg types that are used to perform
   sparse matrix sparse matrix product.*/
-pub type rocsparse_spgemm_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_spgemm_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpGEMM algorithms.
 
@@ -1302,7 +1302,7 @@ pub const rocsparse_sptrsv_alg__rocsparse_sptrsv_alg_default: rocsparse_sptrsv_a
   \details
   This is a list of supported \ref rocsparse_sptrsv_alg types that are used to perform
   triangular solve.*/
-pub type rocsparse_sptrsv_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_sptrsv_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpTRSV algorithms.
 
@@ -1319,7 +1319,7 @@ pub const rocsparse_sptrsv_stage__rocsparse_sptrsv_stage_compute: rocsparse_sptr
 
   \details
   This is a list of possible stages during SpTRSV computation.*/
-pub type rocsparse_sptrsv_stage_ = ::std::os::raw::c_int;
+pub type rocsparse_sptrsv_stage_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpTRSV stages.
 
@@ -1343,7 +1343,7 @@ pub const rocsparse_sptrsv_input__rocsparse_sptrsv_input_analysis_policy: rocspa
 
   \details
   This is a list of possible inputs to the SpTRSV descriptor.*/
-pub type rocsparse_sptrsv_input_ = ::std::os::raw::c_int;
+pub type rocsparse_sptrsv_input_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of inputs to SpTRSV descriptor.
 
@@ -1357,7 +1357,7 @@ pub const rocsparse_sptrsv_output__rocsparse_sptrsv_output_zero_pivot_position: 
 
   \details
   This is a list of possible outputs to the SpTRSV descriptor.*/
-pub type rocsparse_sptrsv_output_ = ::std::os::raw::c_int;
+pub type rocsparse_sptrsv_output_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of outputs to SpTRSV descriptor.
 
@@ -1372,7 +1372,7 @@ pub const rocsparse_sptrsm_alg__rocsparse_sptrsm_alg_default: rocsparse_sptrsm_a
   \details
   This is a list of supported \ref rocsparse_sptrsm_alg types that are used to perform
   triangular solve.*/
-pub type rocsparse_sptrsm_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_sptrsm_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpTRSM algorithms.
 
@@ -1389,7 +1389,7 @@ pub const rocsparse_sptrsm_stage__rocsparse_sptrsm_stage_compute: rocsparse_sptr
 
   \details
   This is a list of possible stages during SpTRSM computation.*/
-pub type rocsparse_sptrsm_stage_ = ::std::os::raw::c_int;
+pub type rocsparse_sptrsm_stage_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpTRSM stages.
 
@@ -1415,7 +1415,7 @@ pub const rocsparse_sptrsm_input__rocsparse_sptrsm_input_analysis_policy: rocspa
 
   \details
   This is a list of possible inputs to the SpTRSM descriptor.*/
-pub type rocsparse_sptrsm_input_ = ::std::os::raw::c_int;
+pub type rocsparse_sptrsm_input_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of inputs to SpTRSM descriptor.
 
@@ -1429,7 +1429,7 @@ pub const rocsparse_sptrsm_output__rocsparse_sptrsm_output_zero_pivot_position: 
 
   \details
   This is a list of possible outputs to the SpTRSM descriptor.*/
-pub type rocsparse_sptrsm_output_ = ::std::os::raw::c_int;
+pub type rocsparse_sptrsm_output_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of outputs to SpTRSM descriptor.
 
@@ -1450,7 +1450,7 @@ pub const rocsparse_spgeam_stage__rocsparse_spgeam_stage_numeric_compute: rocspa
   \details
   This is a list of possible stages during SpGEAM computation. Typical order is
   rocsparse_spgeam_stage_buffer_size, rocsparse_spgeam_stage_analysis, rocsparse_spgeam_stage_compute.*/
-pub type rocsparse_spgeam_stage_ = ::std::os::raw::c_int;
+pub type rocsparse_spgeam_stage_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpGEAM stages.
 
@@ -1477,7 +1477,7 @@ pub const rocsparse_spgeam_input__rocsparse_spgeam_input_scalar_beta: rocsparse_
 
   \details
   This is a list of possible inputs to the SpGEAM descriptor.*/
-pub type rocsparse_spgeam_input_ = ::std::os::raw::c_int;
+pub type rocsparse_spgeam_input_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of inputs to SpGEAM descriptor.
 
@@ -1491,7 +1491,7 @@ pub const rocsparse_spgeam_output__rocsparse_spgeam_output_nnz: rocsparse_spgeam
 
   \details
   This is a list of possible outputs to the SpGEAM descriptor.*/
-pub type rocsparse_spgeam_output_ = ::std::os::raw::c_int;
+pub type rocsparse_spgeam_output_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of outputs to SpGEAM descriptor.
 
@@ -1506,7 +1506,7 @@ pub const rocsparse_spgeam_alg__rocsparse_spgeam_alg_default: rocsparse_spgeam_a
   \details
   This is a list of supported \ref rocsparse_spgeam_alg types that are used to perform
   sparse matrix sparse matrix product.*/
-pub type rocsparse_spgeam_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_spgeam_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of SpGEAM algorithms.
 
@@ -1524,7 +1524,7 @@ pub const rocsparse_gpsv_interleaved_alg__rocsparse_gpsv_interleaved_alg_qr: roc
   \details
   This is a list of supported \ref rocsparse_gpsv_interleaved_alg types that are used to solve
   pentadiagonal linear systems.*/
-pub type rocsparse_gpsv_interleaved_alg_ = ::std::os::raw::c_int;
+pub type rocsparse_gpsv_interleaved_alg_ = ::std::os::raw::c_uint;
 /** \ingroup types_module
   \brief List of gpsv algorithms.
 

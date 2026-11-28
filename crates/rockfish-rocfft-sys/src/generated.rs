@@ -65,7 +65,7 @@ pub const rocfft_status_e_rocfft_status_invalid_distance: rocfft_status_e = 6;
 pub const rocfft_status_e_rocfft_status_invalid_offset: rocfft_status_e = 7;
 pub const rocfft_status_e_rocfft_status_invalid_work_buffer: rocfft_status_e = 8;
 /// @brief rocFFT status/error codes
-pub type rocfft_status_e = ::std::os::raw::c_int;
+pub type rocfft_status_e = ::std::os::raw::c_uint;
 /// @brief rocFFT status/error codes
 pub use self::rocfft_status_e as rocfft_status;
 pub const rocfft_transform_type_e_rocfft_transform_type_complex_forward: rocfft_transform_type_e = 0;
@@ -73,14 +73,14 @@ pub const rocfft_transform_type_e_rocfft_transform_type_complex_inverse: rocfft_
 pub const rocfft_transform_type_e_rocfft_transform_type_real_forward: rocfft_transform_type_e = 2;
 pub const rocfft_transform_type_e_rocfft_transform_type_real_inverse: rocfft_transform_type_e = 3;
 /// @brief Type of transform
-pub type rocfft_transform_type_e = ::std::os::raw::c_int;
+pub type rocfft_transform_type_e = ::std::os::raw::c_uint;
 /// @brief Type of transform
 pub use self::rocfft_transform_type_e as rocfft_transform_type;
 pub const rocfft_precision_e_rocfft_precision_single: rocfft_precision_e = 0;
 pub const rocfft_precision_e_rocfft_precision_double: rocfft_precision_e = 1;
 pub const rocfft_precision_e_rocfft_precision_half: rocfft_precision_e = 2;
 /// @brief Precision
-pub type rocfft_precision_e = ::std::os::raw::c_int;
+pub type rocfft_precision_e = ::std::os::raw::c_uint;
 /// @brief Precision
 pub use self::rocfft_precision_e as rocfft_precision;
 pub const rocfft_result_placement_e_rocfft_placement_inplace: rocfft_result_placement_e = 0;
@@ -90,7 +90,7 @@ pub const rocfft_result_placement_e_rocfft_placement_notinplace: rocfft_result_p
   placed.  Note that input buffers may still be overwritten
   during execution of a transform, even if the transform is not
   in-place.*/
-pub type rocfft_result_placement_e = ::std::os::raw::c_int;
+pub type rocfft_result_placement_e = ::std::os::raw::c_uint;
 /** @brief Result placement
   @details Declares where the output of the transform should be
   placed.  Note that input buffers may still be overwritten
@@ -104,13 +104,13 @@ pub const rocfft_array_type_e_rocfft_array_type_hermitian_interleaved: rocfft_ar
 pub const rocfft_array_type_e_rocfft_array_type_hermitian_planar: rocfft_array_type_e = 4;
 pub const rocfft_array_type_e_rocfft_array_type_unset: rocfft_array_type_e = 5;
 /// @brief Array type
-pub type rocfft_array_type_e = ::std::os::raw::c_int;
+pub type rocfft_array_type_e = ::std::os::raw::c_uint;
 /// @brief Array type
 pub use self::rocfft_array_type_e as rocfft_array_type;
 pub const rocfft_comm_type_e_rocfft_comm_none: rocfft_comm_type_e = 0;
 pub const rocfft_comm_type_e_rocfft_comm_mpi: rocfft_comm_type_e = 1;
 /// @brief Communicator type for distributed transforms
-pub type rocfft_comm_type_e = ::std::os::raw::c_int;
+pub type rocfft_comm_type_e = ::std::os::raw::c_uint;
 /// @brief Communicator type for distributed transforms
 pub use self::rocfft_comm_type_e as rocfft_comm_type;
 pub type rocfft_setup_fn = unsafe extern "C" fn() -> rocfft_status;

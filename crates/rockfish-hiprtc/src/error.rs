@@ -19,7 +19,7 @@ pub enum Error {
         /// The hipRTC function that failed.
         call: &'static str,
         /// The raw `hiprtcResult`.
-        code: i32,
+        code: hiprtcResult,
         /// Its name, such as `HIPRTC_ERROR_INVALID_OPTION`.
         name: String,
     },
@@ -39,7 +39,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 /// Name of a status code, from the constants in the vendored `hiprtc.h`.
 #[allow(non_upper_case_globals, reason = "bindgen constant names")] // the bindgen constants are named `hiprtcResult_...`
-pub fn builtin_name(code: i32) -> Option<&'static str> {
+pub fn builtin_name(code: hiprtcResult) -> Option<&'static str> {
     Some(match code {
         hiprtcResult_HIPRTC_SUCCESS => "HIPRTC_SUCCESS",
         hiprtcResult_HIPRTC_ERROR_OUT_OF_MEMORY => "HIPRTC_ERROR_OUT_OF_MEMORY",
@@ -72,14 +72,14 @@ pub fn builtin_name(code: i32) -> Option<&'static str> {
 ///
 /// The name comes from `hiprtcGetErrorString` when the library has it, else
 /// from the built-in table, else `hiprtcResult(<code>)`.
-pub(crate) fn check(api: &HiprtcApi, call: &'static str, code: i32) -> Result<()> {
+pub(crate) fn check(api: &HiprtcApi, call: &'static str, code: hiprtcResult) -> Result<()> {
     if code == hiprtcResult_HIPRTC_SUCCESS {
         return Ok(());
     }
     let from_library = api.hiprtcGetErrorString().ok().and_then(|f| {
         // SAFETY: `f` is hipRTC's `hiprtcGetErrorString`, which accepts any
         // status and returns a NUL-terminated static string or null.
-        let p = unsafe { f(code as _) };
+        let p = unsafe { f(code) };
         // SAFETY: a non-null result is a valid NUL-terminated string.
         (!p.is_null()).then(|| unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned())
     });

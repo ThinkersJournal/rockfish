@@ -46,7 +46,7 @@ pub const miopenStatus_t_miopenStatusGpuOperationsSkipped: miopenStatus_t = 9;
 pub const miopenStatus_t_miopenStatusVersionMismatch: miopenStatus_t = 10;
 /** @enum miopenStatus_t
  Error codes that are returned by all MIOpen API calls.*/
-pub type miopenStatus_t = ::std::os::raw::c_int;
+pub type miopenStatus_t = ::std::os::raw::c_uint;
 /** @ingroup tensor
  @brief Creates the miopenTensorDescriptor_t type
 
@@ -145,7 +145,7 @@ pub const miopenDataType_t_miopenInt64: miopenDataType_t = 9;
 /** @ingroup tensor
  @enum miopenDataType_t
  MIOpen floating point datatypes. Both 32-bit and 16-bit floats are supported in MIOpen.*/
-pub type miopenDataType_t = ::std::os::raw::c_int;
+pub type miopenDataType_t = ::std::os::raw::c_uint;
 ///< NCHW memory layout (Fully supported)
 pub const miopenTensorLayout_t_miopenTensorNCHW: miopenTensorLayout_t = 0;
 ///< NHWC memory layout (Fully supported)
@@ -168,7 +168,7 @@ pub const miopenTensorLayout_t_miopenTensorNDHWC: miopenTensorLayout_t = 8;
  @enum miopenTensorLayout_t
  Tensor layouts supported by MIOpen.
  miopenTensorCHWNc4 and miopenTensorCHWNc8 layout only support weight tensor.*/
-pub type miopenTensorLayout_t = ::std::os::raw::c_int;
+pub type miopenTensorLayout_t = ::std::os::raw::c_uint;
 ///< Add tensors element-wise
 pub const miopenTensorOp_t_miopenTensorOpAdd: miopenTensorOp_t = 0;
 ///< Multiply two tensors element-wise
@@ -180,7 +180,7 @@ pub const miopenTensorOp_t_miopenTensorOpMax: miopenTensorOp_t = 3;
 /** @ingroup tensor
  @enum miopenTensorOp_t
  Element-wise tensor operation modes*/
-pub type miopenTensorOp_t = ::std::os::raw::c_int;
+pub type miopenTensorOp_t = ::std::os::raw::c_uint;
 ///< Cross-Correlation convolution
 pub const miopenConvolutionMode_t_miopenConvolution: miopenConvolutionMode_t = 0;
 ///< Transpose convolutions -- deconvolution
@@ -192,7 +192,7 @@ pub const miopenConvolutionMode_t_miopenDepthwise: miopenConvolutionMode_t = 3;
 /** @ingroup convolutions
   @enum miopenConvolutionMode_t
  Convolution mode selection for convolution layer preference.*/
-pub type miopenConvolutionMode_t = ::std::os::raw::c_int;
+pub type miopenConvolutionMode_t = ::std::os::raw::c_uint;
 ///< MIOPEN Default Padding
 pub const miopenPaddingMode_t_miopenPaddingDefault: miopenPaddingMode_t = 0;
 ///< Tensorflow SAME Padding
@@ -202,7 +202,7 @@ pub const miopenPaddingMode_t_miopenPaddingValid: miopenPaddingMode_t = 2;
 /** @ingroup padding
   @enum miopenPaddingMode_t
  Padding mode selection for convolution/Pooling layer preference*/
-pub type miopenPaddingMode_t = ::std::os::raw::c_int;
+pub type miopenPaddingMode_t = ::std::os::raw::c_uint;
 ///< No activation, pass through the data
 pub const miopenActivationMode_t_miopenActivationPASTHRU: miopenActivationMode_t = 0;
 ///< Sigmoid function: \f$1 / (1 + e^{-x})\f$
@@ -225,7 +225,7 @@ pub const miopenActivationMode_t_miopenActivationCLAMP: miopenActivationMode_t =
 /** @ingroup activation
  @enum miopenActivationMode_t
  Activation layer modes*/
-pub type miopenActivationMode_t = ::std::os::raw::c_int;
+pub type miopenActivationMode_t = ::std::os::raw::c_uint;
 ///< GEMM variant
 pub const miopenConvFwdAlgorithm_t_miopenConvolutionFwdAlgoGEMM: miopenConvFwdAlgorithm_t = 0;
 ///< Direct convolutions
@@ -239,7 +239,7 @@ pub const miopenConvFwdAlgorithm_t_miopenConvolutionFwdAlgoImplicitGEMM: miopenC
 /** @enum miopenConvFwdAlgorithm_t
  Convolutional algorithm mode for forward propagation. MIOpen use cross-correlation for its
  convolution implementation.*/
-pub type miopenConvFwdAlgorithm_t = ::std::os::raw::c_int;
+pub type miopenConvFwdAlgorithm_t = ::std::os::raw::c_uint;
 ///< GEMM variant
 pub const miopenConvBwdWeightsAlgorithm_t_miopenConvolutionBwdWeightsAlgoGEMM: miopenConvBwdWeightsAlgorithm_t = 0;
 ///< Direct convolution algorithm
@@ -250,7 +250,7 @@ pub const miopenConvBwdWeightsAlgorithm_t_miopenConvolutionBwdWeightsAlgoWinogra
 pub const miopenConvBwdWeightsAlgorithm_t_miopenConvolutionBwdWeightsAlgoImplicitGEMM: miopenConvBwdWeightsAlgorithm_t = 5;
 /** @enum miopenConvBwdWeightsAlgorithm_t
  Convolutional algorithm mode for back propagation on weights.*/
-pub type miopenConvBwdWeightsAlgorithm_t = ::std::os::raw::c_int;
+pub type miopenConvBwdWeightsAlgorithm_t = ::std::os::raw::c_uint;
 ///< GEMM variant
 pub const miopenConvBwdDataAlgorithm_t_miopenConvolutionBwdDataAlgoGEMM: miopenConvBwdDataAlgorithm_t = 0;
 ///< Direct convolutions
@@ -264,7 +264,7 @@ pub const miopenConvBwdDataAlgorithm_t_miopenTransposeBwdDataAlgoGEMM: miopenCon
 pub const miopenConvBwdDataAlgorithm_t_miopenConvolutionBwdDataAlgoImplicitGEMM: miopenConvBwdDataAlgorithm_t = 5;
 /** @enum miopenConvBwdDataAlgorithm_t
  Convolutional algorithm mode for back propagation on data.*/
-pub type miopenConvBwdDataAlgorithm_t = ::std::os::raw::c_int;
+pub type miopenConvBwdDataAlgorithm_t = ::std::os::raw::c_uint;
 /** @brief Perf struct for forward, backward filter, or backward data algorithms
 
  Contains the union to hold the selected convolution algorithm for forward, or backwards layers,

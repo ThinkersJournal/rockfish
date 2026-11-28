@@ -783,7 +783,7 @@ fn generate(root: &Path, t: &Target) -> String {
         quote! {
             /// Name of each `hipError_t` status code in the header (the first
             /// name where several share a code), sorted by code.
-            pub const ERROR_NAMES: &[(i32, &str)] = &[#((#status_codes, #status_strs)),*];
+            pub const ERROR_NAMES: &[(hipError_t, &str)] = &[#((#status_codes, #status_strs)),*];
         }
     };
 

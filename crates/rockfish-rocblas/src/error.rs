@@ -22,7 +22,7 @@ pub enum Error {
         /// The rocBLAS function that failed.
         call: &'static str,
         /// The raw `rocblas_status`.
-        code: i32,
+        code: rocblas_status_,
         /// Its name, such as `rocblas_status_invalid_size`.
         name: String,
     },
@@ -36,7 +36,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 /// Name of a status code, from the constants in the vendored `rocblas-types.h`.
 #[allow(non_upper_case_globals, reason = "bindgen constant names")] // the bindgen constants are named `rocblas_status__...`
-pub fn builtin_name(code: i32) -> Option<&'static str> {
+pub fn builtin_name(code: rocblas_status_) -> Option<&'static str> {
     Some(match code {
         rocblas_status__rocblas_status_success => "rocblas_status_success",
         rocblas_status__rocblas_status_invalid_handle => "rocblas_status_invalid_handle",
@@ -62,7 +62,7 @@ pub fn builtin_name(code: i32) -> Option<&'static str> {
 ///
 /// The name comes from `rocblas_status_to_string` when the library has it,
 /// else from the built-in table, else `rocblas_status(<code>)`.
-pub(crate) fn check(api: &RocblasApi, call: &'static str, code: i32) -> Result<()> {
+pub(crate) fn check(api: &RocblasApi, call: &'static str, code: rocblas_status_) -> Result<()> {
     if code == rocblas_status__rocblas_status_success {
         return Ok(());
     }

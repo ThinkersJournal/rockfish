@@ -11,9 +11,9 @@ use std::ffi::c_void;
 
 use rockfish_hip::{DeviceBuffer, DeviceRepr};
 use rockfish_rocblas_sys::{
-    rocblas_datatype__rocblas_datatype_f32_r, rocblas_datatype__rocblas_datatype_f64_r,
-    rocblas_gemm_algo__rocblas_gemm_algo_standard,
-    rocblas_operation__rocblas_operation_conjugate_transpose,
+    rocblas_datatype_, rocblas_datatype__rocblas_datatype_f32_r,
+    rocblas_datatype__rocblas_datatype_f64_r, rocblas_gemm_algo__rocblas_gemm_algo_standard,
+    rocblas_operation_, rocblas_operation__rocblas_operation_conjugate_transpose,
     rocblas_operation__rocblas_operation_none, rocblas_operation__rocblas_operation_transpose,
 };
 
@@ -33,7 +33,7 @@ pub enum Op {
 }
 
 impl Op {
-    fn raw(self) -> i32 {
+    fn raw(self) -> rocblas_operation_ {
         match self {
             Op::None => rocblas_operation__rocblas_operation_none,
             Op::Transpose => rocblas_operation__rocblas_operation_transpose,
@@ -52,9 +52,9 @@ pub trait GemmElement: DeviceRepr + sealed::Sealed {
     /// The type of `alpha` and `beta`: `f32` for `f32`, `f16` and `bf16`, else `f64`.
     type Scalar: Copy;
     #[doc(hidden)]
-    const DATATYPE: i32;
+    const DATATYPE: rocblas_datatype_;
     #[doc(hidden)]
-    const COMPUTE: i32;
+    const COMPUTE: rocblas_datatype_;
 }
 
 macro_rules! element {
@@ -62,8 +62,8 @@ macro_rules! element {
         impl sealed::Sealed for $t {}
         impl GemmElement for $t {
             type Scalar = $scalar;
-            const DATATYPE: i32 = $data;
-            const COMPUTE: i32 = $compute;
+            const DATATYPE: rocblas_datatype_ = $data;
+            const COMPUTE: rocblas_datatype_ = $compute;
         }
     };
 }

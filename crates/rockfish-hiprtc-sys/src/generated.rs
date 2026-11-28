@@ -32,7 +32,7 @@ pub const hiprtcResult_HIPRTC_ERROR_INTERNAL_ERROR: hiprtcResult = 11;
 ///< Error in linking
 pub const hiprtcResult_HIPRTC_ERROR_LINKING: hiprtcResult = 100;
 #[doc = " @addtogroup GlobalDefs\n @{\n\n/\n/**\n hiprtc error code"]
-pub type hiprtcResult = ::std::os::raw::c_int;
+pub type hiprtcResult = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug)]
 pub struct _hiprtcProgram {

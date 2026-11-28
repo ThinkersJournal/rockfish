@@ -18,7 +18,7 @@ pub type rocblas_layer_mode_flags = u32;
 ///< Enable logging for kernel calls.
 pub const rocblas_layer_mode_ex__rocblas_layer_mode_ex_log_kernel: rocblas_layer_mode_ex_ = 16;
 /// \brief Used to expand the logging layer modes offered for rocSOLVER logging.
-pub type rocblas_layer_mode_ex_ = ::std::os::raw::c_int;
+pub type rocblas_layer_mode_ex_ = ::std::os::raw::c_uint;
 /// \brief Used to expand the logging layer modes offered for rocSOLVER logging.
 pub use self::rocblas_layer_mode_ex_ as rocblas_layer_mode_ex;
 ///< Forward ordering.
@@ -27,7 +27,7 @@ pub const rocblas_direct__rocblas_forward_direction: rocblas_direct_ = 171;
 pub const rocblas_direct__rocblas_backward_direction: rocblas_direct_ = 172;
 /** \brief Used to specify the order in which multiple Householder matrices or plane rotations are
 applied together (see the documentation of the specific routines for more details).*/
-pub type rocblas_direct_ = ::std::os::raw::c_int;
+pub type rocblas_direct_ = ::std::os::raw::c_uint;
 /** \brief Used to specify the order in which multiple Householder matrices or plane rotations are
 applied together (see the documentation of the specific routines for more details).*/
 pub use self::rocblas_direct_ as rocblas_direct;
@@ -37,7 +37,7 @@ pub const rocblas_storev__rocblas_column_wise: rocblas_storev_ = 181;
 pub const rocblas_storev__rocblas_row_wise: rocblas_storev_ = 182;
 /** \brief Used to specify how householder vectors are stored in a matrix of
 vectors*/
-pub type rocblas_storev_ = ::std::os::raw::c_int;
+pub type rocblas_storev_ = ::std::os::raw::c_uint;
 /** \brief Used to specify how householder vectors are stored in a matrix of
 vectors*/
 pub use self::rocblas_storev_ as rocblas_storev;
@@ -53,7 +53,7 @@ pub const rocblas_svect__rocblas_svect_overwrite: rocblas_svect_ = 193;
 pub const rocblas_svect__rocblas_svect_none: rocblas_svect_ = 194;
 /** \brief Used to specify how the singular vectors are to be computed and
 stored*/
-pub type rocblas_svect_ = ::std::os::raw::c_int;
+pub type rocblas_svect_ = ::std::os::raw::c_uint;
 /** \brief Used to specify how the singular vectors are to be computed and
 stored*/
 pub use self::rocblas_svect_ as rocblas_svect;
@@ -64,7 +64,7 @@ pub const rocblas_workmode__rocblas_outofplace: rocblas_workmode_ = 201;
 pub const rocblas_workmode__rocblas_inplace: rocblas_workmode_ = 202;
 /** \brief Used to enable the use of fast algorithms (with out-of-place
 computations) in some of the routines*/
-pub type rocblas_workmode_ = ::std::os::raw::c_int;
+pub type rocblas_workmode_ = ::std::os::raw::c_uint;
 /** \brief Used to enable the use of fast algorithms (with out-of-place
 computations) in some of the routines*/
 pub use self::rocblas_workmode_ as rocblas_workmode;
@@ -77,7 +77,7 @@ pub const rocblas_evect__rocblas_evect_tridiagonal: rocblas_evect_ = 212;
 ///< No eigenvectors are computed.
 pub const rocblas_evect__rocblas_evect_none: rocblas_evect_ = 213;
 /// \brief Used to specify how the eigenvectors are to be computed
-pub type rocblas_evect_ = ::std::os::raw::c_int;
+pub type rocblas_evect_ = ::std::os::raw::c_uint;
 /// \brief Used to specify how the eigenvectors are to be computed
 pub use self::rocblas_evect_ as rocblas_evect;
 ///< The problem is \f$Ax = \lambda Bx\f$.
@@ -87,7 +87,7 @@ pub const rocblas_eform__rocblas_eform_abx: rocblas_eform_ = 222;
 ///< The problem is \f$BAx = \lambda x\f$.
 pub const rocblas_eform__rocblas_eform_bax: rocblas_eform_ = 223;
 /// \brief Used to specify the form of the generalized eigenproblem
-pub type rocblas_eform_ = ::std::os::raw::c_int;
+pub type rocblas_eform_ = ::std::os::raw::c_uint;
 /// \brief Used to specify the form of the generalized eigenproblem
 pub use self::rocblas_eform_ as rocblas_eform;
 ///< All eigenvalues will be found.
@@ -99,7 +99,7 @@ pub const rocblas_erange__rocblas_erange_value: rocblas_erange_ = 232;
 pub const rocblas_erange__rocblas_erange_index: rocblas_erange_ = 233;
 /** \brief Used to specify the type of range in which eigenvalues will be found
 in partial eigenvalue decompositions*/
-pub type rocblas_erange_ = ::std::os::raw::c_int;
+pub type rocblas_erange_ = ::std::os::raw::c_uint;
 /** \brief Used to specify the type of range in which eigenvalues will be found
 in partial eigenvalue decompositions*/
 pub use self::rocblas_erange_ as rocblas_erange;
@@ -110,7 +110,7 @@ pub const rocblas_eorder__rocblas_eorder_blocks: rocblas_eorder_ = 241;
 ordered from smallest to largest.*/
 pub const rocblas_eorder__rocblas_eorder_entire: rocblas_eorder_ = 242;
 /// \brief Used to specify whether the eigenvalues are grouped and ordered by blocks
-pub type rocblas_eorder_ = ::std::os::raw::c_int;
+pub type rocblas_eorder_ = ::std::os::raw::c_uint;
 /// \brief Used to specify whether the eigenvalues are grouped and ordered by blocks
 pub use self::rocblas_eorder_ as rocblas_eorder;
 ///< The computed eigenvalues will not be sorted.
@@ -119,7 +119,7 @@ pub const rocblas_esort__rocblas_esort_none: rocblas_esort_ = 251;
 pub const rocblas_esort__rocblas_esort_ascending: rocblas_esort_ = 252;
 /** \brief Used in the Jacobi methods to specify whether the eigenvalues are sorted
 in increasing order*/
-pub type rocblas_esort_ = ::std::os::raw::c_int;
+pub type rocblas_esort_ = ::std::os::raw::c_uint;
 /** \brief Used in the Jacobi methods to specify whether the eigenvalues are sorted
 in increasing order*/
 pub use self::rocblas_esort_ as rocblas_esort;
@@ -132,7 +132,7 @@ pub const rocblas_srange__rocblas_srange_value: rocblas_srange_ = 262;
 pub const rocblas_srange__rocblas_srange_index: rocblas_srange_ = 263;
 /** \brief Used to specify the type of range in which singular values will be found
 in partial singular value decompositions*/
-pub type rocblas_srange_ = ::std::os::raw::c_int;
+pub type rocblas_srange_ = ::std::os::raw::c_uint;
 /** \brief Used to specify the type of range in which singular values will be found
 in partial singular value decompositions*/
 pub use self::rocblas_srange_ as rocblas_srange;
@@ -143,7 +143,7 @@ pub const rocblas_pivot__rocblas_pivot_top: rocblas_pivot_ = 282;
 ///< The i-th rotation is applied on plane (i,m) or (i,n).
 pub const rocblas_pivot__rocblas_pivot_bottom: rocblas_pivot_ = 283;
 /// \brief Used to specify the planes on which a sequence of Givens rotations is applied.
-pub type rocblas_pivot_ = ::std::os::raw::c_int;
+pub type rocblas_pivot_ = ::std::os::raw::c_uint;
 /// \brief Used to specify the planes on which a sequence of Givens rotations is applied.
 pub use self::rocblas_pivot_ as rocblas_pivot;
 #[repr(C)]
@@ -157,7 +157,7 @@ pub const rocblas_operation__rocblas_operation_none: rocblas_operation_ = 111;
 pub const rocblas_operation__rocblas_operation_transpose: rocblas_operation_ = 112;
 pub const rocblas_operation__rocblas_operation_conjugate_transpose: rocblas_operation_ = 113;
 /// \brief Used to specify whether the matrix is to be transposed or not.
-pub type rocblas_operation_ = ::std::os::raw::c_int;
+pub type rocblas_operation_ = ::std::os::raw::c_uint;
 ///< Upper triangle.
 pub const rocblas_fill__rocblas_fill_upper: rocblas_fill_ = 121;
 ///< Lower triangle.
@@ -165,14 +165,14 @@ pub const rocblas_fill__rocblas_fill_lower: rocblas_fill_ = 122;
 pub const rocblas_fill__rocblas_fill_full: rocblas_fill_ = 123;
 /** \brief Used by the Hermitian, symmetric and triangular matrix
  routines to specify whether the upper, or lower triangle is being referenced.*/
-pub type rocblas_fill_ = ::std::os::raw::c_int;
+pub type rocblas_fill_ = ::std::os::raw::c_uint;
 ///< Non-unit triangular.
 pub const rocblas_diagonal__rocblas_diagonal_non_unit: rocblas_diagonal_ = 131;
 ///< Unit triangular.
 pub const rocblas_diagonal__rocblas_diagonal_unit: rocblas_diagonal_ = 132;
 /** \brief It is used by the triangular matrix routines to specify whether the
  matrix is unit triangular.*/
-pub type rocblas_diagonal_ = ::std::os::raw::c_int;
+pub type rocblas_diagonal_ = ::std::os::raw::c_uint;
 /**< Multiply general matrix by symmetric,
 Hermitian, or triangular matrix on the left.*/
 pub const rocblas_side__rocblas_side_left: rocblas_side_ = 141;
@@ -181,7 +181,7 @@ Hermitian, or triangular matrix on the right.*/
 pub const rocblas_side__rocblas_side_right: rocblas_side_ = 142;
 pub const rocblas_side__rocblas_side_both: rocblas_side_ = 143;
 /// \brief Indicates the side matrix A is located relative to matrix B during multiplication.
-pub type rocblas_side_ = ::std::os::raw::c_int;
+pub type rocblas_side_ = ::std::os::raw::c_uint;
 ///< Success
 pub const rocblas_status__rocblas_status_success: rocblas_status_ = 0;
 ///< Handle not initialized, invalid or null
@@ -212,7 +212,7 @@ pub const rocblas_status__rocblas_status_check_numerics_fail: rocblas_status_ = 
 pub const rocblas_status__rocblas_status_excluded_from_build: rocblas_status_ = 14;
 pub const rocblas_status__rocblas_status_arch_mismatch: rocblas_status_ = 15;
 ///   @brief rocblas status codes definition
-pub type rocblas_status_ = ::std::os::raw::c_int;
+pub type rocblas_status_ = ::std::os::raw::c_uint;
 pub type rocsolver_sorgqr_fn = unsafe extern "C" fn(
     handle: rocblas_handle,
     m: rocblas_int,
